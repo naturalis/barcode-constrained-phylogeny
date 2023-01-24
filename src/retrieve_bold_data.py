@@ -56,7 +56,6 @@ def boldSpecimen():
     print(before_filter , "before")
     print(after_filter , "after COI-5P filter")
 
-    id = 0
     # Loop through unique family (taxonomy) names
     for family in set(df['family_name']):
         print('Making FASTA file for sequences from the family %s...' % family)
@@ -65,23 +64,23 @@ def boldSpecimen():
 
         # Use function mapOpentol to change species names to Opentol taxonomy
         for species_name in set(df_family['species_name']):
-            id += 1
             opentol_name, found_new = mapOpentol(species_name, family)
             if found_new:
-        # Disable panda warnings
+                # Disable panda warnings
                 pd.set_option('display.expand_frame_repr', False)
                 pd.options.mode.chained_assignment = None
 
-        # Make a custom fasta header
+                # Make a custom fasta header
                 sub_df = df_family[df_family['species_name'] == species_name]
-                sub_df["fasta_header"] = ">" + df['species_name'].replace(
-                    [species_name], (str(opentol_name) + "|" + str(id + 1)))
-                print(sub_df)
-    # +\
-    # "|" + df_family["sequenceID"] + \
-        # Put header and sequences in fasta format
-                fasta_out = sub_df['fasta_header'] + "\n" + sub_df["nucleotides"]
+                sub_df.reset_index()
+                sub_df["opentol_id"] = ">" + sub_df['species_name'].replace(
+                    [species_name], str(opentol_name)) + "|"
+                sub_df['id'] = sub_df.index.astype(str)
+                sub_df['fasta_header'] = sub_df['opentol_id'] + sub_df['id']
 
+                # Put header and sequences in fasta format
+                fasta_out = sub_df['fasta_header'] + \
+                            "\n" + sub_df["nucleotides"]
                 # Save BOLD sequences and their respective header in a fastafile
                 np.savetxt("fasta/family/%s.fasta" % family, fasta_out.values,
                            fmt="%s")
