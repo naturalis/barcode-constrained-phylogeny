@@ -9,7 +9,7 @@ par_path = os.path.abspath(os.path.join(os.pardir))
 
 # User arguments
 parser = argparse.ArgumentParser()
-# How to do this so that user can give multiple markers?
+# FIXME How to do this so that user can give multiple markers?
 parser.add_argument('-marker', default="COI-5P",
                     help="Which barcode marker(s) to select: COI-5P, MatK,"
                          " RbcL")
@@ -24,19 +24,29 @@ parser.add_argument('-db', default="BOLD_COI_barcodes.db",
                     help="Name of the the database file: {file_name}.db")
 args = parser.parse_args()
 
+
 def extract_bold(conn):
     for chunk in pd.read_csv(args.indir,quoting=csv.QUOTE_NONE,
                              low_memory=False, sep="\t", chunksize=10000):
-        # How to do this so that user can give multiple markers?
+        #  FIXME How to do this so that user can give multiple markers?
+        # Keep rows that match userarguments
         df = chunk.loc[
             (chunk['marker_code'] == args.marker) &
             (chunk["kingdom"] == args.kingdom)]
+
+        # Keep stated columns, do not keep rows where NAs are present
         df_temp = df[['taxon', 'kingdom', 'family']].dropna()
 
+        # Add rows to SQLite table (makes table if not exitst yet)
         df_temp.to_sql('taxon_temp', conn, if_exists='append',
                             index=False)
+
+        # Keep stated columns
         df_temp = df[['processid', 'marker_code', 'nucraw', 'country', 'taxon']]
+
+        # Add rows to SQLite table (makes table if not exitst yet)
         df_temp.to_sql('barcode_temp', conn, if_exists='append', index=False)
+
         conn.commit()
     conn.close()
 

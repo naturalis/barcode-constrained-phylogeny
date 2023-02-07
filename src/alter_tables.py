@@ -1,9 +1,10 @@
 import sqlite3
-# add user arguments
+# TODO add user arguments
 
 
 def make_tables(conn, cursor):
-    # Create a table
+    # TODO add documentation
+    # Create taxon table
     cursor.execute("""CREATE TABLE IF NOT EXISTS taxon (
         taxon_id INTEGER PRIMARY KEY,
         taxon TEXT,
@@ -11,7 +12,7 @@ def make_tables(conn, cursor):
         family TEXT NOT NULL
         )
     """)
-    # Create a table
+    # Create barcode table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS barcode (
         barcode_id INTEGER PRIMARY KEY,
@@ -25,7 +26,10 @@ def make_tables(conn, cursor):
     # Commit the changes
     conn.commit()
 
+
 def make_distinct(conn, cursor):
+    # TODO add documentation
+    # Select only the distinct taxon entries from taxon_temp, insert into taxon
     cursor.execute("""INSERT INTO taxon (taxon, kingdom, family)
      SELECT DISTINCT * FROM taxon_temp""")
 
@@ -35,14 +39,18 @@ def make_distinct(conn, cursor):
      SELECT DISTINCT barcode_temp.processid, barcode_temp.marker_code,
      barcode_temp.nucraw, barcode_temp.country, taxon.taxon_id
      FROM barcode_temp INNER JOIN taxon ON barcode_temp.taxon = taxon.taxon""")
+
+    # Drop old tables
     cursor.execute("""DROP TABLE taxon_temp""")
     cursor.execute("""DROP TABLE barcode_temp""")
+
     # Commit the changes
     conn.commit()
 
 
 if __name__ == '__main__':
     # Connect to the database (creates a new file if it doesn't exist)
+    # TODO replace db name with user argument
     conn = sqlite3.connect("BOLD_COI_barcodes.db")
 
     # Create a cursor
