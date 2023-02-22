@@ -40,6 +40,9 @@ def make_distinct(conn, cursor):
      barcode_temp.nucraw, barcode_temp.country, taxon.taxon_id
      FROM barcode_temp INNER JOIN taxon ON barcode_temp.taxon = taxon.taxon""")
 
+    cursor.execute("""ALTER TABLE taxon ADD opentol_id varchar(10)""")
+
+
     # Drop old tables
     cursor.execute("""DROP TABLE taxon_temp""")
     cursor.execute("""DROP TABLE barcode_temp""")
