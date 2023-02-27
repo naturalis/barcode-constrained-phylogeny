@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser()
 
 def select_marker():
     print("Select your desired marker. \n"
-          "1) For CO1-5P \n"
+          "1) For COI-5P \n"
           "2) For matK and rbcL")
     marker = input("Selected number: ")
 
