@@ -19,5 +19,5 @@ In this repository this will be prototyped for both animal species and plant spe
 - Manipulates the BOLD data in the custom database and makes two tables, one for taxon data and one for barcode entries.
 
 
-### [map_to_opentol.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/map_opentol.py)
+### [map_opentol.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/map_opentol.py)
 - Uses the [Checklisbank API](https://api.checklistbank.org/) to map BOLD taxon names to Open Tree of Life taxonomy IDs. 
