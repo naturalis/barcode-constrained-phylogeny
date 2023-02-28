@@ -9,4 +9,15 @@ Als je de data in BOLD zou filteren op merker, er zitten immers meerdere merkers
  
 ## Scripts
 ### [unzip_targz.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/unzip_targz.py)
-Unzips a targz file, more specifically a [datarelease](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022) from BOLD Systems containing a snapshot of the barcode database
+Unzips a targz file, more specifically a [datarelease](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022) from BOLD Systems containing a snapshot of the barcode database (more than 8 million barcodes as of 30-DEC-2022).
+
+### [bold_data_dump.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/bold_data_dump.py)
+Puts relevent BOLD data columns into a custom SQLite database.
+
+
+### [alter_tables.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/alter_tables.py)
+Manipulates the BOLD data in the custom database and makes two tables, one for taxon data and one for barcode entries.
+
+
+### [map_to_opentol.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/map_to_opentol.py)
+Uses the [Checklisbank API](https://api.checklistbank.org/) to map BOLD taxon names to [Open Tree of Life](https://tree.opentreeoflife.org/opentree/argus/opentree13.4@ott93302) taxonomy IDs. 
