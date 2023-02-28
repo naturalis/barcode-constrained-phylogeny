@@ -8,6 +8,5 @@ Als je de data in BOLD zou filteren op merker, er zitten immers meerdere merkers
  voor een project-in-voorbereiding voor biodiversa+.
  
 ## Scripts
-
-### [retrieve_bold_data.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/retrieve_bold_data.py)
-Queries the [BOLD Systems API](http://v3.boldsystems.org/index.php/resources/api?type=webservices#combined) to retrieve sequence data for DNA barcodes.  BOLD species names are mapped to [Open Tree Of Life](https://github.com/OpenTreeOfLife/germinator/wiki/Open-Tree-of-Life-Web-APIs#tnrs-methods) taxonomy. FASTA files of the barcodes are made per family group. These are saved as 'fasta/family/{family_name}.fasta'
+### [unzip_targz.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/unzip_targz.py)
+Unzips a targz file, more specifically a [datarelease](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022) from BOLD Systems containing a snapshot of the barcode database
