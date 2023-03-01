@@ -32,9 +32,11 @@ def divide_fastafiles(conn):
     # TODO Only keep rows where opentol_id in taxon table is not NULL
     #  This can only be done after the CLB request in map_opentol.py is fixed
     df = pd.read_sql_query("SELECT barcode.barcode_id, taxon.family, "
-                           "barcode.nucraw FROM barcode LEFT JOIN taxon ON "
+                           "barcode.nucraw, taxon.opentol_id FROM barcode LEFT JOIN taxon ON "
                            "barcode.taxon_id = taxon.taxon_id", conn)
 
+    # Dropping rows where there is not an opentol_id
+    df = df.dropna(subset=['opentol_id'])
     # Loop through unique family names
     for family in set(df['family']):
         # Takes about 25 min for COI (7,5 million barcodes)
