@@ -21,3 +21,6 @@ In this repository this will be prototyped for both animal species and plant spe
 
 ### [map_opentol.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/map_opentol.py)
 - Uses the [Checklisbank API](https://api.checklistbank.org/) to map BOLD taxon names to Open Tree of Life taxonomy IDs. 
+
+### [family_fasta.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/family_fasta.py)
+- Barcodes from the custom database are divided into their taxonomic family groups and written to FASTA files: 'fasta/family/{familyname}.py'
