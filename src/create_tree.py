@@ -1,3 +1,5 @@
+import os
+
 from Bio import Phylo
 from Bio.Phylo.TreeConstruction import DistanceTreeConstructor
 from Bio.Phylo.TreeConstruction import DistanceCalculator
@@ -5,35 +7,49 @@ from Bio import AlignIO
 from Bio import SeqIO
 
 #File declarations
-input_fasta = "../data/family_NT.fasta"
-input_phylip = "../data/family_NT.phylip"
+par_path = os.path.abspath(os.path.join(os.pardir))
+os.makedirs('phylip/', exist_ok=True)
+os.makedirs('trees/upgma/', exist_ok=True)
 
 
-def convert_file():
+def convert_file(fasta_file, phylip_file):
     # Convert fasta to a phylip type file
-    input_f = SeqIO.parse(input_fasta, "fasta")
-    SeqIO.write(input_f, input_phylip, "phylip")
+    #TODO Change this in family_fasta.py so that there are no single sequence fasta files.
+    count = 0
+    with open ('fasta/alignment/' + fasta_file, "r") as f:
+        for record in SeqIO.parse(f, 'fasta'):
+            count += 1
+            if count > 1:
+                input_f = SeqIO.parse('fasta/alignment/' + fasta_file, "fasta")
+                SeqIO.write(input_f, phylip_file, "phylip")
+                return True
+    return False
 
 
-def create_distance_matrix():
+def create_distance_matrix(phylip_file):
     # Create distance matrix from alignment
-    alignment = AlignIO.read(open(input_phylip), 'phylip')
+    alignment = AlignIO.read(open(phylip_file), 'phylip')
     constr = DistanceTreeConstructor()
     calc = DistanceCalculator('identity')
     distance_matrix = calc.get_distance(alignment)
     return constr, distance_matrix
 
 
-def create_tree(constr, distance_matrix):
+def create_tree(constr, distance_matrix, family):
     # Create UPGMA tree and display it
     # TODO fix what is on the tree (names etc.)
     tree = constr.upgma(distance_matrix)
-    print(tree)
+    # Write the tree to a file in Newick format
+    with open(f"trees/upgma/{family}_tree.txt", "w") as f:
+        f.write(tree.format('newick'))
     return tree
 
 
 if __name__ == '__main__':
-    convert_file()
-    constructor, distance_matrix = create_distance_matrix()
-    tree = create_tree(constructor, distance_matrix)
-    Phylo.draw(tree)
+    file_list = os.listdir(par_path + "/src/fasta/alignment/")
+    for fasta_file in file_list:
+        phylip_file = f"phylip/{fasta_file.rstrip('.fasta')}.phylip"
+        passed = convert_file(fasta_file, phylip_file)
+        if passed:
+            constructor, distance_matrix = create_distance_matrix(phylip_file)
+            tree = create_tree(constructor, distance_matrix, fasta_file.rstrip('.fasta'))
