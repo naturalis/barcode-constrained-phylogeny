@@ -1,10 +1,9 @@
 import os
 
-from Bio import Phylo
-from Bio.Phylo.TreeConstruction import DistanceTreeConstructor
-from Bio.Phylo.TreeConstruction import DistanceCalculator
 from Bio import AlignIO
 from Bio import SeqIO
+from Bio.Phylo.TreeConstruction import DistanceCalculator
+from Bio.Phylo.TreeConstruction import DistanceTreeConstructor
 
 #File declarations
 par_path = os.path.abspath(os.path.join(os.pardir))
