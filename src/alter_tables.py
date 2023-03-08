@@ -54,7 +54,7 @@ def make_distinct(conn, cursor):
 if __name__ == '__main__':
     # Connect to the database (creates a new file if it doesn't exist)
     # TODO replace db name with user argument
-    conn = sqlite3.connect("BOLD_COI_barcodes.db")
+    conn = sqlite3.connect("BOLD_COI-5P_barcodes.db")
 
     # Create a cursor
     cursor = conn.cursor()
