@@ -11,7 +11,7 @@ par_path = os.path.abspath(os.path.join(os.pardir))
 # User arguments
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-db', default="BOLD_COI_barcodes.db",
+parser.add_argument('-db', default="BOLD_COI-5P_barcodes.db",
                     help="Name of the the database file: {file_name}.db")
 args = parser.parse_args()
 
@@ -53,14 +53,14 @@ def map_checklistbank(conn, cursor):
     #                          data=data)
     #     content = response.content.decode('utf-8')
     #     print(pd.read_csv(StringIO(content)))
-
+    #
     #     # Put response in dataframe format
     # df_batch = pd.read_csv(StringIO(content), sep=',',
     #                        usecols=['ID', 'inputName'])
-    # Rename columns names
+    # # Rename columns names
     # df_batch.rename(columns={'ID':'opentol_id'})
-
-    # Append rows to sql table 'opentol_temp', create if not exists yet
+    #
+    # # Append rows to sql table 'opentol_temp', create if not exists yet
     # df_batch.to_sql('opentol_temp', conn, if_exists='append')
 
     ## REMOVE WHEN REQUEST WORKS, uses old response from request (around 10.000

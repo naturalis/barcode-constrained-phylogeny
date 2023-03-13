@@ -3,6 +3,7 @@ import csv
 import os
 import sqlite3
 import pandas as pd
+import numpy as np
 
 par_path = os.path.abspath(os.path.join(os.pardir))
 
@@ -10,6 +11,10 @@ par_path = os.path.abspath(os.path.join(os.pardir))
 parser = argparse.ArgumentParser()
 
 def select_marker():
+    """Ask user to enter their desired marker.
+    Based on their answer add argument (type marker and kingdom).
+    :return: arguments and desired marker.
+    """
     print("Select your desired marker. \n"
           "1) For COI-5P \n"
           "2) For matK and rbcL")
@@ -44,6 +49,10 @@ def select_marker():
 
 
 def add_args(kingdom, desired_marker):
+    """Add argument kingdom based on user's input, select input directory and create database file.
+    :param kingdom: Chosen kingdom based on the user's input.
+    :param desired_marker: Chosen marker based on the user's input.
+    """
     parser.add_argument('-kingdom', default=kingdom,
                         help="Which kingdom to filter barcodes from: Animalia"
                              " or Plantae")
@@ -53,11 +62,13 @@ def add_args(kingdom, desired_marker):
                         help="BOLD tsv file location")
 
     # Add to file containing the marker
-    parser.add_argument('-db', default="BOLD_{}_barcodes.db".format(desired_marker),
+    parser.add_argument('-db', default=par_path + "/data/databases/BOLD_{}_barcodes.db".format(desired_marker),
                         help="Name of the the database file: {file_name}.db")
 
 
 def extract_bold(conn, args, desired_marker):
+    """"
+    """
     for chunk in pd.read_csv(args.indir, quoting=csv.QUOTE_NONE,
                              low_memory=False, sep="\t", chunksize=10000):
         # Keep rows that match user arguments
