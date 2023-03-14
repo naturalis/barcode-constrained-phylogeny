@@ -29,8 +29,6 @@ def divide_fastafiles(conn):
     os.makedirs('fasta/family', exist_ok=True)
 
     # Put needed data from db into a dataframe
-    # TODO Only keep rows where opentol_id in taxon table is not NULL
-    #  This can only be done after the CLB request in map_opentol.py is fixed
     df = pd.read_sql_query("SELECT barcode.barcode_id, taxon.family, "
                            "barcode.nucraw, taxon.opentol_id FROM barcode LEFT JOIN taxon ON "
                            "barcode.taxon_id = taxon.taxon_id", conn)
@@ -44,20 +42,21 @@ def divide_fastafiles(conn):
 
         # Grab records from specific family and put them in temp dataframe
         df_family = df[df['family'] == family]
+        # Continue if there are more than one barcode from family
+        if len(df_family) > 1:
+            # Ignore warning
+            pd.options.mode.chained_assignment = None
 
-        # Ignore warning
-        pd.options.mode.chained_assignment = None
+            # Make column with the FASTA header for every barcode
+            df_family['fasta'] = df_family['barcode_id'].apply(
+                lambda barcode_id: '>' + str(barcode_id) + '\n')
 
-        # Make column with the FASTA header for every barcode
-        df_family['fasta'] = df_family['barcode_id'].apply(
-            lambda barcode_id: '>' + str(barcode_id) + '\n')
+            # Add nucraw sequence with the header
+            fasta_out = df_family['fasta'] + df_family["nucraw"]
 
-        # Add nucraw sequence with the header
-        fasta_out = df_family['fasta'] + df_family["nucraw"]
-
-        # Write to FASTA file and name it as their respective family name
-        np.savetxt("fasta/family/%s.fasta" % family, fasta_out.values,
-                           fmt="%s")
+            # Write to FASTA file and name it as their respective family name
+            np.savetxt("fasta/family/%s.fasta" % family, fasta_out.values,
+                               fmt="%s")
 
 
 if __name__ == '__main__':
