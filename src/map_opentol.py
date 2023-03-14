@@ -1,10 +1,8 @@
 import argparse
 import os
-from io import StringIO
 import numpy as np
 import pandas as pd
 import sqlite3
-import requests
 
 par_path = os.path.abspath(os.path.join(os.pardir))
 
@@ -15,59 +13,67 @@ parser.add_argument('-db', default="BOLD_COI-5P_barcodes.db",
                     help="Name of the the database file: {file_name}.db")
 args = parser.parse_args()
 
-
 def map_checklistbank(conn, cursor):
-    # TODO Fix Checklistbank request error (405,HTTP 405 Method Not Allowed)
+    #TODO Option: Use TNRS of OpenTOL to map the rest of the taxon names
+    #TODO When it is working, drop taxon table and rename table opentol_temp to taxon
     """
     This function maps BOLD taxon names from the custom database to an
     Open Tree of Life ID. These IDs are accessed with a request to the
-    CheckListBank API, which needs a csv containing (atleast) a column named
-    scientificName which hold taxon names. The output is saved as a temporary
+    Open tree of life API, which needs a list of taxon names as paramater. The output is saved as a temporary
     table in the database.
     :param conn: Connection to SQLite database
     :param cursor: Cursor for SQLite database
     """
-    results = cursor.execute("""SELECT taxon FROM taxon""").fetchall()
+    # # Change column name from taxon to scientificName
+    df = pd.read_sql("SELECT * FROM taxon", conn)
+    import requests
+    import json
 
-    # Change column name from taxon to scientificName
-    df = pd.DataFrame(results, columns=['scientificName'])
+    # Set the Open Tree of Life API endpoint
+    endpoint = "https://api.opentreeoflife.org/v3"
 
-    # Split dataframe into batches and put them in a list
+    # Split df into chunks
     list_df = np.array_split(df, 50)
 
-    # CheckListBank request url
-    url = "https://api.checklistbank.org/dataset/201891/nameusage/match"
+    ott_ids = []
+    names = []
+    for taxons in list_df:
+        tnrs_url = f"{endpoint}/tnrs/match_names"
+        # TODO instead of Animals check if its animalia or plantea kingdom and put appropiate context
+        tnrs_params = {
+                        "names": taxons['taxon'].to_list(),
+                        "do_approximate_matching": False,
+                        "verbose": False,
+                        "context": 'Animals'
+                    }
+        tnrs_response = requests.post(tnrs_url, json=tnrs_params)
+        tnrs_data = json.loads(tnrs_response.text)
 
-    # Make headers
-    headers = {
-        'Accept': 'text,csv',
-        'Content-Type': 'text/tsv',
-    }
-    ## BACK END FETCH FAILED eventhough this worked a week before, try later
-    ## ALSO DOESNT WORK IN COMMANDLINE
+        # Get the first OTT ID returned from the search
+        for result in tnrs_data['results']:
+            if len(result['matches']) != 0:
+                # Extract the ott_id and name values from the 'taxon' dictionary
+                ott_id = result['matches'][0]['taxon']['ott_id']
+                name = result['matches'][0]['taxon']['unique_name']
+                # Append the values to the corresponding lists
+                ott_ids.append('ott' + str(ott_id))
+                names.append(name)
 
-    # Loop trough list of df batches and make a
-    # for i in list_df:
-    #     data = i.to_csv(index=False)
-    #     response = requests.post(url, headers=headers,
-    #                          data=data)
-    #     content = response.content.decode('utf-8')
-    #     print(pd.read_csv(StringIO(content)))
-    #
-    #     # Put response in dataframe format
-    # df_batch = pd.read_csv(StringIO(content), sep=',',
-    #                        usecols=['ID', 'inputName'])
-    # # Rename columns names
-    # df_batch.rename(columns={'ID':'opentol_id'})
-    #
-    # # Append rows to sql table 'opentol_temp', create if not exists yet
-    # df_batch.to_sql('opentol_temp', conn, if_exists='append')
+    # Create a Pandas DataFrame from the lists of values
+    df_ot = pd.DataFrame({'ott_id': ott_ids, 'taxon': names})
 
-    ## REMOVE WHEN REQUEST WORKS, uses old response from request (around 10.000
-    # taxons as test data)
-    pd.read_csv('match_test.csv', sep='\t').to_sql('opentol_temp', conn,
-                                                       if_exists='append')
+    # Left join old table with new table containing opentol IDs
+    df_merged = pd.merge(df, df_ot, left_on='taxon', right_on='taxon', how='left').drop(columns=['opentol_id'])\
+        .rename(columns={'ott_id': ' opentol_id'})
+
+    # Drop duplicate rows
+    df_merged.drop_duplicates(ignore_index=True, inplace=True)
+
+    # Safe df to a table in the db
+    df_merged.to_sql('opentol_temp', conn, if_exists='replace', index=False)
+
     conn.commit()
+
 
 def alter_db(conn, cursor):
     """
@@ -115,7 +121,7 @@ if __name__ == '__main__':
     map_checklistbank(conn, cursor)
 
     # Alter new table and remove old tables
-    alter_db(conn, cursor)
+    # alter_db(conn, cursor)
 
     # Close the connection
     conn.close()
