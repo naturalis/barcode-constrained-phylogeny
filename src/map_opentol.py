@@ -14,18 +14,10 @@ parser.add_argument('-db', default="BOLD_COI_barcodes.db",
 args = parser.parse_args()
 import requests
 import json
-def map_checklistbank(conn, cursor):
-    #TODO Option: Use TNRS of OpenTOL to map the rest of the taxon names
-    #TODO When it is working, drop taxon table and rename table opentol_temp to taxon
-    """
-    This function maps BOLD taxon names from the custom database to an
-    Open Tree of Life ID. These IDs are accessed with a request to the
-    Open tree of life API, which needs a list of taxon names as paramater. The output is saved as a temporary
-    table in the database.
-    :param conn: Connection to SQLite database
-    :param cursor: Cursor for SQLite database
-    """
-    # # Change column name from taxon to scientificName
+
+
+def map_checklistbank(conn):
+    # Change column name from taxon to scientificName
     df = pd.read_sql("SELECT * FROM taxon", conn)
 
     # Set the Open Tree of Life API endpoint
@@ -75,9 +67,12 @@ def map_checklistbank(conn, cursor):
 
 
 def map_checklistbank_fuzzy():
-    df = pd.read_sql("SELECT * FROM opentol_temp WHERE opentol_id IS NULL", conn)
+    df = pd.read_sql("SELECT * FROM opentol_temp WHERE opentol_id IS NULL",
+                     conn)
+
     # Set the Open Tree of Life API endpoint
     endpoint = "https://api.opentreeoflife.org/v3"
+
     # Split df into chunks
     list_df = np.array_split(df, 50)
 
@@ -85,6 +80,7 @@ def map_checklistbank_fuzzy():
     names = []
     new_taxons = []
 
+    # Loop through chunks from the df
     for taxons in list_df:
         tnrs_url = f"{endpoint}/tnrs/match_names"
         # TODO instead of Animals check if its animalia or plantea kingdom and put appropiate context
