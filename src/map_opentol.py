@@ -147,6 +147,7 @@ def alter_db(conn, cursor):
     # Commit changes
     conn.commit()
 
+
 if __name__ == '__main__':
     # Connect to the database (creates a new file if it doesn't exist)
     conn = sqlite3.connect(args.db)
@@ -154,7 +155,7 @@ if __name__ == '__main__':
     cursor = conn.cursor()
 
     print("Looking for exact matches between BOLD and OpenTOL taxon names...")
-    map_checklistbank(conn, cursor)
+    map_checklistbank(conn)
     print("Fuzzy matching remainder taxons...")
     map_checklistbank_fuzzy()
 
