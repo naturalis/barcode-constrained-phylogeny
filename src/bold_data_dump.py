@@ -67,7 +67,13 @@ def add_args(kingdom, desired_marker):
 
 
 def extract_bold(conn, args, desired_marker):
-    """"
+    """
+     It reads a TSV file with a snapshot of the BOLD database in chunks, selects rows that match the user's
+    arguments for the desired marker and kingdom, and writes them to two tables in the
+    SQLite database (taxon_temp and barcode_temp) with a subset of their columns.
+    :param conn: Connection object to the database.
+    :param args: Command line arguments
+    :param desired_marker: String representing the desired marker
     """
     for chunk in pd.read_csv(args.indir, quoting=csv.QUOTE_NONE,
                              low_memory=False, sep="\t", chunksize=10000):

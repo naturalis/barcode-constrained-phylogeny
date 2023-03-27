@@ -10,7 +10,7 @@ par_path = os.path.abspath(os.path.join(os.pardir))
 parser = argparse.ArgumentParser()
 
 # TODO NOAH: change default to how you named your DB or call with commandline
-parser.add_argument('-db', default="BOLD_COI-5P_barcodes.db",
+parser.add_argument('-db', default="/data/databases/BOLD_COI-5P_barcodes.db",
                     help="Name of the the database file: {file_name}.db")
 
 args = parser.parse_args()
