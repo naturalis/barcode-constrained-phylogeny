@@ -15,7 +15,7 @@ def align_seq():
         input = str('fasta/family/' + fasta_file)
         # Uses input FASTA file en generates an alignment in AA and NT
         alignseq = "java -jar {} -prog alignSequences -seq {} -out_NT {}_NT.fasta -out_AA {}_AA.fasta".format(masce_path, input, output, output)
-        #subprocess.run(alignseq, shell=True)
+        subprocess.run(alignseq, shell=True)
         print(output+"_NT.fasta")
         remove_exclamation = "sed -i 's/!/-/g' {}_NT.fasta".format(output)
         subprocess.run(remove_exclamation, shell=True)
