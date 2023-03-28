@@ -11,7 +11,7 @@ par_path = os.path.abspath(os.path.join(os.pardir))
 
 # User arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('-db', default="BOLD_COI-5P_barcodes.db",
+parser.add_argument('-db', default="../data/databases/BOLD_COI-5P_barcodes.db",
                     help="Name of the the database file: {file_name}.db")
 args = parser.parse_args()
 
@@ -37,7 +37,7 @@ def change_ids(fasta_file):
                                   "taxon.taxon_id WHERE barcode.barcode_id = {}".format(record.id))
             id = result.fetchall()[0][0]
             record.description = ''
-            record.id='{}_{}'.format(id, record.id)
+            record.id='{}'.format(id)
 
             SeqIO.write(record, outputs, 'fasta')
 
@@ -56,11 +56,15 @@ if __name__ == '__main__':
         # Get ott_id in fasta header
         change_ids(fasta_file)
 
+        # Get opentol id per name
+        sep = '_'
+        taxon = fasta_file
+        taxon = taxon.split(sep, 1)[0]
+        ott_id = opentree.OT.get_ottid_from_name(taxon)
+
         # Make temporary newick constraint tree (rewrites in every loop)
         with open('temp_subtree.nwk', 'w') as outfile:
-            # ott id only for Abocionidae
-            # TODO get ott_id from open tree of life
-            outfile.write(str(opentree.OT.synth_subtree(ott_id=406631, label_format="id").tree))
+            outfile.write(str(opentree.OT.synth_subtree(ott_id=ott_id, label_format="id").tree))
 
         # Run raxml commandline
         subprocess.run("{} -p 100 -m  GTRCAT -n {} -s fasta/alignment_c/{} -g temp_subtree.nwk -w raxml/{}".format(
