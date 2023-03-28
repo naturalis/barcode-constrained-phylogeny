@@ -10,7 +10,7 @@ par_path = os.path.abspath(os.path.join(os.pardir))
 parser = argparse.ArgumentParser()
 
 # TODO NOAH: change default to how you named your DB or call with commandline
-parser.add_argument('-db', default="BOLD_COI-5P_barcodes.db",
+parser.add_argument('-db', default="../data/databases/BOLD_COI-5P_barcodes.db",
                     help="Name of the the database file: {file_name}.db")
 
 args = parser.parse_args()
@@ -27,14 +27,16 @@ def divide_fastafiles(conn):
     """
     # Make directory to put FASTA files in
     os.makedirs('fasta/family', exist_ok=True)
-
+    print("working on it")
     # Put needed data from db into a dataframe
     df = pd.read_sql_query("SELECT barcode.barcode_id, taxon.family, "
                            "barcode.nucraw, taxon.opentol_id FROM barcode LEFT JOIN taxon ON "
                            "barcode.taxon_id = taxon.taxon_id", conn)
+    print("busy")
 
     # Dropping rows where there is not an opentol_id
     df = df.dropna(subset=['opentol_id'])
+    print("working on it")
     # Loop through unique family names
     for family in set(df['family']):
         # Takes about 25 min for COI (7,5 million barcodes)
@@ -62,10 +64,10 @@ def divide_fastafiles(conn):
 if __name__ == '__main__':
     # Connect to the database (creates a new file if it doesn't exist)
     conn = sqlite3.connect(args.db)
-
+    print("hello")
     # Create a cursor
     cursor = conn.cursor()
-
+    print("done")
     # Write barcodes to FASTA in family groups
     divide_fastafiles(conn)
 
