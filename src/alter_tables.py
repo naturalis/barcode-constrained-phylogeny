@@ -1,9 +1,23 @@
+import argparse
+import os
 import sqlite3
-# TODO add user arguments
+
+par_path = os.path.abspath(os.path.join(os.pardir))
+
+# User arguments
+parser = argparse.ArgumentParser()
+
+parser.add_argument('-db', default="/data/databases/BOLD_COI-5P_barcodes.db",
+                    help="Name of the the database file: {file_name}.db")
+
+args = parser.parse_args()
 
 
 def make_tables(conn, cursor):
-    # TODO add documentation
+    """Create taxon and barcode tables in the database.
+    :param conn: Connection object to the database.
+    :param cursor: Cursor object to execute SQL commands.
+    """
     # Create taxon table
     cursor.execute("""CREATE TABLE IF NOT EXISTS taxon (
         taxon_id INTEGER PRIMARY KEY,
@@ -28,7 +42,11 @@ def make_tables(conn, cursor):
 
 
 def make_distinct(conn, cursor):
-    # TODO add documentation
+    """Inserts (the distinct) data from temporary tables into the main tables. Opentol_id column is added to taxon
+     table and drops taxon_id to the barcode table as foreignkeys. The temporary tables are dropped.
+    :param conn: Connection object to the database.
+    :param cursor: Cursor object to execute SQL commands.
+    """
     # Select only the distinct taxon entries from taxon_temp, insert into taxon
     cursor.execute("""INSERT INTO taxon (taxon, kingdom, family)
      SELECT DISTINCT * FROM taxon_temp""")
@@ -53,8 +71,7 @@ def make_distinct(conn, cursor):
 
 if __name__ == '__main__':
     # Connect to the database (creates a new file if it doesn't exist)
-    # TODO replace db name with user argument
-    conn = sqlite3.connect("BOLD_COI-5P_barcodes.db")
+    conn = sqlite3.connect(args.db)
 
     # Create a cursor
     cursor = conn.cursor()

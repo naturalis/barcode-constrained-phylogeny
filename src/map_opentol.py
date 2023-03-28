@@ -9,14 +9,24 @@ par_path = os.path.abspath(os.path.join(os.pardir))
 # User arguments
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-db', default="BOLD_COI_barcodes.db",
+parser.add_argument('-db', default="/data/databases/BOLD_COI-5P_barcodes.db",
                     help="Name of the the database file: {file_name}.db")
+parser.add_argument('-kingdom', default="Animals",
+                    help="Which kindgdom: Animals or Plants")
+
 args = parser.parse_args()
 import requests
 import json
 
 
 def map_checklistbank(conn):
+    """
+    Maps bold taxon names from the database taxon table to opentol ids.  It only maps the name if its an exact
+    string match (no fuzzy matching). A context has to be given (args.kingdom) to determine which kingdom the
+    taxon names belong to (Animals or Plants). Saves new table as opentol_temp in the database.
+    :param conn: Connection object to the database.
+    :return:
+    """
     # Change column name from taxon to scientificName
     df = pd.read_sql("SELECT * FROM taxon", conn)
 
@@ -35,7 +45,7 @@ def map_checklistbank(conn):
                         "names": taxons['taxon'].to_list(),
                         "do_approximate_matching": False,
                         "verbose": False,
-                        "context": 'Animals'
+                        "context": args.kingdom
                     }
         tnrs_response = requests.post(tnrs_url, json=tnrs_params)
         tnrs_data = json.loads(tnrs_response.text)
@@ -60,13 +70,20 @@ def map_checklistbank(conn):
     # Drop duplicate rows
     df_merged.drop_duplicates(ignore_index=True, inplace=True)
 
-    # Safe df to a table in the db
+    # Save df to a table in the db
     df_merged.to_sql('opentol_temp', conn, if_exists='replace', index=False)
 
     conn.commit()
 
 
 def map_checklistbank_fuzzy():
+    """
+    Maps bold taxon names from the database opentol_temp table to opentol ids. It tries to map all the
+    taxon names that did not got an exact match in map_checklistbank(), using fuzzy matching. BOLD names are
+    replaced with the matched taxon names from OpenTOL. A context has to be given (args.kingdom) to determine
+    which kingdom the taxon names belong to (Animals or Plants). Saves new table as temp in the database.
+    :param conn: Connection object to the database.
+    """
     df = pd.read_sql("SELECT * FROM opentol_temp WHERE opentol_id IS NULL",
                      conn)
 
@@ -88,7 +105,7 @@ def map_checklistbank_fuzzy():
                         "names": taxons['taxon'].to_list(),
                         "do_approximate_matching": True,
                         "verbose": False,
-                        "context": 'Animals'
+                        "context": args.kingdom
                     }
         tnrs_response = requests.post(tnrs_url, json=tnrs_params)
         tnrs_data = json.loads(tnrs_response.text)
@@ -135,6 +152,11 @@ def map_checklistbank_fuzzy():
 
 
 def alter_db(conn, cursor):
+    """
+    Drops the old taxon table and opentol_temp table. Renames temp to taxon.
+    :param conn: Connection object to the database.
+    :param cursor: Cursor object to execute SQL commands.
+    """
     # Remove temporary table
     cursor.execute("""DROP TABLE opentol_temp""")
 
@@ -147,6 +169,7 @@ def alter_db(conn, cursor):
     # Commit changes
     conn.commit()
 
+
 if __name__ == '__main__':
     # Connect to the database (creates a new file if it doesn't exist)
     conn = sqlite3.connect(args.db)
@@ -154,7 +177,7 @@ if __name__ == '__main__':
     cursor = conn.cursor()
 
     print("Looking for exact matches between BOLD and OpenTOL taxon names...")
-    map_checklistbank(conn, cursor)
+    map_checklistbank(conn)
     print("Fuzzy matching remainder taxons...")
     map_checklistbank_fuzzy()
 
