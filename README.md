@@ -1,11 +1,25 @@
 # barcode-constrained-phylogeny
-This repository contains code and data for building topologically-constrained phylogenies.
+This repository contains code and data for building very large, topologically-constrained barcode phylogenies through a divide-and-conquer strategy. Such trees are useful as reference materials in the comparable calculation of alpha and beta biodiversity metrics across metabarcoding assays. The input data for the approach we develop here comes from BOLD. The international database [BOLD Systems](https://www.boldsystems.org/index.php) contains DNA barcodes for hundred of thousands of species, with multiple barcodes per species. Theoretically, this data could be filtered and aligned per DNA marker to make phylogenetic trees. However, there are two limiting factors: building very large phylogenies is computationally intensive, and barcodes are not considered ideal for building big trees because they are short (providing insufficient signal to resolve large trees) and because they tend to saturate across large patristic distances.
 
-The internationsl database [BOLD Systems](https://www.boldsystems.org/index.php) contains DNA barcodes for hundred of thousands of species, with multiple barcodes per species. Theoretically, this data could be filtered and aligned per DNA marker to make phylogenetic trees with. However, there are two limiting factors: there is a maximum of the number and size trees that can be build, and barcodes are not considered ideal for building big trees because they do not give a strong signal. 
+Both problems can be mitigated by using the [Open Tree of Life](https://tree.opentreeoflife.org/opentree/argus/opentree13.4@ott93302) as a further source of phylogenetic signal. The BOLD data can be split into chunks that correspond to Open Tree of Life clades. These chunks can be made into alignments and subtrees. The OpenTOL can be used as a constraint in the algorithms to make these. The chunks are then combined in a large synthesis by grafting them on a backbone made from exemplar taxa from the subtrees. Here too, the OpenTOL is a source of phylogenetic constraint.
 
-Both problems can be solved by using the [Open Tree of Life](https://tree.opentreeoflife.org/opentree/argus/opentree13.4@ott93302) as a backbone. The BOLD data can be split into chunks that are corresponding to Open Tree of Life. These chunks can be made into alignments and trees. The backbone can also be used as a constraint in the algorithms to make these.
+In this repository this concept is prototyped for both animal species and plant species.
 
-In this repository this will be prototyped for both animal species and plant species.
+## Requirements/dependencies
+
+FILL ME
+
+## How to install
+
+FILL ME
+
+## How to run
+
+FILL ME
+
+## Repository layout
+
+FILL ME
 
 ## Scripts
 ### [unzip_targz.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/unzip_targz.py)
@@ -31,3 +45,7 @@ In this repository this will be prototyped for both animal species and plant spe
 
 ### [create_tree](https://github.com/naturalis/barcode-constrained-phylogeny/blob/macse/src/create_tree.py)
 - A distance matrix is made based on a NT/AA file. From the distance matrix a UPGMA tree is made. 
+
+## License
+
+FILL ME
