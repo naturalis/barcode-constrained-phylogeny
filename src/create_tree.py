@@ -5,18 +5,20 @@ import subprocess
 import opentree
 from Bio import SeqIO
 
+# TODO When rewriting for snakemake use file name as input without extensions
 #File declarations
 
 par_path = os.path.abspath(os.path.join(os.pardir))
 
 # User arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('-db', default="../data/databases/BOLD_COI-5P_barcodes.db",
+parser.add_argument('-db', default="BOLD_COI-5P_barcodes.db",
                     help="Name of the the database file: {file_name}.db")
 args = parser.parse_args()
 
 # RAXML in var
 RAXML = "raxmlHPC.exe"
+
 
 
 def change_ids(fasta_file):
@@ -37,12 +39,13 @@ def change_ids(fasta_file):
                                   "taxon.taxon_id WHERE barcode.barcode_id = {}".format(record.id))
             id = result.fetchall()[0][0]
             record.description = ''
-            record.id='{}'.format(id)
+            record.id = '{}_{}'.format(id, record.id)
 
             SeqIO.write(record, outputs, 'fasta')
 
 
 if __name__ == '__main__':
+    os.makedirs('constraint_trees/', exist_ok=True)
     os.makedirs('raxml/', exist_ok=True)
     # Change when trying a new raxml run
     run_name = 'with_constraint_test'
@@ -62,8 +65,8 @@ if __name__ == '__main__':
         taxon = taxon.split(sep, 1)[0]
         ott_id = opentree.OT.get_ottid_from_name(taxon)
 
-        # Make temporary newick constraint tree (rewrites in every loop)
-        with open('temp_subtree.nwk', 'w') as outfile:
+        # Make constraint tree using family name (derived from file name)
+        with open('constraint_trees/{}.nwk'.format(fasta_file.strip('.fasta')), 'w') as outfile:
             outfile.write(str(opentree.OT.synth_subtree(ott_id=ott_id, label_format="id").tree))
 
         # Run raxml commandline
