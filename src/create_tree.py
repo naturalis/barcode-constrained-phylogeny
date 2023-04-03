@@ -1,93 +1,106 @@
+import argparse
 import os
 import sqlite3
 import subprocess
-
-from Bio import AlignIO
-from Bio import SeqIO
-from Bio.Phylo.TreeConstruction import DistanceCalculator
-from Bio.Phylo.TreeConstruction import DistanceTreeConstructor
-
-#File declarations
-par_path = os.path.abspath(os.path.join(os.pardir))
-os.makedirs('phylip/', exist_ok=True)
-os.makedirs('trees/upgma/', exist_ok=True)
+from io import StringIO
+from Bio.Phylo.Applications import RaxmlCommandline
 import opentree
+from Bio import SeqIO
+from Bio import Phylo
 
+# File declarations
 
-def convert_file(fasta_file, phylip_file):
-    print('converting files')
-    # Convert fasta to a phylip type file
-    #TODO Change this in family_fasta.py so that there are no single sequence fasta files.
-    count = 0
-    with open (fasta_file, "r") as f:
-        for record in SeqIO.parse(f, 'fasta'):
-            count += 1
-            if count > 1:
-                input_f = SeqIO.parse(fasta_file, "fasta")
-                SeqIO.write(input_f, phylip_file, "phylip")
-                return True
-    return False
+par_path = os.path.abspath(os.path.join(os.pardir))
 
+# User arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('-db', default="../data/databases/BOLD_COI-5P_barcodes.db",
+                    help="Name of the the database file: {file_name}.db")
+args = parser.parse_args()
 
-def create_distance_matrix(phylip_file):
-    # Create distance matrix from alignment
-    alignment = AlignIO.read(open(phylip_file), 'phylip')
-    constr = DistanceTreeConstructor()
-    calc = DistanceCalculator('identity')
-    distance_matrix = calc.get_distance(alignment)
-    return constr, distance_matrix
+# RAXML in var
+RAXML = "raxmlHPC.exe"
 
-
-def create_tree(constr, distance_matrix, family):
-    # Create UPGMA tree and display it
-    # TODO fix what is on the tree (names etc.)
-    tree = constr.upgma(distance_matrix)
-    # Write the tree to a file in Newick format
-    with open(f"trees/upgma/{family}_tree.txt", "w") as f:
-        f.write(tree.format('newick'))
-    return tree
-
-def create_tree_raxml(file_name):
-    print('creating trees')
-    print(file_name)
-    command = "raxmlHPC -s {} -n {} -f d -g {} -m GTRCAT -p 12345"
-    file = 'phylip/alignment_Acanthosomatidae.phylip'
-    outfile = '{}.tre'.format(file_name)
-
-
-    # Set up the OpenTree API client
-    tree_constraint = opentree.OT.synth_subtree(ott_id=215958)
-
-
-    subprocess.run(command.format(file_name + '.fasta', 'tree', tree_constraint), shell=True)
 
 def change_ids(fasta_file):
-    os.makedirs('corrected/', exist_ok=True)
-    from Bio import SeqIO
+    """
+    Change the headers of every sequence in a fasta file from >{barcode_id} to >{opentol_id}_{barcode_id}.
+    Saves corrected fasta file in new directory fasta/alignments_c
+    :param fasta_file: name of the fasta file
+    """
+    # Make directory for alignments with corrected headers
+    os.makedirs("fasta/alignment_c/", exist_ok=True)
     # Connect to the database (creates a new file if it doesn't exist)
-    conn = sqlite3.connect('BOLD_COI_barcodes.db')
-    print(fasta_file)
+    conn = sqlite3.connect(args.db)
     # Create a cursor
     cursor = conn.cursor()
-    with open("corrected/{}".format(fasta_file), "w") as outputs:
-        for record in SeqIO.parse('alignment/' + fasta_file, "fasta"):
-            result = cursor.execute("SELECT taxon.opentol_id FROM taxon LEFT JOIN barcode ON "
-                                   "barcode.taxon_id = taxon.taxon_id WHERE barcode.barcode_id = {}".format(record.id))
+    with open("fasta/alignment_c/{}".format(fasta_file), "w") as outputs:
+        for record in SeqIO.parse('fasta/alignment/' + fasta_file, "fasta"):
+            result = cursor.execute("SELECT taxon.opentol_id FROM taxon LEFT JOIN barcode ON barcode.taxon_id = "
+                                    "taxon.taxon_id WHERE barcode.barcode_id = {}".format(record.id))
             id = result.fetchall()[0][0]
-            record.id = '{}_{}'.format(record.id, id)
+            record.description = ''
+            #record.id = '{}_{}'.format(record.id, id)
+            record.id = '{}_{}'.format(id, record.id)
+            #print(record)
+            # print(outputs)
             SeqIO.write(record, outputs, 'fasta')
 
+def create_constraint():
+    os.makedirs('raxml/', exist_ok=True)
+    # Change when trying a new raxml run
+    run_name = 'with_constraint_test'
+
+    # Includes both NT and AA alignments in file list
+    file_list = os.listdir(par_path + "/src/fasta/alignment/")
+
+    # file_list[1:2] is only for 'Abacionidae_NT.fasta' to test
+    for fasta_file in file_list[1:2]:
+        os.makedirs('raxml/{}'.format(run_name), exist_ok=True)
+        # Get ott_id in fasta header
+        change_ids(fasta_file)
+
+        # Get opentol id per name
+        sep = '_'
+        taxon = fasta_file
+        taxon = taxon.split(sep, 1)[0]
+        # ott_id = opentree.OT.get_ottid_from_name(taxon)
+        ott_id = opentree.OT.get_ottid_from_name(taxon)
+        print(ott_id)
+
+        # Make temporary newick constraint tree (rewrites in every loop)
+        with open('temp_subtree.nwk', 'w') as outfile:
+            outfile.write(str(opentree.OT.synth_subtree(ott_id=ott_id, label_format="id").tree))
+
+def create_tree():
+    print("fasta/alignment_c/{}".format(fasta_file + ".reduced"))
+    print(fasta_file + ".reduced")
+    #Run raxml commandline without constraint
+    subprocess.run("{} -p 100 -m  GTRGAMMA -n {} -s fasta/alignment_c/{}  -w raxml/{}".format(RAXML, "run_name", fasta_file  , "run_name"))
+
+    # Raxml with constraint
+    subprocess.run(
+        "{} -p 100 -m  GTRGAMMA -n {} -s fasta/alignment_c/{}  -g temp_subtree.nwk -w raxml/{}".format(RAXML, "run_name", fasta_file,
+                                                                                   "run_name"))
+
+    # Can also be run with RaxmlCommandLine
+    # raxml_cline = RaxmlCommandline(sequences="fasta/alignment_c/{}".format(fasta_file + ".reduced"),
+    #                              model="GTRGAMMA", name=run_name, grouping_constraint="temp_subtree.nwk",
+    #                              working_dir="raxml/{}".format(run_name))
+    #print(raxml_cline)
+    #raxml_cline()
+
+
+def display_tree():
+    # Display treee
+    with open("raxml/with_constraint_test/RAxML_bestTree.with_constraint_test") as f:
+        tree = f.read()
+    tree = Phylo.read(StringIO(tree), "newick")
+    # print(tree)
+    Phylo.draw(tree)
+
+
 if __name__ == '__main__':
-    file_list = os.listdir(par_path + "/src/alignment/")
-    # for fasta_file in file_list:
-    #     phylip_file = f"phylip/{fasta_file.rstrip('.fasta')}.phylip"
-    #     passed = convert_file(fasta_file, phylip_file)
-    #     if passed:
-    #         constructor, distance_matrix = create_distance_matrix(phylip_file)
-    #         tree = create_tree(constructor, distance_matrix, fasta_file.rstrip('.fasta'))
-    fasta_file = 'alignment_Acanthosomatidae.fasta'
-    phylip_file = f"phylip/{fasta_file.rstrip('.fasta')}.phylip"
+    fasta_file="fasta/alignment/Abacionidae_NT.fasta"
     change_ids(fasta_file)
-    # convert_file('corrected/alignment_Acanthosomatidae.fasta', phylip_file)
-    create_tree_raxml('corrected/'+ fasta_file.rstrip('.fasta'))
-    # change_ids(fasta_file)
+    display_tree()
