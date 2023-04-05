@@ -1,0 +1,4 @@
+name: phylogeny
+dependencies:
+  - pip:
+      - -r requirements.txt

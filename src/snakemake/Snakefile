@@ -1,2 +1,107 @@
+# This file does not work
+# It is a mock code
+# Maybe some rules should be in seperate files, because you dont want to do them more than once
+# For example downloading MASCE
+
+from src import *
+
+
+GLOBALS=[PATH, DATABASEFILE]
+
+rule untar:
+    output:
+        {/data/} # In the data directory the file will be untard
+    input:
+        {PATH/BOLD_databasefile} # File to be untared
+    shell:
+        untar {input} > output
+
+rule extract_BOLD:
+    output:
+        database=DATABASEFILE
+    input:
+        {marker}
+    script:
+        "bold_data_dump.py"
+    shell:
+        python {script} {input.marker} > {output}
+
+rule alter_db:
+    # The same Datbase will be altered
+    output:
+        DATABASE
+    input:
+        DATABASE
+    script:
+        tables="alter_tables"
+    shell:
+        python script {input} > {output}
+
+rule add_ott:
+    output:
+        DATABASE
+    input:
+        DATABASE
+    script:
+        ott = "map_opentol.py"
+    shell:
+        python script {input.ott} > output
+
+rule download_masce:
+    output:
+        {datadir}
+    input:
+        {url}
+    shell:
+        "wget -P {outdir} {url}"
+
+rule make_family_fasta:
+    params:
+        directory=DIR
+    output:
+        directory=file
+    input:
+        DATABASE
+    script:
+        "family_fasta.py"
+    shell:
+        python {script} {input} > {DIR}/{file}
+
+rule align:
+    input:
+        directory={DIR}
+    output:
+        directory={DIR}
+    threads: X
+    script:
+        "create_MSA.py"
+    shell:
+        for f in {input}:
+            python {script} > {output}
+
+rule tree:
+    input:
+        {MSA dir}
+    output:
+        {tree dir}
+    script:
+        {create_tree}
+    threads: X
+    shell:
+        for f in {input}:
+            python {script} > {output}
+
+rule display_tree:
+    input:
+        {newick_string}
+    output:
+        {file.png}  # To download subtrees
+    script:
+        {display_tree?}
+    shell:
+        python {script} {input} > {output}
+
+
+
 
 
