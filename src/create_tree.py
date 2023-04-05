@@ -74,14 +74,13 @@ def create_constraint():
 
 def create_tree():
     print("fasta/alignment_c/{}".format(fasta_file + ".reduced"))
-    print(fasta_file + ".reduced")
+    print(fasta_file)
     #Run raxml commandline without constraint
-    subprocess.run("{} -p 100 -m  GTRGAMMA -n {} -s fasta/alignment_c/{}  -w raxml/{}".format(RAXML, "run_name", fasta_file  , "run_name"))
+    #subprocess.run("{} -p 100 -m  GTRGAMMA -n {} -s fasta/alignment_c/{}  -w raxml/{}".format(RAXML, "run_name", fasta_file  , "run_name"))
 
     # Raxml with constraint
     subprocess.run(
-        "{} -p 100 -m  GTRGAMMA -n {} -s fasta/alignment_c/{}  -g temp_subtree.nwk -w raxml/{}".format(RAXML, "run_name", fasta_file,
-                                                                                   "run_name"))
+        "{} -p 100 -m  GTRGAMMA -n {} -s fasta/alignment_c/{}  -g temp_subtree.nwk -w raxml\{}".format(RAXML, "run_name", fasta_file,"run_name"))
 
     # Can also be run with RaxmlCommandLine
     # raxml_cline = RaxmlCommandline(sequences="fasta/alignment_c/{}".format(fasta_file + ".reduced"),
@@ -93,7 +92,7 @@ def create_tree():
 
 def display_tree():
     # Display treee
-    with open("raxml/with_constraint_test/RAxML_bestTree.with_constraint_test") as f:
+    with open("raxml/run_name/RAxML_bestTree.run_name") as f:
         tree = f.read()
     tree = Phylo.read(StringIO(tree), "newick")
     # print(tree)
@@ -101,6 +100,9 @@ def display_tree():
 
 
 if __name__ == '__main__':
-    fasta_file="fasta/alignment/Abacionidae_NT.fasta"
-    change_ids(fasta_file)
+    fasta_file="Abacionidae_NT.fasta"
+    #change_ids(fasta_file)
+    #create_tree()
+
     display_tree()
+
