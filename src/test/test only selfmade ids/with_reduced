@@ -1,0 +1,55 @@
+RAxML-NG v. 1.1 released on 29.11.2021 by The Exelixis Lab.
+Developed by: Alexey M. Kozlov and Alexandros Stamatakis.
+Contributors: Diego Darriba, Tomas Flouri, Benoit Morel, Sarah Lutteropp, Ben Bettisworth.
+Latest version: https://github.com/amkozlov/raxml-ng
+Questions/problems/suggestions? Please visit: https://groups.google.com/forum/#!forum/raxml
+
+System: Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz, 6 cores, 7 GB RAM
+
+RAxML-NG was called at 11-Apr-2023 10:13:39 as follows:
+
+raxml-ng --msa Abacionidae_NT.fasta.raxml.reduced.phy --model GTR+G --tree-constraint temp_subtree.nwk
+
+Analysis options:
+  run mode: ML tree search
+  start tree(s): random (10) + parsimony (10)
+  topological constraint: temp_subtree.nwk (algorithm: NEW)
+  random seed: 1681200819
+  tip-inner: OFF
+  pattern compression: ON
+  per-rate scalers: OFF
+  site repeats: ON
+  fast spr radius: AUTO
+  spr subtree cutoff: 1.000000
+  branch lengths: proportional (ML estimate, algorithm: NR-FAST)
+  SIMD kernels: AVX2
+  parallelization: coarse-grained (auto), PTHREADS (auto)
+
+[00:00:00] Reading alignment from file: Abacionidae_NT.fasta.raxml.reduced.phy
+[00:00:00] Loaded alignment with 25 taxa and 1545 sites
+
+Alignment comprises 1 partitions and 120 patterns
+
+Partition 0: noname
+Model: GTR+FO+G4m
+Alignment sites / patterns: 1545 / 120
+Gaps: 61.00 %
+Invariant sites: 89.19 %
+
+
+NOTE: Binary MSA file created: Abacionidae_NT.fasta.raxml.reduced.phy.raxml.rba
+
+[00:00:00] Loading constraint tree from: temp_subtree.nwk
+[00:00:00] Loaded non-comprehensive constraint tree with 9 taxa
+
+
+ERROR: Following 9 taxa present in the constraint tree can not be found in the alignment:
+ott3515916
+ott3515929
+ott3515934
+ott3515974
+ott7110925
+ott406633
+ott406635
+ott3515854
+ott7110926

@@ -1,0 +1,199 @@
+RAxML-NG v. 1.1 released on 29.11.2021 by The Exelixis Lab.
+Developed by: Alexey M. Kozlov and Alexandros Stamatakis.
+Contributors: Diego Darriba, Tomas Flouri, Benoit Morel, Sarah Lutteropp, Ben Bettisworth.
+Latest version: https://github.com/amkozlov/raxml-ng
+Questions/problems/suggestions? Please visit: https://groups.google.com/forum/#!forum/raxml
+
+System: Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz, 6 cores, 7 GB RAM
+
+RAxML-NG was called at 11-Apr-2023 09:59:40 as follows:
+
+raxml-ng --msa Abacionidae_NT.fasta --model GTR+G --tree-constraint temp_subtree.nwk
+
+Analysis options:
+  run mode: ML tree search
+  start tree(s): random (10) + parsimony (10)
+  topological constraint: temp_subtree.nwk (algorithm: NEW)
+  random seed: 1681199979
+  tip-inner: OFF
+  pattern compression: ON
+  per-rate scalers: OFF
+  site repeats: ON
+  fast spr radius: AUTO
+  spr subtree cutoff: 1.000000
+  branch lengths: proportional (ML estimate, algorithm: NR-FAST)
+  SIMD kernels: AVX2
+  parallelization: coarse-grained (auto), PTHREADS (auto)
+
+[00:00:00] Reading alignment from file: Abacionidae_NT.fasta
+[00:00:00] Loaded alignment with 168 taxa and 1563 sites
+
+ERROR: Sequences 1 and 2 have identical name: ott77630
+ERROR: Sequences 1 and 3 have identical name: ott77630
+ERROR: Sequences 1 and 4 have identical name: ott77630
+ERROR: Sequences 1 and 5 have identical name: ott77630
+ERROR: Sequences 1 and 6 have identical name: ott77630
+ERROR: Sequences 1 and 7 have identical name: ott77630
+ERROR: Sequences 1 and 8 have identical name: ott77630
+ERROR: Sequences 1 and 9 have identical name: ott77630
+ERROR: Sequences 10 and 11 have identical name: ott406635
+ERROR: Sequences 10 and 12 have identical name: ott406635
+ERROR: Sequences 10 and 13 have identical name: ott406635
+ERROR: Sequences 10 and 14 have identical name: ott406635
+ERROR: Sequences 10 and 15 have identical name: ott406635
+ERROR: Sequences 10 and 17 have identical name: ott406635
+ERROR: Sequences 10 and 19 have identical name: ott406635
+ERROR: Sequences 10 and 20 have identical name: ott406635
+ERROR: Sequences 10 and 21 have identical name: ott406635
+ERROR: Sequences 10 and 22 have identical name: ott406635
+ERROR: Sequences 10 and 23 have identical name: ott406635
+ERROR: Sequences 10 and 24 have identical name: ott406635
+ERROR: Sequences 10 and 25 have identical name: ott406635
+ERROR: Sequences 10 and 26 have identical name: ott406635
+ERROR: Sequences 10 and 27 have identical name: ott406635
+ERROR: Sequences 10 and 28 have identical name: ott406635
+ERROR: Sequences 10 and 29 have identical name: ott406635
+ERROR: Sequences 10 and 30 have identical name: ott406635
+ERROR: Sequences 10 and 31 have identical name: ott406635
+ERROR: Sequences 10 and 32 have identical name: ott406635
+ERROR: Sequences 10 and 37 have identical name: ott406635
+ERROR: Sequences 10 and 38 have identical name: ott406635
+ERROR: Sequences 10 and 39 have identical name: ott406635
+ERROR: Sequences 10 and 40 have identical name: ott406635
+ERROR: Sequences 10 and 41 have identical name: ott406635
+ERROR: Sequences 10 and 42 have identical name: ott406635
+ERROR: Sequences 10 and 44 have identical name: ott406635
+ERROR: Sequences 10 and 47 have identical name: ott406635
+ERROR: Sequences 10 and 48 have identical name: ott406635
+ERROR: Sequences 10 and 51 have identical name: ott406635
+ERROR: Sequences 10 and 52 have identical name: ott406635
+ERROR: Sequences 10 and 55 have identical name: ott406635
+ERROR: Sequences 10 and 56 have identical name: ott406635
+ERROR: Sequences 10 and 69 have identical name: ott406635
+ERROR: Sequences 10 and 70 have identical name: ott406635
+ERROR: Sequences 10 and 79 have identical name: ott406635
+ERROR: Sequences 10 and 80 have identical name: ott406635
+ERROR: Sequences 10 and 83 have identical name: ott406635
+ERROR: Sequences 10 and 84 have identical name: ott406635
+ERROR: Sequences 10 and 85 have identical name: ott406635
+ERROR: Sequences 10 and 86 have identical name: ott406635
+ERROR: Sequences 10 and 89 have identical name: ott406635
+ERROR: Sequences 10 and 90 have identical name: ott406635
+ERROR: Sequences 10 and 91 have identical name: ott406635
+ERROR: Sequences 10 and 93 have identical name: ott406635
+ERROR: Sequences 10 and 94 have identical name: ott406635
+ERROR: Sequences 10 and 95 have identical name: ott406635
+ERROR: Sequences 10 and 96 have identical name: ott406635
+ERROR: Sequences 10 and 97 have identical name: ott406635
+ERROR: Sequences 10 and 99 have identical name: ott406635
+ERROR: Sequences 10 and 101 have identical name: ott406635
+ERROR: Sequences 10 and 102 have identical name: ott406635
+ERROR: Sequences 10 and 103 have identical name: ott406635
+ERROR: Sequences 10 and 105 have identical name: ott406635
+ERROR: Sequences 10 and 106 have identical name: ott406635
+ERROR: Sequences 10 and 107 have identical name: ott406635
+ERROR: Sequences 10 and 108 have identical name: ott406635
+ERROR: Sequences 10 and 109 have identical name: ott406635
+ERROR: Sequences 10 and 110 have identical name: ott406635
+ERROR: Sequences 10 and 111 have identical name: ott406635
+ERROR: Sequences 10 and 112 have identical name: ott406635
+ERROR: Sequences 10 and 113 have identical name: ott406635
+ERROR: Sequences 10 and 114 have identical name: ott406635
+ERROR: Sequences 10 and 115 have identical name: ott406635
+ERROR: Sequences 10 and 116 have identical name: ott406635
+ERROR: Sequences 10 and 117 have identical name: ott406635
+ERROR: Sequences 10 and 122 have identical name: ott406635
+ERROR: Sequences 10 and 123 have identical name: ott406635
+ERROR: Sequences 10 and 124 have identical name: ott406635
+ERROR: Sequences 10 and 125 have identical name: ott406635
+ERROR: Sequences 10 and 126 have identical name: ott406635
+ERROR: Sequences 10 and 127 have identical name: ott406635
+ERROR: Sequences 10 and 128 have identical name: ott406635
+ERROR: Sequences 10 and 129 have identical name: ott406635
+ERROR: Sequences 10 and 130 have identical name: ott406635
+ERROR: Sequences 10 and 131 have identical name: ott406635
+ERROR: Sequences 10 and 132 have identical name: ott406635
+ERROR: Sequences 10 and 133 have identical name: ott406635
+ERROR: Sequences 10 and 134 have identical name: ott406635
+ERROR: Sequences 10 and 135 have identical name: ott406635
+ERROR: Sequences 10 and 137 have identical name: ott406635
+ERROR: Sequences 10 and 138 have identical name: ott406635
+ERROR: Sequences 10 and 139 have identical name: ott406635
+ERROR: Sequences 10 and 141 have identical name: ott406635
+ERROR: Sequences 10 and 143 have identical name: ott406635
+ERROR: Sequences 10 and 144 have identical name: ott406635
+ERROR: Sequences 10 and 147 have identical name: ott406635
+ERROR: Sequences 10 and 148 have identical name: ott406635
+ERROR: Sequences 10 and 149 have identical name: ott406635
+ERROR: Sequences 10 and 150 have identical name: ott406635
+ERROR: Sequences 10 and 151 have identical name: ott406635
+ERROR: Sequences 10 and 152 have identical name: ott406635
+ERROR: Sequences 10 and 153 have identical name: ott406635
+ERROR: Sequences 10 and 154 have identical name: ott406635
+ERROR: Sequences 10 and 155 have identical name: ott406635
+ERROR: Sequences 10 and 156 have identical name: ott406635
+ERROR: Sequences 10 and 157 have identical name: ott406635
+ERROR: Sequences 10 and 158 have identical name: ott406635
+ERROR: Sequences 10 and 159 have identical name: ott406635
+ERROR: Sequences 10 and 160 have identical name: ott406635
+ERROR: Sequences 10 and 161 have identical name: ott406635
+ERROR: Sequences 10 and 162 have identical name: ott406635
+ERROR: Sequences 10 and 163 have identical name: ott406635
+ERROR: Sequences 10 and 164 have identical name: ott406635
+ERROR: Sequences 10 and 166 have identical name: ott406635
+ERROR: Sequences 10 and 167 have identical name: ott406635
+ERROR: Sequences 10 and 168 have identical name: ott406635
+ERROR: Sequences 16 and 18 have identical name: ott406633
+ERROR: Sequences 16 and 33 have identical name: ott406633
+ERROR: Sequences 16 and 34 have identical name: ott406633
+ERROR: Sequences 16 and 35 have identical name: ott406633
+ERROR: Sequences 16 and 36 have identical name: ott406633
+ERROR: Sequences 16 and 43 have identical name: ott406633
+ERROR: Sequences 16 and 45 have identical name: ott406633
+ERROR: Sequences 16 and 46 have identical name: ott406633
+ERROR: Sequences 16 and 49 have identical name: ott406633
+ERROR: Sequences 16 and 50 have identical name: ott406633
+ERROR: Sequences 16 and 53 have identical name: ott406633
+ERROR: Sequences 16 and 54 have identical name: ott406633
+ERROR: Sequences 16 and 57 have identical name: ott406633
+ERROR: Sequences 16 and 58 have identical name: ott406633
+ERROR: Sequences 16 and 59 have identical name: ott406633
+ERROR: Sequences 16 and 60 have identical name: ott406633
+ERROR: Sequences 16 and 61 have identical name: ott406633
+ERROR: Sequences 16 and 62 have identical name: ott406633
+ERROR: Sequences 16 and 63 have identical name: ott406633
+ERROR: Sequences 16 and 64 have identical name: ott406633
+ERROR: Sequences 16 and 65 have identical name: ott406633
+ERROR: Sequences 16 and 66 have identical name: ott406633
+ERROR: Sequences 16 and 67 have identical name: ott406633
+ERROR: Sequences 16 and 68 have identical name: ott406633
+ERROR: Sequences 16 and 71 have identical name: ott406633
+ERROR: Sequences 16 and 72 have identical name: ott406633
+ERROR: Sequences 16 and 73 have identical name: ott406633
+ERROR: Sequences 16 and 74 have identical name: ott406633
+ERROR: Sequences 16 and 75 have identical name: ott406633
+ERROR: Sequences 16 and 76 have identical name: ott406633
+ERROR: Sequences 16 and 77 have identical name: ott406633
+ERROR: Sequences 16 and 78 have identical name: ott406633
+ERROR: Sequences 16 and 81 have identical name: ott406633
+ERROR: Sequences 16 and 82 have identical name: ott406633
+ERROR: Sequences 16 and 87 have identical name: ott406633
+ERROR: Sequences 16 and 88 have identical name: ott406633
+ERROR: Sequences 16 and 92 have identical name: ott406633
+ERROR: Sequences 16 and 98 have identical name: ott406633
+ERROR: Sequences 16 and 100 have identical name: ott406633
+ERROR: Sequences 16 and 104 have identical name: ott406633
+ERROR: Sequences 16 and 118 have identical name: ott406633
+ERROR: Sequences 16 and 119 have identical name: ott406633
+ERROR: Sequences 16 and 120 have identical name: ott406633
+ERROR: Sequences 16 and 121 have identical name: ott406633
+ERROR: Sequences 16 and 136 have identical name: ott406633
+ERROR: Sequences 16 and 140 have identical name: ott406633
+ERROR: Sequences 16 and 142 have identical name: ott406633
+ERROR: Sequences 16 and 145 have identical name: ott406633
+ERROR: Sequences 16 and 146 have identical name: ott406633
+ERROR: Sequences 16 and 165 have identical name: ott406633
+
+ERROR: Duplicate sequence names found: 165
+
+ERROR: Alignment check failed (see details above)!
