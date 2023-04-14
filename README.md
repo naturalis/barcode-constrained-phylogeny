@@ -1,11 +1,11 @@
 # barcode-constrained-phylogeny
 This repository contains code and data for building topologically-constrained phylogenies.
 
-The internationsl database [BOLD Systems](https://www.boldsystems.org/index.php) contains DNA barcodes for hundred of thousands of species, with multiple barcodes per species. Theoretically, this data could be filtered and aligned per DNA marker to make phylogenetic trees with. However, there are two limiting factors: there is a maximum of the number and size trees that can be build, and barcodes are not considered ideal for building big trees because they do not give a strong signal. 
+The international database BOLD Systems contains DNA barcodes for hundreds of thousands of species, with multiple barcodes per species. Theoretically, this data could be filtered and aligned per DNA marker to make phylogenetic trees. However, there are two limiting factors: there is a maximum number and size of trees that can be built, and barcodes are not considered ideal for building large trees because they do not provide a strong signal.
 
-Both problems can be solved by using the [Open Tree of Life](https://tree.opentreeoflife.org/opentree/argus/opentree13.4@ott93302) as a backbone. The BOLD data can be split into chunks that are corresponding to Open Tree of Life. These chunks can be made into alignments and trees. The backbone can also be used as a constraint in the algorithms to make these.
+Both problems can be solved by using the Open Tree of Life as a backbone. The BOLD data can be split into chunks that correspond to the Open Tree of Life. These chunks can be made into alignments and trees, and the backbone can also be used as a constraint in the algorithms to create these.
 
-In this repository this will be prototyped for both animal species and plant species.
+This repository will prototype the use of Open Tree of Life as a backbone for both animal and plant species.
 
 ## Scripts
 ### [unzip_targz.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/unzip_targz.py)
