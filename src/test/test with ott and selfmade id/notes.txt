@@ -1,0 +1,1 @@
+Using the ott_id first and then the taxon_id in the header does not result in a different outcome.

@@ -1,0 +1,91 @@
+RAxML-NG v. 1.1 released on 29.11.2021 by The Exelixis Lab.
+Developed by: Alexey M. Kozlov and Alexandros Stamatakis.
+Contributors: Diego Darriba, Tomas Flouri, Benoit Morel, Sarah Lutteropp, Ben Bettisworth.
+Latest version: https://github.com/amkozlov/raxml-ng
+Questions/problems/suggestions? Please visit: https://groups.google.com/forum/#!forum/raxml
+
+System: Intel(R) Core(TM) i5-7200U CPU @ 2.50GHz, 2 cores, 7 GB RAM
+
+RAxML-NG was called at 12-Apr-2023 15:46:48 as follows:
+
+raxml-ng --msa Aba.fasta --model GTR+G --tree-constraint temp.nwk
+
+Analysis options:
+  run mode: ML tree search
+  start tree(s): random (10) + parsimony (10)
+  topological constraint: temp.nwk (algorithm: NEW)
+  random seed: 1681307208
+  tip-inner: OFF
+  pattern compression: ON
+   per-rate scalers: OFF
+  site repeats: ON
+  fast spr radius: AUTO
+  spr subtree cutoff: 1.000000
+  branch lengths: proportional (ML estimate, algorithm: NR-FAST)
+  SIMD kernels: AVX2
+  parallelization: coarse-grained (auto), PTHREADS (auto)
+
+[00:00:00] Reading alignment from file: Aba.fasta
+[00:00:00] Loaded alignment with 56 taxa and 1563 sites
+
+WARNING: Fully undetermined columns found: 18
+
+WARNING: Sequences 2492326_ott77630 and 2909821_ott77630 are exactly identical!
+WARNING: Sequences 1745642_ott406635 and 1745643_ott406635 are exactly identical!
+WARNING: Sequences 1745647_ott406635 and 1745658_ott406635 are exactly identical!
+WARNING: Sequences 1745647_ott406635 and 1745659_ott406635 are exactly identical!
+WARNING: Sequences 1745647_ott406635 and 1745661_ott406635 are exactly identical!
+WARNING: Sequences 1745647_ott406635 and 1745664_ott406635 are exactly identical!
+WARNING: Sequences 1745648_ott406635 and 1745649_ott406635 are exactly identical!
+WARNING: Sequences 1745648_ott406635 and 1745651_ott406635 are exactly identical!
+WARNING: Sequences 1745648_ott406635 and 1745653_ott406635 are exactly identical!
+WARNING: Sequences 1745648_ott406635 and 1745666_ott406635 are exactly identical!
+WARNING: Sequences 1745648_ott406635 and 1745671_ott406635 are exactly identical!
+WARNING: Sequences 1745648_ott406635 and 1745682_ott406635 are exactly identical!
+WARNING: Sequences 1745648_ott406635 and 1745685_ott406635 are exactly identical!
+WARNING: Sequences 1745663_ott406635 and 1745678_ott406635 are exactly identical!
+WARNING: Sequences 1745663_ott406635 and 1745680_ott406635 are exactly identical!
+WARNING: Sequences 1745668_ott406633 and 1745669_ott406633 are exactly identical!
+WARNING: Sequences 1745668_ott406633 and 1745670_ott406633 are exactly identical!
+WARNING: Sequences 1745668_ott406633 and 1745673_ott406633 are exactly identical!
+WARNING: Sequences 1745668_ott406633 and 1745676_ott406633 are exactly identical!
+WARNING: Sequences 1745668_ott406633 and 1745677_ott406633 are exactly identical!
+WARNING: Sequences 1745668_ott406633 and 1745681_ott406633 are exactly identical!
+WARNING: Sequences 1745674_ott406633 and 1745675_ott406633 are exactly identical!
+WARNING: Sequences 1745674_ott406633 and 1745683_ott406633 are exactly identical!
+WARNING: Sequences 1745674_ott406633 and 1745688_ott406633 are exactly identical!
+WARNING: Sequences 1745652_ott406635 and 1745655_ott406635 are exactly identical!
+WARNING: Sequences 1745652_ott406635 and 1745656_ott406635 are exactly identical!
+WARNING: Sequences 1745652_ott406635 and 1745657_ott406635 are exactly identical!
+WARNING: Sequences 1745652_ott406635 and 1745662_ott406635 are exactly identical!
+WARNING: Sequences 1745652_ott406635 and 1745665_ott406635 are exactly identical!
+WARNING: Duplicate sequences found: 31
+
+NOTE: Reduced alignment (with duplicates and gap-only sites/taxa removed)
+NOTE: was saved to: /home/noah/barcode-constrained-phylogeny/src/test/testwithbothid/Aba.fasta.raxml.reduced.phy
+
+Alignment comprises 1 partitions and 120 patterns
+Partition 0: noname
+Model: GTR+FO+G4m
+Alignment sites / patterns: 1545 / 120
+Gaps: 61.03 %
+Invariant sites: 89.19 %
+
+
+NOTE: Binary MSA file created: Aba.fasta.raxml.rba
+
+[00:00:00] Loading constraint tree from: temp.nwk
+[00:00:00] Loaded non-comprehensive constraint tree with 9 taxa
+
+
+ERROR: Following 9 taxa present in the constraint tree can not be found in the alignment:
+ott3515916
+ott3515929
+ott3515934
+ott3515974
+ott7110925
+ott406633
+ott406635
+ott3515854
+ott7110926
+
