@@ -89,7 +89,7 @@ def replace_newick(dict):
     :param dict:
     :return:
     """
-    with open("temp.nwk", "r") as input:
+    with open("test.nwk", "r") as input:
         with open("temp_subtree", "w") as output:
             ott = input.readline()
             for key in dict.keys():

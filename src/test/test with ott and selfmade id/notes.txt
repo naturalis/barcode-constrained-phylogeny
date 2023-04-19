@@ -1,1 +1,10 @@
 Using the ott_id first and then the taxon_id in the header does not result in a different outcome.
+
+' '.join(i for i in toPrint.split() if i not in bannedWord)
+
+                try:
+                    if ott[1] not in dict:
+                       not_in_alignment.append(ott[1])
+                except:
+                    if ott[0] not in dict:
+                        not_in_alignment.append(ott[0])
