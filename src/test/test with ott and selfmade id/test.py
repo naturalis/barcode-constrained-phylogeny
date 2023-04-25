@@ -21,19 +21,20 @@ conn = sqlite3.connect(args.db)
 cursor = conn.cursor()
 #print(par_path)
 file_list = os.listdir(par_path + "../../fasta/alignment/")
-#print(file_list)
+
 
 def replace_with_ott():
+    # Get dict with different ott's
     """Replace the header in the phylip file.
     Uses the phylip file with the barcode id as input and creates a new file with an ott id as header.
     """
     dir_path= "../../fasta/alignment/"
-    test_path=""
     fasta_file = "Abacionidae_NT.fasta"
-    new_file = "Aba.fasta"
+    new_file = "species.txt"
     ott = []
     dict = {}
     count = 0
+    species = []
     with open("{}/{}".format(dir_path,fasta_file), "r+") as input: # File with barcode id as header
         with open("{}".format(new_file), "w+") as output:  # File with ott id as header
             for line in input:
@@ -44,66 +45,54 @@ def replace_with_ott():
                         "SELECT taxon.opentol_id, barcode.barcode_id FROM taxon LEFT JOIN barcode ON barcode.taxon_id = "
                         "taxon.taxon_id WHERE barcode.barcode_id = {}".format(id))
                     results = result.fetchall()
-                    output.write(">" +results[0][0] + "_" + str(results[0][1]) + "\n")
                     if results[0][0] not in ott:
                         ott.append(results[0][0])
                     if results[0][0] in dict:
                         dict[results[0][0]].append(results[0][0]+"_"+ str(results[0][1]))
                     else:
                         dict[results[0][0]] = []
-                else:
-                    output.write(line)
-
+                    if results[0][0] not in species:
+                        species.append(results[0][0])
+            # Write list to string
+            species = "\n".join(species)
+            # Writing string to the outputfile
+            # print(output)
+            output.write(species)
     output.close()
     print(dict)
     return dict
 
-def remove_newick(dict):
-    """Remove ott which are not found in the alignment file
-    :param dict: contains the ott in the alignment file
-    :return: writes a newick in a file
-    """
-    not_in_alignment = []
-    with open("temp.nwk", "r") as input:
-        with open("test.nwk", "w+") as output:
-            line = input.readline()
-            line = line.split(",")
-            for ott in line:
-                ott = ott.replace("(","")
-                ott = ott.replace(")"," ")
-                ott = ott.split(" ")
-                for i in range(len(ott)):
-                    if ott[i] not in dict:
-                        not_in_alignment.append(ott[i])
-            line = ", ".join(line)
-            print(line)
-            for i in not_in_alignment:
-                line = line.replace(i, "")
-            print(line)
-            output.write(line)
 
-
-
+def replace_zero_branch_length():
+    with open("tree.nwk", "r") as input:
+        with open("final_temp_subtree.nwk", "w+") as output:
+            newick = input.readline()
+            print(newick)
+            newick = newick.replace(":0", "")
+            print(newick)
 def replace_newick(dict):
     """
-    :param dict:
+    :param dict: To retrieve the values from the dict (consisting of ott and barcode id)
     :return:
     """
-    with open("test.nwk", "r") as input:
-        with open("temp_subtree", "w") as output:
+    with open("tree.nwk", "r") as input:
+        with open("final_temp_subtree.nwk", "w+") as output:
             ott = input.readline()
             for key in dict.keys():
-                ott = ott.replace(key,str(dict[key]))
-                ott = ott.replace("[","")
+                ott = ott.replace(key, "("  + str(dict[key]) + ")")
+                print("ott", ott)
+                ott = ott.replace("[", "")
                 ott = ott.replace("]", "")
-            output.write("(")
+                #ott = ott.replace()
+            #print(ott)
             output.write(ott)
-            output.write(");")
-            print(ott)
+
+
 
 
 if __name__ == '__main__':
-    #get_length()
     dict = replace_with_ott()
-    remove_newick(dict)
     replace_newick(dict)
+    replace_zero_branch_length()
+
+
