@@ -1,36 +1,32 @@
 import os
 import subprocess
-import re
-import shutil
-import datetime
 
-# Specify paths
-par_path = os.path.abspath(os.path.join(os.pardir))
-masce_path = "../data/macse_v2.06.jar"
-file_list = os.listdir(par_path + "/src/fasta/family/")
-
-def align_seq():
-    os.makedirs('fasta/alignment', exist_ok=True)
+def align_seq(in_file, out_file_nt, out_file_aa):
+    os.makedirs('data/fasta/alignment', exist_ok=True)
     #TODO change from two family test data to everything?
-    for fasta_file in file_list[0:2]:
-        output = 'fasta/alignment/' + fasta_file.rstrip('.fasta')
-        input = str('fasta/family/' + fasta_file)
-        # Uses input FASTA file en generates an alignment in AA and NT
-        alignseq = "java -jar {} -prog alignSequences -seq {} -out_NT {}_NT.fasta -out_AA {}_AA.fasta".format(masce_path, input, output, output)
-        subprocess.run(alignseq, shell=True)
-        remove_exclamation_mark(output)     # Call function to remove exclamation mark
+    # Uses input FASTA file en generates an alignment in AA and NT
+    out_file_nt_temp = out_file_nt.split('_')[0] + "_temp_NT.fasta"
+    out_file_aa_temp = out_file_nt.split('_')[0] + "_temp_AA.fasta"
+    alignseq = "java -jar {} -prog alignSequences -seq {} -out_NT {} -out_AA {}".format(masce_path, in_file,
+                                                                                        out_file_nt_temp,
+                                                                                        out_file_aa_temp)
+    subprocess.run(alignseq, shell=True)
+    remove_exclamation_mark(out_file_nt, out_file_nt_temp) # Call function to remove exclamation mark
+    remove_exclamation_mark(out_file_aa, out_file_aa_temp)
 
 
-def remove_exclamation_mark(output):
+def remove_exclamation_mark(out_file, outfile_temp):
     """Remove eclamation mark from file.
     :param output: File to be changed.
     :return: None, but create a file without exclamation marks.
     """
-    subprocess.run("sed s/!/-/g {}_NT.fasta > {}_temp_NT.fasta".format(output, output), shell=True)
-    print("{}_NT.fasta".format(output))
-    os.remove("{}_NT.fasta".format(output))
-    os.rename("{}_temp_NT.fasta".format(output), "{}_NT.fasta".format(output))
+    subprocess.run("sed s/!/-/g {} > {}".format(outfile_temp, out_file), shell=True)
+    os.remove("{}".format(outfile_temp))
 
 
 if __name__ == '__main__':
-    align_seq()
+    masce_path = snakemake.input[0]
+    in_file = snakemake.input[1]
+    out_file_nt = snakemake.output[0]
+    out_file_aa = snakemake.output[1]
+    align_seq(in_file, out_file_nt, out_file_aa)

@@ -1,25 +1,12 @@
-import argparse
-import os
 import numpy as np
 import pandas as pd
 import sqlite3
-
-par_path = os.path.abspath(os.path.join(os.pardir))
-
-# User arguments
-parser = argparse.ArgumentParser()
-
-parser.add_argument('-db', default="/data/databases/BOLD_COI-5P_barcodes.db",
-                    help="Name of the the database file: {file_name}.db")
-parser.add_argument('-kingdom', default="Animals",
-                    help="Which kindgdom: Animals or Plants")
-
-args = parser.parse_args()
+import os
 import requests
 import json
 
 
-def map_checklistbank(conn):
+def map_checklistbank(conn, kingdom):
     """
     Maps bold taxon names from the database taxon table to opentol ids.  It only maps the name if its an exact
     string match (no fuzzy matching). A context has to be given (args.kingdom) to determine which kingdom the
@@ -45,7 +32,7 @@ def map_checklistbank(conn):
                         "names": taxons['taxon'].to_list(),
                         "do_approximate_matching": False,
                         "verbose": False,
-                        "context": args.kingdom
+                        "context": kingdom
                     }
         tnrs_response = requests.post(tnrs_url, json=tnrs_params)
         tnrs_data = json.loads(tnrs_response.text)
@@ -76,7 +63,7 @@ def map_checklistbank(conn):
     conn.commit()
 
 
-def map_checklistbank_fuzzy():
+def map_checklistbank_fuzzy(kingdom):
     """
     Maps bold taxon names from the database opentol_temp table to opentol ids. It tries to map all the
     taxon names that did not got an exact match in map_checklistbank(), using fuzzy matching. BOLD names are
@@ -105,7 +92,7 @@ def map_checklistbank_fuzzy():
                         "names": taxons['taxon'].to_list(),
                         "do_approximate_matching": True,
                         "verbose": False,
-                        "context": args.kingdom
+                        "context": kingdom
                     }
         tnrs_response = requests.post(tnrs_url, json=tnrs_params)
         tnrs_data = json.loads(tnrs_response.text)
@@ -171,18 +158,25 @@ def alter_db(conn, cursor):
 
 
 if __name__ == '__main__':
+    temp_database_name = snakemake.input[0]
+    marker = snakemake.params.marker
+    database_file = snakemake.output[0]
+    if marker == "COI-5P":
+        kingdom = 'Animals'
+    else:
+        kingdom = "Plants"
     # Connect to the database (creates a new file if it doesn't exist)
-    conn = sqlite3.connect(args.db)
+    conn = sqlite3.connect(temp_database_name)
     # Create a cursor
     cursor = conn.cursor()
-
     print("Looking for exact matches between BOLD and OpenTOL taxon names...")
-    map_checklistbank(conn)
+    map_checklistbank(conn, kingdom)
     print("Fuzzy matching remainder taxons...")
-    map_checklistbank_fuzzy()
+    map_checklistbank_fuzzy(kingdom)
 
     # Alter new table and remove old tables
     alter_db(conn, cursor)
 
+    os.rename(temp_database_name, database_file)
     # Close the connection
     conn.close()

@@ -1,19 +1,7 @@
 import sqlite3
-import argparse
 import os
 import numpy as np
 import pandas as pd
-
-par_path = os.path.abspath(os.path.join(os.pardir))
-
-# User arguments
-parser = argparse.ArgumentParser()
-
-# TODO NOAH: change default to how you named your DB or call with commandline
-parser.add_argument('-db', default="/data/databases/BOLD_COI-5P_barcodes.db",
-                    help="Name of the the database file: {file_name}.db")
-
-args = parser.parse_args()
 
 
 def divide_fastafiles(conn):
@@ -26,17 +14,13 @@ def divide_fastafiles(conn):
     :param conn: Connection to SQLite database
     """
     # Make directory to put FASTA files in
-    os.makedirs('fasta/family', exist_ok=True)
-    print("working on it")
+    os.makedirs('data/fasta/family', exist_ok=True)
     # Put needed data from db into a dataframe
     df = pd.read_sql_query("SELECT barcode.barcode_id, taxon.family, "
                            "barcode.nucraw, taxon.opentol_id FROM barcode LEFT JOIN taxon ON "
                            "barcode.taxon_id = taxon.taxon_id", conn)
-    print("busy")
-
     # Dropping rows where there is not an opentol_id
     df = df.dropna(subset=['opentol_id'])
-    print("working on it")
     # Loop through unique family names
     for family in set(df['family']):
         # Takes about 25 min for COI (7,5 million barcodes)
@@ -57,17 +41,19 @@ def divide_fastafiles(conn):
             fasta_out = df_family['fasta'] + df_family["nucraw"]
 
             # Write to FASTA file and name it as their respective family name
-            np.savetxt("fasta/family/%s.fasta" % family, fasta_out.values,
+            np.savetxt("data/fasta/family/%s.fasta" % family, fasta_out.values,
                                fmt="%s")
 
 
 if __name__ == '__main__':
+    database_file = snakemake.input[0]
     # Connect to the database (creates a new file if it doesn't exist)
-    conn = sqlite3.connect(args.db)
-    print("hello")
+
+    conn = sqlite3.connect(database_file)
+
     # Create a cursor
     cursor = conn.cursor()
-    print("done")
+
     # Write barcodes to FASTA in family groups
     divide_fastafiles(conn)
 
