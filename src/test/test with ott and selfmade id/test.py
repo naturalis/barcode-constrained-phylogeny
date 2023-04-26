@@ -19,7 +19,6 @@ print(args.db)
 conn = sqlite3.connect(args.db)
 # Create a cursor
 cursor = conn.cursor()
-#print(par_path)
 file_list = os.listdir(par_path + "../../fasta/alignment/")
 
 
@@ -56,20 +55,12 @@ def replace_with_ott():
             # Write list to string
             species = "\n".join(species)
             # Writing string to the outputfile
-            # print(output)
             output.write(species)
     output.close()
-    print(dict)
     return dict
 
 
-def replace_zero_branch_length():
-    with open("tree.nwk", "r") as input:
-        with open("final_temp_subtree.nwk", "w+") as output:
-            newick = input.readline()
-            print(newick)
-            newick = newick.replace(":0", "")
-            print(newick)
+
 def replace_newick(dict):
     """
     :param dict: To retrieve the values from the dict (consisting of ott and barcode id)
@@ -78,21 +69,17 @@ def replace_newick(dict):
     with open("tree.nwk", "r") as input:
         with open("final_temp_subtree.nwk", "w+") as output:
             ott = input.readline()
+            ott = ott.replace(":0", "")
             for key in dict.keys():
-                ott = ott.replace(key, "("  + str(dict[key]) + ")")
-                print("ott", ott)
+                ott = ott.replace(key, "(" + str(dict[key]) + ")")
                 ott = ott.replace("[", "")
                 ott = ott.replace("]", "")
-                #ott = ott.replace()
-            #print(ott)
             output.write(ott)
-
-
 
 
 if __name__ == '__main__':
     dict = replace_with_ott()
     replace_newick(dict)
-    replace_zero_branch_length()
+
 
 
