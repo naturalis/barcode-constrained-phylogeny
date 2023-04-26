@@ -1,7 +1,0 @@
-# Commands used on terminal in pc
-# Looking at some commands of a newer version of RAXL
-raxml-ng --msa src/fasta/alignment/Abacionidae_NT.fasta --model GTR+G --nofiles #krijg output in cmd
-# With https://isu-molphyl.github.io/EEOB563/computer_labs/lab4/models.html MULTIx-GTR is same as GTRGAMMA??
-useful commands for later
---prefix
---tree-constraint [insert file]
