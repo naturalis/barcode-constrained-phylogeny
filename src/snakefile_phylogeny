@@ -81,12 +81,6 @@ rule megatree_pruner:
     shell: "megatree-pruner -d {input[0]} -i {input[1]} > {output}"
 
 
- # rule raxml:
- #     input: "data/family/alignment/{family}_NT_corrected.fasta", "data/newick/{family}_constraint.nwk"
- #     output: "data/newick/"
- #     shell: "raxml-ng --msa {input[0]} --model GTR+G --tree-constraint {input[1]}"
-
-
 rule replace_ids:
     input: database_file, "data/fasta/alignment/{family}_NT.fasta"
     output: "data/fasta/alignment/{family}_NT_corrected.fasta"
@@ -101,11 +95,21 @@ rule edit_newick:
     script: "edit_constraint.py"
 
 
-rule test_constraint:
-    input: "data/newick/Acanthosomatidae_constraint.nwk"
+rule raxml:
+    input: "data/fasta/alignment/{family}_NT_corrected.fasta", "data/newick/{family}_constraint.nwk"
+    output: "raxml/{family}.fasta.raxml.log"
+    shell: "./raxml-ng --msa {input[0]} --model GTR+G --tree-constraint {input[1]} --prefix raxml/{wildcards.family}"
+
+
+# rule test_constraint:
+#     input: "data/newick/Acanthosomatidae_constraint.nwk"
+#     threads: config["cpu_cores"]
+#     shell: 'touch {input}'
+
+rule test_raxml:
+    input: "raxml/Acanthosomatidae.fasta.raxml.log"
     threads: config["cpu_cores"]
     shell: 'touch {input}'
-
 
 
 # rule all:
