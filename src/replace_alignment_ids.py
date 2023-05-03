@@ -20,7 +20,6 @@ def replace_with_ott(cursor, alignment_input, alignment_output):
             SeqIO.write(record, output, 'fasta')
 
 
-
 if __name__ == '__main__':
     database_file = snakemake.input[0]
     alignment_input = snakemake.input[1]

@@ -97,27 +97,26 @@ rule edit_newick:
 
 rule raxml:
     input: "data/fasta/alignment/{family}_NT_corrected.fasta", "data/newick/{family}_constraint.nwk"
-    output: "raxml/{family}.fasta.raxml.log"
-    shell: "./raxml-ng --msa {input[0]} --model GTR+G --tree-constraint {input[1]} --prefix raxml/{wildcards.family}"
+    output: "raxml/{family}.raxml.log"
+    shell: "mkdir -p raxml | ./raxml-ng --msa {input[0]} --model GTR+G --tree-constraint {input[1]} --prefix raxml/{wildcards.family}"
 
-
-# rule test_constraint:
-#     input: "data/newick/Acanthosomatidae_constraint.nwk"
-#     threads: config["cpu_cores"]
-#     shell: 'touch {input}'
 
 rule test_raxml:
-    input: "raxml/Acanthosomatidae.fasta.raxml.log"
+    input: "raxml/Acanthosomatidae.raxml.log"
     threads: config["cpu_cores"]
     shell: 'touch {input}'
 
+    # rule test_constraint:
+    #     input: "data/newick/Acanthosomatidae_constraint.nwk"
+    #     threads: config["cpu_cores"]
+    #     shell: 'touch {input}'
 
-# rule all:
+# rule test_change_ids_acantho:
 #     input:"data/fasta/alignment/Acanthosomatidae_NT_corrected.fasta"
 #     threads: 4
 #     shell: "touch {input}"
 
-# rule all:
+# rule test_change_ids_all:
 #     input: dynamic("data/fasta/alignment/{family}_NT_corrected.fasta")
 #     threads:
 #         4

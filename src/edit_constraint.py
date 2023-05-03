@@ -15,11 +15,13 @@ def replace_newick(alignment_input, newick_input, newick_output):
             ott = input.readline()
             ott = ott.replace(":0", "")
             for key in headers_dict.keys():
-                ott = ott.replace(key, "(" + str(headers_dict[key]) + ")")
+                if len(headers_dict[key]) > 1:
+                    ott = ott.replace(key, "(" + str(headers_dict[key]) + ")")
+                else:
+                    ott = ott.replace(key, str(headers_dict[key]))
                 ott = ott.replace("[", "")
                 ott = ott.replace("]", "")
             output.write(ott)
-
 
 
 if __name__ == '__main__':
