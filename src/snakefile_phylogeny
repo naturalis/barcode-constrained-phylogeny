@@ -1,8 +1,4 @@
-import glob
-
 configfile: "config.yaml"
-
-fasta_files = glob.glob("data/family_fastas/*.fasta")
 
 database_file = "data/databases/BOLD_{}_barcodes_test.db".format(config["marker"])
 
@@ -46,6 +42,7 @@ rule family_fasta:
 
 rule download_macse:
     output: 'data/macse_v2.06.jar'
+    threads: config["cpu_cores"]
     shell: "wget -P data/ https://bioweb.supagro.inra.fr/macse/releases/macse_v2.06.jar"
 
 
@@ -57,11 +54,73 @@ rule align_masce:
     script: "create_MSA.py"
 
 
-rule all:
-    input: dynamic("data/fasta/alignment/{family}_NT.fasta")
-    threads:
-        4
-    shell: "touch {input}"
+rule get_opentree_zip:
+    output: "data/opentree/opentree13.4_tree/labelled_supertree/labelled_supertree.tre"
+    threads: config["cpu_cores"]
+    shell:  "wget -P data/opentree/ https://files.opentreeoflife.org/synthesis/opentree13.4/opentree13.4tree.tgz" "tar -xvzf opentree13.4tree.tgz --directory data/opentree"
+
+
+rule unique_otts:
+    input: "data/fasta/alignment/{family}_NT_corrected.fasta"
+    output: "data/ott_lists/{family}_otts.txt"
+    threads: config["cpu_cores"]/2
+    shell: 'cat {input} | egrep ">" | cut -f1 -d "_" | tr -d ">" | sort -u > {output}'
+
+
+rule megatree_loader:
+    input: "data/opentree/opentree13.4_tree/labelled_supertree/labelled_supertree.tre"
+    output: "data/databases/opentree_nodes.db"
+    threads: config["cpu_cores"]
+    shell: "megatree-loader -i {input} -d {output}"
+
+
+rule megatree_pruner:
+    input: "data/databases/opentree_nodes.db", "data/ott_lists/{family}_otts.txt"
+    output: "data/newick/{family}_constraint_temp.nwk"
+    threads: config["cpu_cores"]/2
+    shell: "megatree-pruner -d {input[0]} -i {input[1]} > {output}"
+
+
+rule replace_ids:
+    input: database_file, "data/fasta/alignment/{family}_NT.fasta"
+    output: "data/fasta/alignment/{family}_NT_corrected.fasta"
+    threads: config["cpu_cores"]/2
+    script: "replace_alignment_ids.py"
+
+
+rule edit_newick:
+    input: "data/fasta/alignment/{family}_NT_corrected.fasta", "data/newick/{family}_constraint_temp.nwk"
+    output:  "data/newick/{family}_constraint.nwk"
+    threads: config["cpu_cores"]/2
+    script: "edit_constraint.py"
+
+
+rule raxml:
+    input: "data/fasta/alignment/{family}_NT_corrected.fasta", "data/newick/{family}_constraint.nwk"
+    output: "raxml/{family}.raxml.log"
+    shell: "mkdir -p raxml | ./raxml-ng --msa {input[0]} --model GTR+G --tree-constraint {input[1]} --prefix raxml/{wildcards.family}"
+
+
+rule test_raxml:
+    input: "raxml/Acanthosomatidae.raxml.log"
+    threads: config["cpu_cores"]
+    shell: 'touch {input}'
+
+    # rule test_constraint:
+    #     input: "data/newick/Acanthosomatidae_constraint.nwk"
+    #     threads: config["cpu_cores"]
+    #     shell: 'touch {input}'
+
+# rule test_change_ids_acantho:
+#     input:"data/fasta/alignment/Acanthosomatidae_NT_corrected.fasta"
+#     threads: 4
+#     shell: "touch {input}"
+
+# rule test_change_ids_all:
+#     input: dynamic("data/fasta/alignment/{family}_NT_corrected.fasta")
+#     threads:
+#         4
+#     shell: "touch {input}"
 
 
 
