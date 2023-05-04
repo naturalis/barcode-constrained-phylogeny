@@ -17,15 +17,15 @@ Further dependencies are specified in [requirements.txt](requirements.txt)
 
 ## How to install
 
-FILL ME
+**This needs an integral solution. I don't care if its conda or Docker but it needs to be painless**
 
 ## How to run
 
-FILL ME
+**Explain here how to run the snakemake targets**
 
 ## Repository layout
 
-FILL ME
+**Explain here how the repository is laid out**
 
 ## Scripts
 ### [unzip_targz.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/unzip_targz.py)
