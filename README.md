@@ -7,7 +7,12 @@ In this repository this concept is prototyped for both animal species and plant 
 
 ## Requirements/dependencies
 
-FILL ME
+- [raxml-ng v1.1.0](https://github.com/amkozlov/raxml-ng/releases)
+- [macse v2.06](https://bioweb.supagro.inra.fr/macse/releases/macse_v2.06.jar)
+- [sqlite3](https://sqlite.org/download.html) **which version?**
+- python **which version?**
+
+Further dependencies are specified in [requirements.txt](requirements.txt)
 
 ## How to install
 
