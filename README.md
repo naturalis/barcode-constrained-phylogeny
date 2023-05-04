@@ -11,6 +11,7 @@ In this repository this concept is prototyped for both animal species and plant 
 - [macse v2.06](https://bioweb.supagro.inra.fr/macse/releases/macse_v2.06.jar)
 - [sqlite3](https://sqlite.org/download.html) **which version?**
 - python **which version?**
+- java **which version?**
 
 Further dependencies are specified in [requirements.txt](requirements.txt)
 
