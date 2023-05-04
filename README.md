@@ -17,7 +17,7 @@ Further dependencies are specified in [requirements.txt](requirements.txt)
 
 ## How to install
 
-**This needs an integral solution. I don't care if its conda or Docker but it needs to be painless**
+**Solve this with Docker. Right now it's Frankensteined together with a download of MACSE, but not of RAXML or SQLite. Very inconsistent, needs to be improved. Also, which java is required?**
 
 ## How to run
 
