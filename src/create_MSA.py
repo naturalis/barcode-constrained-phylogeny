@@ -2,7 +2,7 @@ import os
 import subprocess
 
 def align_seq(in_file, out_file_nt, out_file_aa):
-    os.makedirs('data/fasta/alignment', exist_ok=True)
+    os.makedirs('../data/fasta/alignment', exist_ok=True)
     #TODO change from two family test data to everything?
     # Uses input FASTA file en generates an alignment in AA and NT
     out_file_nt_temp = out_file_nt.split('_')[0] + "_temp_NT.fasta"

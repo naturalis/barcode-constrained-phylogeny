@@ -14,7 +14,7 @@ def divide_fastafiles(conn):
     :param conn: Connection to SQLite database
     """
     # Make directory to put FASTA files in
-    os.makedirs('data/fasta/family', exist_ok=True)
+    os.makedirs('../data/fasta/family', exist_ok=True)
     # Put needed data from db into a dataframe
     df = pd.read_sql_query("SELECT barcode.barcode_id, taxon.family, "
                            "barcode.nucraw, taxon.opentol_id FROM barcode LEFT JOIN taxon ON "
@@ -41,7 +41,7 @@ def divide_fastafiles(conn):
             fasta_out = df_family['fasta'] + df_family["nucraw"]
 
             # Write to FASTA file and name it as their respective family name
-            np.savetxt("data/fasta/family/%s.fasta" % family, fasta_out.values,
+            np.savetxt("../data/fasta/family/%s.fasta" % family, fasta_out.values,
                                fmt="%s")
 
 

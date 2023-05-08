@@ -13,6 +13,6 @@ dependencies:
       - -r requirements.txt
 
 file_names:
-  bold_zip: data/BOLD_Public.30-Dec-2022.tar.gz
-  bold_tsv: data/mnt/bold_public/datapackages/recent-data/BOLD_Public.30-Dec-2022.tsv
+  bold_zip: ../data/BOLD_Public.30-Dec-2022.tar.gz
+  bold_tsv: ../data/mnt/bold_public/datapackages/recent-data/BOLD_Public.30-Dec-2022.tsv
 

@@ -27,7 +27,6 @@ def extract_bold(conn, bold_tsv, marker):
             df = chunk.loc[
                 ((chunk['marker_code'] == marker_1) & (chunk["kingdom"] == "Plantae")) |
                 (chunk['marker_code'] == marker_2) & (chunk["kingdom"] == "Plantae")]
-        df = df.head(10)
         # Keep stated columns, do not keep rows where NAs are present
         df_temp = df[['taxon', 'kingdom', 'family']].dropna()
         # Add rows to SQLite table (makes table if not exitst yet)
