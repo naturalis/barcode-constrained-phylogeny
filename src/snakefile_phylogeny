@@ -97,6 +97,7 @@ rule edit_newick:
 rule raxml:
     input: "../data/fasta/alignment/{family}_NT_corrected.fasta", "../data/newick/{family}_constraint.nwk"
     output: "../data/raxml/{family}.raxml.log"
+    threads: config["cpu_cores"]/2
     shell: "mkdir -p ../data/raxml | ../bin/raxml-ng --msa {input[0]} --model GTR+G --tree-constraint {input[1]} --prefix ../data/raxml/{wildcards.family}"
 
 #
