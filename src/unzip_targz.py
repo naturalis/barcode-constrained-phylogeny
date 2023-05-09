@@ -6,7 +6,7 @@ def tar_unzip(tu_inputfile):
     file = tarfile.open(tu_inputfile)
 
     # Extract file to output directory
-    file.extractall("data/")
+    file.extractall("../data/")
 
     file.close()
 
