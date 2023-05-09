@@ -10,8 +10,8 @@ In this repository this concept is prototyped for both animal species and plant 
 - [raxml-ng v1.1.0](https://github.com/amkozlov/raxml-ng/releases)
 - [macse v2.06](https://bioweb.supagro.inra.fr/macse/releases/macse_v2.06.jar)
 - [sqlite3](https://sqlite.org/download.html) **which version?**
-- python **which version?**
-- java **which version?**
+- python v3.11
+- java v8
 
 Further dependencies are specified in [requirements.txt](requirements.txt)
 
@@ -25,7 +25,9 @@ Further dependencies are specified in [requirements.txt](requirements.txt)
 
 ## Repository layout
 
-**Explain here how the repository is laid out**
+All data used and generated are located in the [data/](https://github.com/naturalis/barcode-constrained-phylogeny/data/) directory. 
+The snakefile and python scripts are found in the [src/](https://github.com/naturalis/barcode-constrained-phylogeny/src/) directory. 
+
 
 ## Scripts
 ### [unzip_targz.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/unzip_targz.py)
@@ -34,23 +36,21 @@ Further dependencies are specified in [requirements.txt](requirements.txt)
 ### [bold_data_dump.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/bold_data_dump.py) 
 - Puts relevant BOLD data columns into a custom SQLite database.
 
-### [alter_tables.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/alter_tables.py)
-- Manipulates the BOLD data in the custom database and makes two tables, one for taxon data and one for barcode entries.
-
 ### [map_opentol.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/map_opentol.py)
 - Uses the [Open Tree of Life API](https://github.com/OpenTreeOfLife/germinator/wiki/TNRS-API-v3#match_names) to map BOLD taxon names to Open Tree of Life taxonomy IDs. 
 
 ### [family_fasta.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/family_fasta.py)
-- Barcodes from the custom database are divided into their taxonomic family groups and written to FASTA files: 'fasta/family/{familyname}.fasta'
-
-### [download_macse.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/macse/src/download_macse.py)
-- Download program macse (Only works on linux distributions).
+- Barcodes from the custom database are divided into their taxonomic family groups and written to FASTA files: 'fasta/family/{family}.fasta'
 
 ### [create_MSA](https://github.com/naturalis/barcode-constrained-phylogeny/blob/macse/src/create_MSA.py)
-- Using macse create a Multiple Sequence Alignment in files: '{filename_NT}.fasta' and '{filename_AA}.fast'.
+- Uses masce to create a Multiple Sequence Alignment as output files:'{family_NT}.fasta' and '{family_AA}.fasta'.
 
-### [create_tree](https://github.com/naturalis/barcode-constrained-phylogeny/blob/macse/src/create_tree.py)
-- A distance matrix is made based on a NT/AA file. From the distance matrix a UPGMA tree is made. 
+### [replace alignment ids](https://github.com/naturalis/barcode-constrained-phylogeny/blob/macse/src/replace_alignment_ids.py)
+- Replaces the FASTA headers in alignments from '>{barcode_id}' to '>{opentol_id}\_{barcode_id}' 
+
+### [edit_constraint](https://github.com/naturalis/barcode-constrained-phylogeny/blob/macse/src/edit_constraint.py)
+- Edits the constraint trees to accomodate for multiple barcodes from one species and prepares the newick files for raxml.
+
 
 ## License
 
