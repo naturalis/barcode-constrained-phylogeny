@@ -69,17 +69,6 @@ def alter_matrix(dist_df, blacklist):
     return df
 
 
-def create_search_list(dist_df):
-    """
-    :param dist_df:
-    :return:
-    """
-    two_dimensional_list = dist_df.values.tolist()  # df to two dimensional list
-    flatten_list = [j for sub in two_dimensional_list for j in sub] # Get one dimensional list
-    values = list(set(flatten_list))    # Only unique values
-    values.sort(reverse=True)   # Sorting the list, so it is easier to obtain values
-    return values
-
 def get_highest(df):
     highest = df.max()  # <- cant use
     print(max(highest))  # Get highest values
@@ -87,34 +76,15 @@ def get_highest(df):
     print(result_list)
     # Get row and column name
     representatives = get_corresponding_ott(df, result_list[0][0], result_list[0][1])
-    representatives_to_file(representatives)
+    return representatives
 
 
-
-def obsolete(dist_df):
-    highest = dist_df.max()  #  <- cant use
-    print(max(highest))     # Get highest values
-    result_list = search_pos(dist_df, {max(highest)})
-    del result_list[1::2]
-    print(result_list)
-    # Get row and column name
-    representatives = get_corresponding_ott(dist_df, result_list[0][0], result_list[0][1])
-    representatives_to_file(representatives)
-
-def give_largest(col,n):
-    # N indicates how high; 1=highest val; 2=second highest val for each ott
-    largest = col.nlargest(n).reset_index(drop=True)
-    data = [x for x in largest]
-    index = [f'{i}_largest' for i in range(1, len(largest) + 1)]
-    return pd.Series(data, index=index)
-
-def n_largest(df, axis, n):
-    return df.apply(give_largest, axis=axis, n=n)
 
 def search_pos(df_data: pd.DataFrame, search: set) -> list:
     nda_values = df_data.values
     tuple_index = np.where(np.isin(nda_values, [e for e in search]))
     return [(row, col, nda_values[row][col]) for row, col in zip(tuple_index[0], tuple_index[1])]
+
 
 def get_corresponding_ott(df, col_pos, row_pos):
     representatives = []
@@ -132,7 +102,7 @@ def get_corresponding_ott(df, col_pos, row_pos):
 def representatives_to_file(representatives):
     """Important to get the normal sequences in this file"""
 
-    f = "test/Abronicidae/Abronicidae_with_ott.fasta"
+    f = "test/Abyl/Abylidae_with_ott.fasta"
     #with open("{}/{}".format(dir, filename), "r") as input:
     with open(f, "r") as input:
         with open("representatives.fasta", "a") as outputs:
@@ -142,8 +112,15 @@ def representatives_to_file(representatives):
                         SeqIO.write(record, outputs, 'fasta')
 
 
+def get_species(representatives):
+    with open("representatives.txt", "a") as output:
+        for header in representatives:
+            header = header.split("_")
+            output.write(header[0]+"\n")
+
 
 if __name__ == "__main__":
+    #TODO change with snakemake
     conn = sqlite3.connect(args.db)
     # Create a cursor
     cursor = conn.cursor()
@@ -151,8 +128,9 @@ if __name__ == "__main__":
     dist_df, names = create_matrix()
     blacklist = get_blacklist(names)
     altered_matrix = alter_matrix(dist_df, blacklist)
-    values = create_search_list(altered_matrix)
-    get_highest(altered_matrix)
+    representatives = get_highest(altered_matrix)
+    representatives_to_file(representatives)
+    get_species(representatives)
     # Close the connection
     conn.close()
 
