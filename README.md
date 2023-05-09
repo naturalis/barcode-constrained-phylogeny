@@ -25,8 +25,8 @@ Further dependencies are specified in [requirements.txt](requirements.txt)
 
 ## Repository layout
 
-All data used and generated are located in the [data/](https://github.com/naturalis/barcode-constrained-phylogeny/data/) directory. 
-The snakefile and python scripts are found in the [src/](https://github.com/naturalis/barcode-constrained-phylogeny/src/) directory. 
+All data used and generated are located in the [data/](https://github.com/naturalis/barcode-constrained-phylogeny/tree/main/data/) directory. 
+The snakefile and python scripts are found in the [src/](https://github.com/naturalis/barcode-constrained-phylogeny/tree/main/src/) directory. 
 
 
 ## Scripts
@@ -45,10 +45,10 @@ The snakefile and python scripts are found in the [src/](https://github.com/natu
 ### [create_MSA](https://github.com/naturalis/barcode-constrained-phylogeny/blob/macse/src/create_MSA.py)
 - Uses masce to create a Multiple Sequence Alignment as output files:'{family_NT}.fasta' and '{family_AA}.fasta'.
 
-### [replace alignment ids](https://github.com/naturalis/barcode-constrained-phylogeny/blob/macse/src/replace_alignment_ids.py)
+### [replace alignment ids](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/replace_alignment_ids.py)
 - Replaces the FASTA headers in alignments from '>{barcode_id}' to '>{opentol_id}\_{barcode_id}' 
 
-### [edit_constraint](https://github.com/naturalis/barcode-constrained-phylogeny/blob/macse/src/edit_constraint.py)
+### [edit_constraint](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/edit_constraint.py)
 - Edits the constraint trees to accomodate for multiple barcodes from one species and prepares the newick files for raxml.
 
 
