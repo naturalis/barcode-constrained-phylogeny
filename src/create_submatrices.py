@@ -1,6 +1,22 @@
+"""Create file containing all distances matrices.
+
+This script uses a bestTree file from RAXML to create a distance matrix.
+
+PREREQUISITES: The otol database has been downloaded.
+Megatree tool is installed and used to create database from otol file.
+
+The otol version used for this project was 13.4
+Get otol database from https://files.opentreeoflife.org/synthesis/opentree13.4/opentree13.4tree.tgz
+The database used is based on the /opentree13.4_tree/labelled_supertree/labelled_supertree_ottnames.tre
+
+Install Megatree using the GITHUB doc.
+https://github.com/rvosa/bio-phylo-forest-dbtree.git
+
+creating the otol database with megatree loader:
+megatree-loader -i labelled_supertree.tre -d {outputfile.db}
 """
 
-"""
+
 import os
 import numpy
 import sqlite3
@@ -19,6 +35,13 @@ parser.add_argument('-db', default="data/databases/outfile.db",
                     help="Name of the the database file: {file_name}.db")
 
 args = parser.parse_args()
+
+def read_xlsx():
+    df = pd.read_excel("data/tree_distance_matrices.xlsx", sheet_name="Abyl")
+    column_names = list(df)
+    column_names.pop(0)
+    print(column_names)     # All the ott_barcodes
+
 def get_blacklist(names):
     """Create matrix containing only the ott found in the database"""
     blacklist = []
@@ -74,16 +97,17 @@ def get_corresponding_ott(df, col_pos, row_pos):
 if __name__ == "__main__":
     # TODO change with snakemake
     # TODO get rid of calling db like this
-    # conn = sqlite3.connect(args.db)
+    #conn = sqlite3.connect(args.db)
     # Create a cursor
-    # cursor = conn.cursor()
+    #cursor = conn.cursor()
+    read_xlsx()
     # Write barcodes to FASTA in family groups
-    dist_df, names = create_matrix()
-    write_matrix_to_file(dist_df)
-    # blacklist = get_blacklist(names)
+    #dist_df, names = create_matrix()
+    #write_matrix_to_file(dist_df)
+    #blacklist = get_blacklist(names)
     # altered_matrix = alter_matrix(dist_df, blacklist)
     # representatives = get_highest(altered_matrix)
     # representatives_to_file(representatives)
     # get_species(representatives)
     # Close the connection
-    # conn.close()
+    #conn.close()
