@@ -11,6 +11,6 @@ def tar_unzip(tu_inputfile):
     file.close()
 
 if __name__ == '__main__':
-    inputfile = snakemake.input[0]
+    inputfile = snakemake.input[0] # noqa: F821
 
     tar_unzip(inputfile)
