@@ -25,8 +25,8 @@ def replace_newick(alignment_input, newick_input, newick_output):
 
 
 if __name__ == '__main__':
-    alignment_input = snakemake.input[0]
-    newick_input = snakemake.input[1]
-    newick_output = snakemake.output[0]
+    alignment_input = snakemake.input[0] # noqa: F821
+    newick_input = snakemake.input[1] # noqa: F821
+    newick_output = snakemake.output[0] # noqa: F821
 
     replace_newick(alignment_input, newick_input, newick_output)
