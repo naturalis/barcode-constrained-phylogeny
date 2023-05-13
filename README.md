@@ -5,19 +5,32 @@ Both problems can be mitigated by using the [Open Tree of Life](https://tree.ope
 
 In this repository this concept is prototyped for both animal species and plant species.
 
-## Requirements/dependencies
+## Installation
 
-- [raxml-ng v1.1.0](https://github.com/amkozlov/raxml-ng/releases)
-- [macse v2.06](https://bioweb.supagro.inra.fr/macse/releases/macse_v2.06.jar)
-- [sqlite3](https://sqlite.org/download.html) **which version?**
-- python v3.11
-- java v8
+The pipeline and its dependencies are managed using conda. On a linux or osx system, you can follow these steps to set up the `bactria` Conda environment using an `environment.yml` file and a `requirements.txt` file:
 
-Further dependencies are specified in [requirements.txt](requirements.txt)
-
-## How to install
-
-**Solve this with conda. Right now it's Frankensteined together with a download of MACSE, but not of RAXML or SQLite. Very inconsistent, needs to be improved. Also, which java is required?**
+1. **Clone the Repository:**  
+   Clone the repository containing the environment files to your local machine:
+   ```bash
+   git clone https://github.com/naturalis/barcode-constrained-phylogeny.git
+   cd barcode-constrained-phylogeny
+2. **Create the Conda Environment:**
+   Create the bactria Conda environment using the environment.yml file with the following command:
+   ```bash
+   conda env create -f environment.yml
+   ```
+   This command will create a new Conda environment named bactria with the packages specified in the environment.yml file. This file also includes pip packages specified in the requirements.txt file, which will be installed after the Conda packages.
+3. **Activate the Environment:**
+   After creating the environment, activate it using the conda activate command:
+   ```bash
+   conda activate bactria
+   ```
+4. **Verify the Environment:**
+   Verify that the bactria environment was set up correctly and that all packages were installed using the conda list command:
+   ```bash
+   conda list
+   ```
+   This command will list all packages installed in the active Conda environment. You should see all of the packages specified in the environment.yml file and the requirements.txt file.
 
 ## How to run
 
