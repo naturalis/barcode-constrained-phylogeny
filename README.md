@@ -34,7 +34,7 @@ The pipeline and its dependencies are managed using conda. On a linux or osx sys
 
 ## How to run
 
-**Explain here how to run the snakemake targets**
+⚠️ **Explain here how to run the snakemake targets**
 
 ## Repository layout
 
