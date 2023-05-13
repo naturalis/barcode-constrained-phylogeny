@@ -9,4 +9,4 @@ dependencies:
 #  - perl-bio-phylo-forest-dbtree
   - pip
   - pip:
-    - -r file:requirements.txt  
+    - -r requirements.txt  
