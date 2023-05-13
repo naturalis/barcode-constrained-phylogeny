@@ -16,6 +16,7 @@ The pipeline and its dependencies are managed using conda. On a linux or osx sys
    ```bash
    git clone https://github.com/naturalis/barcode-constrained-phylogeny.git
    cd barcode-constrained-phylogeny
+   ```
 2. **Create the Conda Environment:**
    Create the bactria Conda environment using the environment.yml file with the following command:
    ```bash
