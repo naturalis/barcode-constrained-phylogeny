@@ -41,8 +41,8 @@ The pipeline and its dependencies are managed using conda. On a linux or osx sys
 
 ## Repository layout
 
-All data used and generated are located in the [data/](https://github.com/naturalis/barcode-constrained-phylogeny/tree/main/data/) directory. 
-The snakefile and python scripts are found in the [src/](https://github.com/naturalis/barcode-constrained-phylogeny/tree/main/src/) directory. 
+All data used and generated are located in the [data/](data/) directory. 
+The snakefile and python scripts are found in the [src/](src/) directory. 
 
 ## License
 
