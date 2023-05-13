@@ -46,7 +46,7 @@ def divide_fastafiles(conn):
 
 
 if __name__ == '__main__':
-    database_file = snakemake.input[0]
+    database_file = snakemake.input[0] # noqa: F821
     # Connect to the database (creates a new file if it doesn't exist)
 
     conn = sqlite3.connect(database_file)
