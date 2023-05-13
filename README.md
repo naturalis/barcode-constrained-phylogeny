@@ -1,3 +1,5 @@
+![workflow](https://github.com/naturalis/barcode-constrained-phylogeny/actions/workflows/python-package-conda.yml/badge.svg)
+
 # barcode-constrained-phylogeny
 This repository contains code and data for building very large, topologically-constrained barcode phylogenies through a divide-and-conquer strategy. Such trees are useful as reference materials in the comparable calculation of alpha and beta biodiversity metrics across metabarcoding assays. The input data for the approach we develop here comes from BOLD. The international database [BOLD Systems](https://www.boldsystems.org/index.php) contains DNA barcodes for hundred of thousands of species, with multiple barcodes per species. Theoretically, this data could be filtered and aligned per DNA marker to make phylogenetic trees. However, there are two limiting factors: building very large phylogenies is computationally intensive, and barcodes are not considered ideal for building big trees because they are short (providing insufficient signal to resolve large trees) and because they tend to saturate across large patristic distances.
 
