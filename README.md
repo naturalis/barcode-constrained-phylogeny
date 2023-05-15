@@ -7,6 +7,13 @@ Both problems can be mitigated by using the [Open Tree of Life](https://tree.ope
 
 In this repository this concept is prototyped for both animal species and plant species.
 
+## Currently added to the snakemake pipeline/repository
+- Extract BOLD data
+- Split data into FASTA files on family level
+- Align FASTA files
+- Make constraint trees for families 
+- Make subtrees from families using FASTA alignments and constraint trees 
+
 ## Installation
 
 The pipeline and its dependencies are managed using conda. On a linux or osx system, you can follow these steps to set up the `bactria` Conda environment using an `environment.yml` file and a `requirements.txt` file:
@@ -35,9 +42,20 @@ The pipeline and its dependencies are managed using conda. On a linux or osx sys
    ```
    This command will list all packages installed in the active Conda environment. You should see all of the packages specified in the environment.yml file and the requirements.txt file.
 
+## Configuration
+Important before runnning the snakemake pipeline is to change in src/config.yaml the number of threads available on your computer. 
+
 ## How to run
+Here is an overview of all the rules in the snakefile_phylogeny:
+
+![graphviz (1)](https://github.com/naturalis/barcode-constrained-phylogeny/assets/70514560/2b7eb955-f3bc-4126-a7b4-e361a88f4010)
 
 ⚠️ **Explain here how to run the snakemake targets**
+How to run raxml for all alignments:
+```bash 
+snakemake -R all --snakefile snakefile_phylogeny -j {number of threads}
+```
+Fill the same number at {number of threads} as you filled in previously in src/config.yaml
 
 ## Repository layout
 
