@@ -43,7 +43,7 @@ The pipeline and its dependencies are managed using conda. On a linux or osx sys
    This command will list all packages installed in the active Conda environment. You should see all of the packages specified in the environment.yml file and the requirements.txt file.
 
 ## Configuration
-Important before runnning the snakemake pipeline is to change in src/config.yaml the number of threads available on your computer. 
+Important before runnning the snakemake pipeline is to change in src/config.yaml the number of threads available on your computer. It is also important to change the marker to be researched in the config.yaml. The file [BOLD tsv_file](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022) must be downloaded manually and stored in the [data/](data/) directory.
 
 ## How to run
 Here is an overview of all the rules in the snakefile_phylogeny:
@@ -55,7 +55,12 @@ How to run raxml for all alignments:
 ```bash 
 snakemake -R all --snakefile snakefile_phylogeny -j {number of threads}
 ```
+Snakemake rules can be performed separately:
+```bash 
+snakemake -R {Rule} --snakefile snakefile_phylogeny -j {number of threads}
+```
 Fill the same number at {number of threads} as you filled in previously in src/config.yaml
+In {Rule} insert the rule to be performed.
 
 ## Repository layout
 
