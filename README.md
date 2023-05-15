@@ -37,7 +37,7 @@ The pipeline and its dependencies are managed using conda. On a linux or osx sys
 
 ## How to run
 
-The pipeline is implemented using snakemake, which is available within the coda environment that results from the installation. Important before runnning the snakemake pipeline is to change in [src/config.yaml](src/config.yaml) the number of threads available on your computer. Which marker gene is used in the pipeline is also specified in the config.yaml (default COI-5P). Prior to execution, the BOLD data package to use (we used the [release of 30 December 2022](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022)) must be downloaded manually and stored in the [data/](data/) directory.
+The pipeline is being implemented using snakemake, which is available within the coda environment that results from the installation. Important before runnning the snakemake pipeline is to change in [src/config.yaml](src/config.yaml) the number of threads available on your computer. Which marker gene is used in the pipeline is also specified in the config.yaml (default COI-5P). Prior to execution, the BOLD data package to use (we used the [release of 30 December 2022](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022)) must be downloaded manually and stored in the [data/](data/) directory.
 
 From the barcode-constrained-phylogny directory move into directory where the snakefile is located:
 ```bash 
@@ -60,6 +60,14 @@ In {Rule} insert the rule to be performed.
 Here is an overview of all the rules in the snakefile_phylogeny:
 
 ![graphviz (1)](https://github.com/naturalis/barcode-constrained-phylogeny/assets/70514560/2b7eb955-f3bc-4126-a7b4-e361a88f4010)
+
+## To do
+
+The project is under active development, with the following action items for the short term:
+
+- Select exemplars from each subset, align the exemplars across subsets, infer a backbone
+- Graft the subtrees into the backbone
+- Develop a data package with inputs and outputs of an example run
 
 ## Repository layout
 
