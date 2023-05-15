@@ -43,15 +43,14 @@ The pipeline and its dependencies are managed using conda. On a linux or osx sys
    This command will list all packages installed in the active Conda environment. You should see all of the packages specified in the environment.yml file and the requirements.txt file.
 
 ## Configuration
-Important before runnning the snakemake pipeline is to change in src/config.yaml the number of threads available on your computer. It is also important to change the marker to be researched in the config.yaml. The file [BOLD tsv_file](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022) must be downloaded manually and stored in the [data/](data/) directory.
+Important before runnning the snakemake pipeline is to change in [src/config.yaml](src/config.yaml) the number of threads available on your computer. It is also important to change the marker to be researched in the config.yaml (default COI-5P). The file [BOLD tar.gz_file](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022) must be downloaded manually and stored in the [data/](data/) directory.
 
 ## How to run
-Here is an overview of all the rules in the snakefile_phylogeny:
-
-![graphviz (1)](https://github.com/naturalis/barcode-constrained-phylogeny/assets/70514560/2b7eb955-f3bc-4126-a7b4-e361a88f4010)
-
-⚠️ **Explain here how to run the snakemake targets**
-How to run raxml for all alignments:
+From the barcode-constrained-phylogny directory move to directory where the snakefile is located:
+```bash 
+cd src/
+```
+How to run raxml for all family alignments:
 ```bash 
 snakemake -R all --snakefile snakefile_phylogeny -j {number of threads}
 ```
@@ -62,10 +61,14 @@ snakemake -R {Rule} --snakefile snakefile_phylogeny -j {number of threads}
 Fill the same number at {number of threads} as you filled in previously in src/config.yaml.
 In {Rule} insert the rule to be performed.
 
+Here is an overview of all the rules in the snakefile_phylogeny:
+
+![graphviz (1)](https://github.com/naturalis/barcode-constrained-phylogeny/assets/70514560/2b7eb955-f3bc-4126-a7b4-e361a88f4010)
+
 ## Repository layout
 
 All data used and generated are located in the [data/](data/) directory. 
-The snakefile and python scripts are found in the [src/](src/) directory. 
+The snakefile, snakefile configuration file and python scripts are found in the [src/](src/) directory. 
 
 ## License
 
