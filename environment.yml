@@ -6,7 +6,7 @@ channels:
 dependencies:
   - raxml-ng
   - macse
-#  - perl-bio-phylo-forest-dbtree
+  - perl-bio-phylo-forest-dbtree
   - pip
   - pip:
     - -r requirements.txt  
