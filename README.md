@@ -7,13 +7,6 @@ Both problems can be mitigated by using the [Open Tree of Life](https://tree.ope
 
 In this repository this concept is prototyped for both animal species and plant species.
 
-## Currently added to the snakemake pipeline/repository
-- Extract BOLD data
-- Split data into FASTA files on family level
-- Align FASTA files
-- Make constraint trees for families 
-- Make subtrees from families using FASTA alignments and constraint trees 
-
 ## Installation
 
 The pipeline and its dependencies are managed using conda. On a linux or osx system, you can follow these steps to set up the `bactria` Conda environment using an `environment.yml` file and a `requirements.txt` file:
@@ -42,23 +35,26 @@ The pipeline and its dependencies are managed using conda. On a linux or osx sys
    ```
    This command will list all packages installed in the active Conda environment. You should see all of the packages specified in the environment.yml file and the requirements.txt file.
 
-## Configuration
-Important before runnning the snakemake pipeline is to change in [src/config.yaml](src/config.yaml) the number of threads available on your computer. It is also important to change the marker to be researched in the config.yaml (default COI-5P). The file [BOLD tar.gz_file](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022) must be downloaded manually and stored in the [data/](data/) directory.
-
 ## How to run
-From the barcode-constrained-phylogny directory move to directory where the snakefile is located:
+
+The pipeline is implemented using snakemake, which is available within the coda environment that results from the installation. Important before runnning the snakemake pipeline is to change in [src/config.yaml](src/config.yaml) the number of threads available on your computer. Which marker gene is used in the pipeline is also specified in the config.yaml (default COI-5P). Prior to execution, the BOLD data package to use (we used the [release of 30 December 2022](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022)) must be downloaded manually and stored in the [data/](data/) directory.
+
+From the barcode-constrained-phylogny directory move into directory where the snakefile is located:
 ```bash 
 cd src/
 ```
-How to run raxml for all family alignments:
+
+How to run the pipeline for all family alignments:
 ```bash 
 snakemake -R all --snakefile snakefile_phylogeny -j {number of threads}
 ```
+
 Snakemake rules can be performed separately:
 ```bash 
 snakemake -R {Rule} --snakefile snakefile_phylogeny -j {number of threads}
 ```
-Fill the same number at {number of threads} as you filled in previously in src/config.yaml.
+
+Enter the same number at {number of threads} as you filled in previously in src/config.yaml.
 In {Rule} insert the rule to be performed.
 
 Here is an overview of all the rules in the snakefile_phylogeny:
