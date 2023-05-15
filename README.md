@@ -59,7 +59,7 @@ Snakemake rules can be performed separately:
 ```bash 
 snakemake -R {Rule} --snakefile snakefile_phylogeny -j {number of threads}
 ```
-Fill the same number at {number of threads} as you filled in previously in src/config.yaml
+Fill the same number at {number of threads} as you filled in previously in src/config.yaml.
 In {Rule} insert the rule to be performed.
 
 ## Repository layout
