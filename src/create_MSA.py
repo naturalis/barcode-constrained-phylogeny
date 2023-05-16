@@ -26,8 +26,8 @@ def remove_exclamation_mark(out_file, outfile_temp):
 
 
 if __name__ == '__main__':
-    masce_path = snakemake.input[0]
-    in_file = snakemake.input[1]
-    out_file = snakemake.output[0]
+    masce_path = snakemake.input[0] # noqa: F821
+    in_file = snakemake.input[1] # noqa: F821
+    out_file = snakemake.output[0] # noqa: F821
     align_seq(in_file, out_file)
 

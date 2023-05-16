@@ -113,7 +113,7 @@ rule all:
 #     threads: config["cpu_cores"]
 #     shell: "touch {input}"
 
-
+#
 # rule test_raxml:
 #     input: "../data/raxml/Abacionidae/Abacionidae_{}.raxml.log".format(acid)
 #     threads: config["cpu_cores"]
