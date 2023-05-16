@@ -24,9 +24,11 @@ if __name__ == '__main__':
     database_file = snakemake.input[0]
     alignment_input = snakemake.input[1]
 
+
+
     alignment_output = snakemake.output[0]
 
     conn = sqlite3.connect(database_file)
     cursor = conn.cursor()
 
-    dict = replace_with_ott(cursor, alignment_input, alignment_output)
+    replace_with_ott(cursor, alignment_input, alignment_output)

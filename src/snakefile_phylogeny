@@ -1,6 +1,7 @@
 configfile: "config.yaml"
 
 database_file = "../data/databases/BOLD_{}_barcodes.db".format(config["marker"])
+acid = config['acid']
 
 rule unzip:
     input: config["file_names"]["bold_zip"]
@@ -48,7 +49,7 @@ rule download_macse:
 # could be rewritten to just use shell)
 rule align_masce:
     input:  '../bin/macse_v2.06.jar', "../data/fasta/family/{family}.fasta"
-    output: "../data/fasta/alignment/{family}_NT.fasta", "../data/fasta/alignment/{family}_AA.fasta"
+    output: "../data/fasta/alignment/{{family}}_{}.fasta".format(acid)
     threads: config["cpu_cores"]
     script: "create_MSA.py"
 
@@ -60,7 +61,7 @@ rule get_opentree_zip:
 
 
 rule unique_otts:
-    input: "../data/fasta/alignment/{family}_NT_corrected.fasta"
+    input: "../data/fasta/alignment/{{family}}_{}_corrected.fasta".format(acid)
     output: "../data/ott_lists/{family}_otts.txt"
     threads: config["cpu_cores"]/2
     shell: 'cat {input} | egrep ">" | cut -f1 -d "_" | tr -d ">" | sort -u > {output}'
@@ -81,30 +82,42 @@ rule megatree_pruner:
 
 
 rule replace_ids:
-    input: database_file, "../data/fasta/alignment/{family}_NT.fasta"
-    output: "../data/fasta/alignment/{family}_NT_corrected.fasta"
+    input: database_file, "../data/fasta/alignment/{{family}}_{}.fasta".format(acid)
+    output: "../data/fasta/alignment/{{family}}_{}_corrected.fasta".format(acid)
     threads: config["cpu_cores"]/2
     script: "replace_alignment_ids.py"
 
 
 rule edit_newick:
-    input: "../data/fasta/alignment/{family}_NT_corrected.fasta", "../data/newick/{family}_constraint_temp.nwk"
+    input: "../data/fasta/alignment/{{family}}_{}_corrected.fasta".format(acid), "../data/newick/{family}_constraint_temp.nwk"
     output:  "../data/newick/{family}_constraint.nwk"
     threads: config["cpu_cores"]/2
     script: "edit_constraint.py"
 
 
 rule raxml:
-    input: "../data/fasta/alignment/{family}_NT_corrected.fasta", "../data/newick/{family}_constraint.nwk"
-    output: "../data/raxml/{family}.raxml.log"
+    input: "../data/fasta/alignment/{{family}}_{}_corrected.fasta".format(acid), "../data/newick/{family}_constraint.nwk"
+    output: "../data/raxml/{{family}}/{{family}}_{}.raxml.log".format(acid)
     threads: config["cpu_cores"]/2
-    shell: "mkdir -p ../data/raxml | ../bin/raxml-ng --msa {input[0]} --model GTR+G --tree-constraint {input[1]} --prefix ../data/raxml/{wildcards.family}"
+    shell: "mkdir -p ../data/raxml/{{wildcards.family}} | ../bin/raxml-ng --msa {{input[0]}} --model GTR+G --tree-constraint {{input[1]}} --prefix ../data/raxml/{{wildcards.family}}/{{wildcards.family}}_{}".format(acid)
 
-#
-rule test_raxml:
-    input: "../data/raxml/Abylidae.raxml.log"
+
+rule all:
+    input: dynamic("../data/raxml/{{family}}/{{family}}_{}.raxml.log".format(acid))
     threads: config["cpu_cores"]
-    shell: 'touch {input}'
+    shell: "touch {input}"
+
+
+# rule test_change_ids_all:
+#     input: dynamic("../data/raxml/{family}.raxml.log")
+#     threads: config["cpu_cores"]
+#     shell: "touch {input}"
+
+
+# rule test_raxml:
+#     input: "../data/raxml/Abacionidae/Abacionidae_{}.raxml.log".format(acid)
+#     threads: config["cpu_cores"]
+#     shell: 'touch {input}'
 
 #     # rule test_constraint:
 #     #     input: "data/newick/Acanthosomatidae_constraint.nwk"
