@@ -16,6 +16,12 @@ def get_species(representatives):
 
 if __name__ == '__main__':
     # For personal use, not for snakemake
-    outputfile = "representatives.txt"
+    # Species.txt is not used for current repository
+    outputfile = "test/matK/representatives/representatives.txt"
     representatives = []
+    rep = "test/matK/matrix/submatrices_representatives.txt"
+    with open(rep,"r") as input:
+        headers = input.readlines()
+        for h in headers:
+            representatives.append(h)
     get_species(representatives)
