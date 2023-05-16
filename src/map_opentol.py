@@ -158,9 +158,9 @@ def alter_db(conn, cursor):
 
 
 if __name__ == '__main__':
-    temp_database_name = snakemake.input[0]
-    marker = snakemake.params.marker
-    database_file = snakemake.output[0]
+    temp_database_name = snakemake.input[0] # noqa: F821
+    marker = snakemake.params.marker # noqa: F821
+    database_file = snakemake.output[0] # noqa: F821
     if marker == "COI-5P":
         kingdom = 'Animals'
     else:

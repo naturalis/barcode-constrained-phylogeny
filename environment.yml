@@ -1,0 +1,12 @@
+name: bactria
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - raxml-ng
+  - macse
+  - perl-bio-phylo-forest-dbtree
+  - pip
+  - pip:
+    - -r requirements.txt  

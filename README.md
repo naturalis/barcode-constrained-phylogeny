@@ -1,56 +1,78 @@
-# barcode-constrained-phylogeny
+![workflow](https://github.com/naturalis/barcode-constrained-phylogeny/actions/workflows/python-package-conda.yml/badge.svg)
+
+# Barcode tree inference and analysis
 This repository contains code and data for building very large, topologically-constrained barcode phylogenies through a divide-and-conquer strategy. Such trees are useful as reference materials in the comparable calculation of alpha and beta biodiversity metrics across metabarcoding assays. The input data for the approach we develop here comes from BOLD. The international database [BOLD Systems](https://www.boldsystems.org/index.php) contains DNA barcodes for hundred of thousands of species, with multiple barcodes per species. Theoretically, this data could be filtered and aligned per DNA marker to make phylogenetic trees. However, there are two limiting factors: building very large phylogenies is computationally intensive, and barcodes are not considered ideal for building big trees because they are short (providing insufficient signal to resolve large trees) and because they tend to saturate across large patristic distances.
 
 Both problems can be mitigated by using the [Open Tree of Life](https://tree.opentreeoflife.org/opentree/argus/opentree13.4@ott93302) as a further source of phylogenetic signal. The BOLD data can be split into chunks that correspond to Open Tree of Life clades. These chunks can be made into alignments and subtrees. The OpenTOL can be used as a constraint in the algorithms to make these. The chunks are then combined in a large synthesis by grafting them on a backbone made from exemplar taxa from the subtrees. Here too, the OpenTOL is a source of phylogenetic constraint.
 
 In this repository this concept is prototyped for both animal species and plant species.
 
-## Requirements/dependencies
+## Installation
 
-- [raxml-ng v1.1.0](https://github.com/amkozlov/raxml-ng/releases)
-- [macse v2.06](https://bioweb.supagro.inra.fr/macse/releases/macse_v2.06.jar)
-- [sqlite3](https://sqlite.org/download.html) **which version?**
-- python **which version?**
-- java **which version?**
+The pipeline and its dependencies are managed using conda. On a linux or osx system, you can follow these steps to set up the `bactria` Conda environment using an `environment.yml` file and a `requirements.txt` file:
 
-Further dependencies are specified in [requirements.txt](requirements.txt)
-
-## How to install
-
-**Solve this with conda. Right now it's Frankensteined together with a download of MACSE, but not of RAXML or SQLite. Very inconsistent, needs to be improved. Also, which java is required?**
+1. **Clone the Repository:**  
+   Clone the repository containing the environment files to your local machine:
+   ```bash
+   git clone https://github.com/naturalis/barcode-constrained-phylogeny.git
+   cd barcode-constrained-phylogeny
+   ```
+2. **Create the Conda Environment:**
+   Create the bactria Conda environment using the environment.yml file with the following command:
+   ```bash
+   conda env create -f environment.yml
+   ```
+   This command will create a new Conda environment named bactria with the packages specified in the environment.yml file. This file also includes pip packages specified in the requirements.txt file, which will be installed after the Conda packages.
+3. **Activate the Environment:**
+   After creating the environment, activate it using the conda activate command:
+   ```bash
+   conda activate bactria
+   ```
+4. **Verify the Environment:**
+   Verify that the bactria environment was set up correctly and that all packages were installed using the conda list command:
+   ```bash
+   conda list
+   ```
+   This command will list all packages installed in the active Conda environment. You should see all of the packages specified in the environment.yml file and the requirements.txt file.
 
 ## How to run
 
-**Explain here how to run the snakemake targets**
+The pipeline is being implemented using snakemake, which is available within the coda environment that results from the installation. Important before runnning the snakemake pipeline is to change in [src/config.yaml](src/config.yaml) the number of threads available on your computer. Which marker gene is used in the pipeline is also specified in the config.yaml (default COI-5P). Prior to execution, the BOLD data package to use (we used the [release of 30 December 2022](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022)) must be downloaded manually and stored in the [data/](data/) directory. If a BOLD release from another date is used the file names in config.yaml have to be updated. 
+
+From the barcode-constrained-phylogny directory move into directory where the snakefile is located:
+```bash 
+cd src/
+```
+
+How to run the pipeline for all family alignments:
+```bash 
+snakemake -R all --snakefile snakefile_phylogeny -j {number of threads}
+```
+
+Snakemake rules can be performed separately:
+```bash 
+snakemake -R {Rule} --snakefile snakefile_phylogeny -j {number of threads}
+```
+
+Enter the same number at {number of threads} as you filled in previously in src/config.yaml.
+In {Rule} insert the rule to be performed.
+
+Here is an overview of all the rules in the snakefile_phylogeny:
+
+![graphviz (1)](https://github.com/naturalis/barcode-constrained-phylogeny/assets/70514560/2b7eb955-f3bc-4126-a7b4-e361a88f4010)
+
+## To do
+
+The project is under active development, with the following action items for the short term:
+
+- Select exemplars from each subset, align the exemplars across subsets, infer a backbone
+- Graft the subtrees into the backbone
+- Develop a data package with inputs and outputs of an example run
 
 ## Repository layout
 
-**Explain here how the repository is laid out**
-
-## Scripts
-### [unzip_targz.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/unzip_targz.py)
-- Unzips a targz file, more specifically a [datarelease](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022) from BOLD Systems containing a snapshot of the barcode database (more than 8 million barcodes as of 30-DEC-2022).
-
-### [bold_data_dump.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/bold_data_dump.py) 
-- Puts relevant BOLD data columns into a custom SQLite database.
-
-### [alter_tables.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/alter_tables.py)
-- Manipulates the BOLD data in the custom database and makes two tables, one for taxon data and one for barcode entries.
-
-### [map_opentol.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/map_opentol.py)
-- Uses the [Open Tree of Life API](https://github.com/OpenTreeOfLife/germinator/wiki/TNRS-API-v3#match_names) to map BOLD taxon names to Open Tree of Life taxonomy IDs. 
-
-### [family_fasta.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/src/family_fasta.py)
-- Barcodes from the custom database are divided into their taxonomic family groups and written to FASTA files: 'fasta/family/{familyname}.fasta'
-
-### [download_macse.py](https://github.com/naturalis/barcode-constrained-phylogeny/blob/macse/src/download_macse.py)
-- Download program macse (Only works on linux distributions).
-
-### [create_MSA](https://github.com/naturalis/barcode-constrained-phylogeny/blob/macse/src/create_MSA.py)
-- Using macse create a Multiple Sequence Alignment in files: '{filename_NT}.fasta' and '{filename_AA}.fast'.
-
-### [create_tree](https://github.com/naturalis/barcode-constrained-phylogeny/blob/macse/src/create_tree.py)
-- A distance matrix is made based on a NT/AA file. From the distance matrix a UPGMA tree is made. 
+All data used and generated are located in the [data/](data/) directory. 
+The snakefile, snakefile configuration file and python scripts are found in the [src/](src/) directory. 
 
 ## License
 

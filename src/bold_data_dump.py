@@ -97,9 +97,9 @@ def make_distinct(conn, cursor):
 
 
 if __name__ == '__main__':
-    database = snakemake.output[0]
-    bold_tsv = snakemake.input[0]
-    marker = snakemake.params.marker
+    database = snakemake.output[0] # noqa: F821
+    bold_tsv = snakemake.input[0] # noqa: F821
+    marker = snakemake.params.marker # noqa: F821
 
     # Make connection to the database
     conn = sqlite3.connect(database)
