@@ -1,10 +1,12 @@
 
-# Either use COI-5P or matK_rbcL
-marker: COI-5P
-
 # IMPORTANT: This depends on your own system. You can check your cpu cores in a ubuntu terminal using the command ls
 cpu_cores: 8
 
+# Either use COI-5P or matK_rbcL
+marker: COI-5P
+
+# Nucleotide alignments (NT) or aminoacid (AA) for MACSE alignment
+acid: NT
 
 name: phylogeny
 
