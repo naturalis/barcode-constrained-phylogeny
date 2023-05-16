@@ -6,6 +6,7 @@ fasta_files = glob.glob("data/family_fastas/*.fasta")
 
 database_file = "data/databases/BOLD_{}_barcodes_test.db".format(config["marker"])
 
+XXX This needs to be a pipeline, i.e. one target depends on another. Right now these all look like unconnected operations.
 
 rule unzip:
     input: config["file_names"]["bold_zip"]
@@ -43,13 +44,13 @@ rule family_fasta:
     script:
         "family_fasta.py"
 
-
+# XXX delete me. This is not needed because macse is handled by conda
 rule download_macse:
     output: 'data/macse_v2.06.jar'
     shell: "wget -P data/ https://bioweb.supagro.inra.fr/macse/releases/macse_v2.06.jar"
 
 
-# could be rewritten to just use shell)
+# XXX update me to use the macse as provided by conda, which is an executable `macse`
 rule align_masce:
     input:  'data/macse_v2.06.jar', "data/fasta/family/{family}.fasta"
     output: "data/fasta/alignment/{family}_NT.fasta", "data/fasta/alignment/{family}_AA.fasta"
