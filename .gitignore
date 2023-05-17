@@ -1,3 +1,19 @@
+# ignore pycharm files
+.idea
+
+# ignore OSX files
+.DS_Store
+
+# ignore local data
+data/BOLD_Public.30-Dec-2022.tar.gz
+data/databases/
+data/fasta/
+data/mnt/
+data/opentree/
+
+# ignore snakemake hidden files
+src/.snakemake/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
