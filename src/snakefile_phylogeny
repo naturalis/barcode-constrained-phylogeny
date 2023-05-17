@@ -57,7 +57,7 @@ rule align_masce:
 rule get_opentree_zip:
     output: "../data/opentree/opentree13.4_tree/labelled_supertree/labelled_supertree.tre"
     threads: config["cpu_cores"]
-    shell:  "wget -P ../data/opentree/ https://files.opentreeoflife.org/synthesis/opentree13.4/opentree13.4tree.tgz" "tar -xvzf opentree13.4tree.tgz --directory ../data/opentree"
+    shell:  "wget -P ../data/opentree/ https://files.opentreeoflife.org/synthesis/opentree13.4/opentree13.4tree.tgz && tar -xvzf ../data/opentree/opentree13.4tree.tgz --directory ../data/opentree"
 
 
 rule unique_otts:
