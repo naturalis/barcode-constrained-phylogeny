@@ -3,21 +3,20 @@ from ete3 import Tree       # To use for distance matrix
 import pandas as pd
 import os
 
+# Getting rid of test with excel and changing it back to csv file
+# Loop can maybe be done in snakemake
+# From data/fasta/family get  per family dir
+#
 
-def loop_over_fam():
+def loop_over_fam(path):
     for family in family_list:
-        mode = get_mode_excelwriter(family, family_list)
+        outputfile = ""
+        #mode = get_mode_excelwriter(family, family_list)
         family = family.split(".")  # Expect a X.fasta.raxml.bestTree
         dist_df = create_matrix(family[0])
-        write_matrix_to_file(dist_df, family[0], outputfile, mode)
 
+        #write_matrix_to_file(dist_df, family[0], outputfile, mode) -> write_matrix_to_csv
 
-def get_mode_excelwriter(family, flist):
-    if family == flist[0]:
-        mode = "w"
-    else:
-        mode = "a"
-    return mode
 
 def create_matrix(family):
     """Get newick from RAXML output.
@@ -49,15 +48,16 @@ def write_matrix_to_file(dist_df, family, outputfile, mode):
     The matrix will be appended to the path file.
     The matrix will on his own sheet with the corresponding family name.
     """
-    path = r"test/matK/{}".format(outputfile)
-    with pd.ExcelWriter(path, engine='openpyxl', mode=mode) as writer:
-        dist_df.to_excel(writer, sheet_name=family)
+    dist_df.to_csv("data/control_abyl.txt",sep='\t',header=True)
 
 
 if __name__ == "__main__":
-    par_path = os.path.abspath(os.path.join(os.pardir))
-    path = snakemake.input[0]
-    outputfile = snakemake.output[0]
-    family_list = os.listdir(par_path + path)
-    loop_over_fam()
+    path2 = os.getcwd()     # Get current working directory
+    path = snakemake.input[0]   # noqa: F821
+    path = os.path.normpath(path)
+    total_path = os.path.join(path2, path)
+    print(total_path)
+    family_list = os.listdir(os.path.join(path2, path))
+    print(family_list)
+    #loop_over_fam(path)
 

@@ -14,8 +14,8 @@ def representatives_to_file(representatives, inputfile, output):
 
 
 if __name__ == '__main__':
-    inputfile = snakemake.input[0]
-    representatives = snakemake.input[1]
-    outputfile = snakemak.output[2]
+    inputfile = snakemake.input[0]  # noqa: F821
+    representatives = snakemake.input[1] # noqa: F821
+    outputfile = snakemak.output[2] # noqa: F821
     representatives_to_file(representatives, inputfile, outputfile)
 

@@ -42,9 +42,9 @@ def alter_newick_string(otol_newick, dict, file):
 
 if __name__ == '__main__':
     # Mock up for expected snakemake
-    otol_newick = snakemake.input[0]
-    representatives = snakemake.input[1] # in fasta format
-    altered_newick = snakemak.output[0]
+    otol_newick = snakemake.input[0] # noqa: F821
+    representatives = snakemake.input[1] # noqa: F821 representative.fasta file
+    altered_newick = snakemak.output[0] # noqa: F821
     newick = change_newick_backbone(otol_newick)
     dict = make_dict(representatives)
     alter_newick_string(newick, dict, altered_newick)

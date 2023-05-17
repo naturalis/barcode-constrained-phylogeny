@@ -87,17 +87,14 @@ def alter_matrix(dist_df, blacklist, mode, outputfile, family):
 
 
 if __name__ == "__main__":
-    # TODO change with snakemake
-    # TODO get rid of calling db like this
-    db_file = snakemake.input[0]
+    db_file = snakemake.input[0]    # noqa: F821
     excel_file = "test/matK/matrix/dist_matK.xlsx"
-    #outputfile = snakemake.output[0]
-    #conn = sqlite3.connect(db_file)
+    outputfile = snakemake.output[0]    # noqa: F821
+    conn = sqlite3.connect(db_file)
     # Create a cursor
-    #cursor = conn.cursor()
+    cursor = conn.cursor()
     flist = create_fam_list()
     df = read_xlsx(excel_file, flist)
-    print(df.keys())
-    #loop_over_df(flist, cursor, df)
+    loop_over_df(flist, cursor, df)
     # Close the connection
-    #conn.close()
+    conn.close()
