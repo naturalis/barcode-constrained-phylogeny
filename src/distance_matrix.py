@@ -9,13 +9,13 @@ import os
 #
 
 def loop_over_fam(path):
-    for family in family_list:
-        outputfile = ""
-        #mode = get_mode_excelwriter(family, family_list)
-        family = family.split(".")  # Expect a X.fasta.raxml.bestTree
-        dist_df = create_matrix(family[0])
-
-        #write_matrix_to_file(dist_df, family[0], outputfile, mode) -> write_matrix_to_csv
+    for family in path:
+        if family.__contains__("bestTree"):
+            print("fam",family)
+            family = family.split(".")  # Expect a X.fasta.raxml.bestTree
+            outputfile = "data/fasta/{}/dist_matrix_{}.txt".format(family[0],family[0])
+            dist_df = create_matrix(family[0])
+            write_matrix_to_file(dist_df, outputfile) # write matrix to csv
 
 
 def create_matrix(family):
@@ -27,7 +27,8 @@ def create_matrix(family):
     Use that distance to add to the dataframe.
     :return: dataframe containing distances.
     """
-    tree = Tree("test/matK/{}.fasta.raxml.bestTree".format(family),
+    print("data/fasta/{}/{}.fasta.raxml.bestTree".format(family,family))
+    tree = Tree("data/fasta/{}/{}.fasta.raxml.bestTree".format(family,family),
                 format=1)  # Format indicates newick structure in file
     leave = list(tree.get_leaves())  # Get all leaves
     names = []
@@ -42,22 +43,20 @@ def create_matrix(family):
     dist_df = pd.DataFrame(data=dmat, index=names, columns=names)  # Make into dataframe
     return dist_df
 
-def write_matrix_to_file(dist_df, family, outputfile, mode):
+def write_matrix_to_file(dist_df, outputfile):
     """Append the matrix to file.
     Path contains the path to the excel file.
     The matrix will be appended to the path file.
     The matrix will on his own sheet with the corresponding family name.
     """
-    dist_df.to_csv("data/control_abyl.txt",sep='\t',header=True)
+    dist_df.to_csv(outputfile,sep='\t',header=True)
 
 
 if __name__ == "__main__":
     path2 = os.getcwd()     # Get current working directory
     path = snakemake.input[0]   # noqa: F821
-    path = os.path.normpath(path)
     total_path = os.path.join(path2, path)
-    print(total_path)
     family_list = os.listdir(os.path.join(path2, path))
     print(family_list)
-    #loop_over_fam(path)
+    loop_over_fam(family_list)
 

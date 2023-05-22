@@ -20,31 +20,26 @@ megatree-loader -i labelled_supertree.tre -d {outputfile.db}
 import sqlite3
 import os
 import pandas as pd
-
+"""
 par_path = os.path.abspath(os.path.join(os.pardir))
 # User arguments
 family_list = os.listdir(par_path + "/src/test/matK/")
 file = "test/matK/matrix/dist_matK.xlsx"
 par_path = os.path.abspath(os.path.join(os.pardir))
+"""
 
 
-def create_fam_list():
-    par_path = os.path.abspath(os.path.join(os.pardir))
-    family_list = os.listdir(par_path + "/src/test/matK/trees/")
-    flist = []
-    for family in family_list:
-        family = family.split(".")
-        flist.append(family[0])
-    return flist
-
-def loop_over_df(flist, cursor, df):
+def loop_over_families(flist, cursor):
     for family in flist:
-        df1 = df.get(family)
-        names = get_otts_in_df(df1)
+            #family = family.split(".")
+        outputfile = "data/fasta/{}/altered_matrix_{}.txt".format(family,family)
+        csv_file = "data/fasta/{}/dist_matrix_{}.txt".format(family,family)
+        df = pd.read_csv(csv_file,delimiter="\t")
+        print(df)
+        names = get_otts_in_df(df)
         # Write barcodes to FASTA in family groups
-        mode = get_mode_excelwriter(family, flist)
         blacklist = get_blacklist(names, cursor)
-        alter_matrix(df1, blacklist, mode, outputfile, family)
+        alter_matrix(df, blacklist, outputfile)
 
 def get_otts_in_df(df):
     names = []
@@ -53,15 +48,6 @@ def get_otts_in_df(df):
     names.pop(0)
     return names
 
-def get_mode_excelwriter(family, flist):
-    if family == flist[0]:
-        mode = "w"
-    else:
-        mode = "a"
-    return mode
-def read_xlsx(excel_file,family):
-    df = pd.read_excel(excel_file, sheet_name=family, index_col=[0])
-    return df
 
 def get_blacklist(names, cursor):
     """Create matrix containing only the ott found in the database"""
@@ -76,25 +62,23 @@ def get_blacklist(names, cursor):
     return blacklist
 
 
-def alter_matrix(dist_df, blacklist, mode, outputfile, family):
-    #TODO returns warning but no error, seems to work
+def alter_matrix(dist_df, blacklist, outputfile):
     df = dist_df[dist_df.columns.drop(blacklist)]   # Working
-    df.drop(blacklist, inplace=True, axis=0)
-    path = r"test/matK/{}".format(outputfile)
-    with pd.ExcelWriter(path, engine='openpyxl', mode=mode) as writer:
-        df.to_excel(writer, sheet_name=family)
+    #df.drop(blacklist, inplace=True, axis=0) # -> Why not working, it worked last week :(
+    df.to_csv(outputfile, sep='\t', header=True)
+    print(df)
     return df
 
 
 if __name__ == "__main__":
-    db_file = snakemake.input[0]    # noqa: F821
-    excel_file = "test/matK/matrix/dist_matK.xlsx"
-    outputfile = snakemake.output[0]    # noqa: F821
+    path2 = os.getcwd()  # Get current working directory
+    path = snakemake.input[0]  # noqa: F821
+    total_path = os.path.join(path2, path)
+    family_list = os.listdir(os.path.join(path2, path))
+    db_file = snakemake.input[1]    # noqa: F821
     conn = sqlite3.connect(db_file)
     # Create a cursor
     cursor = conn.cursor()
-    flist = create_fam_list()
-    df = read_xlsx(excel_file, flist)
-    loop_over_df(flist, cursor, df)
+    loop_over_families(family_list, cursor)
     # Close the connection
     conn.close()
