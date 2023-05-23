@@ -75,6 +75,7 @@ if __name__ == "__main__":
     path = snakemake.input[0]  # noqa: F821
     total_path = os.path.join(path2, path)
     family_list = os.listdir(os.path.join(path2, path))
+    print(family_list)
     db_file = snakemake.input[1]    # noqa: F821
     conn = sqlite3.connect(db_file)
     # Create a cursor

@@ -27,7 +27,7 @@ rule create_matrix:
             # Loop over possible directories in barcode-constrained-phylogeny/data/families/
 
 rule create_submatrices:
-    # Based on input from create_matrix
+    # Based on input from create_matrix n
     input:
         "data/fasta/",
         ott_database_file

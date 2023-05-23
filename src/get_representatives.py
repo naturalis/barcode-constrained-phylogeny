@@ -47,7 +47,7 @@ def get_corresponding_ott(df, col_pos, row_pos):
     return representatives
 
 if __name__ == "__main__":
-    input = snakemake.input[0]
+    input = snakemake.input[0]  # noqa: F821
     flist = create_fam_list()
     df = read_xlsx(input, flist)
     loop_over_df(flist, df)

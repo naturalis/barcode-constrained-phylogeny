@@ -10,11 +10,12 @@ import os
 
 def loop_over_fam(path):
     for family in path:
-        if family.__contains__("bestTree"):
+        print(family)
+        if family == path[0]:
             print("fam",family)
             family = family.split(".")  # Expect a X.fasta.raxml.bestTree
-            outputfile = "data/fasta/{}/dist_matrix_{}.txt".format(family[0],family[0])
-            dist_df = create_matrix(family[0])
+            outputfile = "data/fasta/{}/dist_matrix_{}.txt".format(family,family)
+            dist_df = create_matrix(family)
             write_matrix_to_file(dist_df, outputfile) # write matrix to csv
 
 
