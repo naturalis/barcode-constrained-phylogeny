@@ -78,7 +78,7 @@ The snakefile, snakefile configuration file and python scripts are found in the 
 
 MIT License
 
-Copyright (c) 2022 Naturalis Biodiversity Center
+Copyright (c) 2023 Naturalis Biodiversity Center
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
