@@ -1,44 +1,60 @@
 import csv
 import sqlite3
 import pandas as pd
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-
-def extract_bold(conn, bold_tsv, marker):
+def extract_bold(conn, bold_tsv, marker, minlength):
     """
-     It reads a TSV file with a snapshot of the BOLD database in chunks, selects rows that match the user's
-    arguments for the desired marker and kingdom, and writes them to two tables in the
+    Reads a TSV file with a snapshot of the BOLD database in chunks, selects rows that match the user's
+    arguments for the desired marker, length, and kingdom, and writes them to two tables in the
     SQLite database (taxon_temp and barcode_temp) with a subset of their columns.
     :param conn: Connection object to the database.
-    :param args: Command line arguments
-    :param desired_marker: String representing the desired marker
+    :param bold_tsv: Location of the unzipped BOLD TSV
+    :param marker: String representing the desired marker
+    :param minlength: Integer representing minimum length of sequences to include
     """
     for chunk in pd.read_csv(bold_tsv, quoting=csv.QUOTE_NONE,
                              low_memory=False, sep="\t", chunksize=10000):
         # Keep rows that match user arguments
         if marker == "COI-5P":
             df = chunk.loc[
-                (chunk['marker_code'] == marker) & (chunk["kingdom"] == "Animalia")]
+                (chunk['marker_code'] == marker) &
+                (chunk["kingdom"] == "Animalia") &
+                (chunk["nucraw"].str.len() >= minlength)
+                ]
 
         else:
-            # variable marker matk_rcbl is split into two seperate markers
+            # variable marker matk_rcbl is split into two separate markers
             marker_1 = marker.split('_')[0]
             marker_2 = marker.split('_')[1]
             df = chunk.loc[
-                ((chunk['marker_code'] == marker_1) & (chunk["kingdom"] == "Plantae")) |
-                (chunk['marker_code'] == marker_2) & (chunk["kingdom"] == "Plantae")]
+                (
+                        (chunk['marker_code'] == marker_1) &
+                        (chunk["kingdom"] == "Plantae") &
+                        (chunk["nucraw"].str.len() >= minlength)
+                ) |
+                (
+                        (chunk['marker_code'] == marker_2) &
+                        (chunk["kingdom"] == "Plantae") &
+                        (chunk["nucraw"].str.len() >= minlength)
+                )
+                ]
         # Keep stated columns, do not keep rows where NAs are present
         df_temp = df[['taxon', 'kingdom', 'family']].dropna()
-        # Add rows to SQLite table (makes table if not exitst yet)
+        # Add rows to SQLite table (makes table if not exist yet)
         df_temp.to_sql('taxon_temp', conn, if_exists='append',
                        index=False)
 
         # Keep stated columns
         df_temp = df[['processid', 'marker_code', 'nucraw', 'country', 'taxon']]
-        # Add rows to SQLite table (makes table if not exitst yet)
+        # Add rows to SQLite table (makes table if not exist yet)
         df_temp.to_sql('barcode_temp', conn, if_exists='append', index=False)
 
         conn.commit()
+
 
 def make_tables(conn, cursor):
     """Create taxon and barcode tables in the database.
@@ -70,7 +86,7 @@ def make_tables(conn, cursor):
 
 def make_distinct(conn, cursor):
     """Inserts (the distinct) data from temporary tables into the main tables. Opentol_id column is added to taxon
-     table and drops taxon_id to the barcode table as foreignkeys. The temporary tables are dropped.
+     table and drops taxon_id to the barcode table as foreign keys. The temporary tables are dropped.
     :param conn: Connection object to the database.
     :param cursor: Cursor object to execute SQL commands.
     """
@@ -87,7 +103,6 @@ def make_distinct(conn, cursor):
 
     cursor.execute("""ALTER TABLE taxon ADD opentol_id varchar(10)""")
 
-
     # Drop old tables
     cursor.execute("""DROP TABLE taxon_temp""")
     cursor.execute("""DROP TABLE barcode_temp""")
@@ -97,27 +112,28 @@ def make_distinct(conn, cursor):
 
 
 if __name__ == '__main__':
-    database = snakemake.output[0] # noqa: F821
-    bold_tsv = snakemake.input[0] # noqa: F821
-    marker = snakemake.params.marker # noqa: F821
+    database = snakemake.output[0]  # noqa: F821
+    bold_tsv_file = snakemake.input[0]  # noqa: F821
+    marker_name = snakemake.params.marker  # noqa: F821
+    minimum_length = snakemake.params.minlength  # noqa: F821
 
     # Make connection to the database
-    conn = sqlite3.connect(database)
+    connection = sqlite3.connect(database)
 
     # Create a cursor
-    cursor = conn.cursor()
+    database_cursor = connection.cursor()
 
     # Dump BOLD data into DB in temporary tables
-    print("BOLD dump into database")
-    extract_bold(conn, bold_tsv, marker)
+    logger.info("BOLD dump into database")
+    extract_bold(connection, bold_tsv_file, marker_name, minimum_length)
 
     # Make new tables with different names
-    print("Make new tables")
-    make_tables(conn, cursor)
+    logger.info("Make new tables")
+    make_tables(connection, database_cursor)
 
     # Drop duplicates
-    print("Make distinct")
-    make_distinct(conn, cursor)
+    logger.info("Make distinct")
+    make_distinct(connection, database_cursor)
 
     # Close the connection
-    conn.close()
+    connection.close()
