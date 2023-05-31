@@ -7,6 +7,7 @@ dependencies:
   - raxml-ng
   - hmmer
   - perl-bio-phylo-forest-dbtree
+  - graphviz
   - pip
   - pip:
     - -r requirements.txt  
