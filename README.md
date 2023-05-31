@@ -59,7 +59,7 @@ In {Rule} insert the rule to be performed.
 
 Here is an overview of all the rules in the snakefile_phylogeny:
 
-![graphviz (1)](https://github.com/naturalis/barcode-constrained-phylogeny/assets/70514560/2b7eb955-f3bc-4126-a7b4-e361a88f4010)
+![graphviz (1)](doc/dag.svg)
 
 ## To do
 
