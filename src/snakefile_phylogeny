@@ -15,7 +15,7 @@ rule create_database:
   input: config["file_names"]["bold_tsv"]
   output: 'temporary_database.db'
   params:
-    marker=config["marker"]
+    marker=config["marker"],
     minlength=config["minlength"]
   threads: config["cpu_cores"]
   script:
