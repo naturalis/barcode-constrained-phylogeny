@@ -10,6 +10,7 @@ data/databases/
 data/fasta/
 data/mnt/
 data/opentree/
+*.sto
 
 # ignore snakemake hidden files
 src/.snakemake/
