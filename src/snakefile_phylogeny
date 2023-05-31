@@ -1,7 +1,7 @@
 configfile: "config.yaml"
 
-database_file = "../data/databases/BOLD_{}_barcodes.db".format(config["marker"])
-acid = config['acid']
+database_file = "../data/databases/BOLD_{}_barcodes.db".format(config["datatype"])
+datatype = config['datatype']
 
 rule unzip:
     input: config["file_names"]["bold_zip"]
@@ -14,7 +14,9 @@ rule unzip:
 rule create_database:
   input: config["file_names"]["bold_tsv"]
   output: 'temporary_database.db'
-  params: marker=config["marker"]
+  params:
+    marker=config["marker"]
+    minlength=config["minlength"]
   threads: config["cpu_cores"]
   script:
       "bold_data_dump.py"
@@ -39,17 +41,10 @@ rule family_fasta:
     script:
         "family_fasta.py"
 
-
-rule download_macse:
-    output: '../bin/macse_v2.06.jar'
-    threads: config["cpu_cores"]
-    shell: "wget -P ../bin/ https://bioweb.supagro.inra.fr/macse/releases/macse_v2.06.jar"
-
-
 # could be rewritten to just use shell)
-rule align_masce:
-    input:  '../bin/macse_v2.06.jar', "../data/fasta/family/{family}.fasta"
-    output: "../data/fasta/alignment/{{family}}_{}.fasta".format(acid)
+rule align_macse:
+    input:  "../data/fasta/family/{family}.fasta"
+    output: "../data/fasta/alignment/{{family}}_{}.fasta".format(datatype)
     threads: config["cpu_cores"]
     script: "create_MSA.py"
 
@@ -61,7 +56,7 @@ rule get_opentree_zip:
 
 
 rule unique_otts:
-    input: "../data/fasta/alignment/{{family}}_{}_corrected.fasta".format(acid)
+    input: "../data/fasta/alignment/{{family}}_{}_corrected.fasta".format(datatype)
     output: "../data/ott_lists/{family}_otts.txt"
     threads: config["cpu_cores"]/2
     shell: 'cat {input} | egrep ">" | cut -f1 -d "_" | tr -d ">" | sort -u > {output}'
@@ -82,28 +77,28 @@ rule megatree_pruner:
 
 
 rule replace_ids:
-    input: database_file, "../data/fasta/alignment/{{family}}_{}.fasta".format(acid)
-    output: "../data/fasta/alignment/{{family}}_{}_corrected.fasta".format(acid)
+    input: database_file, "../data/fasta/alignment/{{family}}_{}.fasta".format(datatype)
+    output: "../data/fasta/alignment/{{family}}_{}_corrected.fasta".format(datatype)
     threads: config["cpu_cores"]/2
     script: "replace_alignment_ids.py"
 
 
 rule edit_newick:
-    input: "../data/fasta/alignment/{{family}}_{}_corrected.fasta".format(acid), "../data/newick/{family}_constraint_temp.nwk"
+    input: "../data/fasta/alignment/{{family}}_{}_corrected.fasta".format(datatype), "../data/newick/{family}_constraint_temp.nwk"
     output:  "../data/newick/{family}_constraint.nwk"
     threads: config["cpu_cores"]/2
     script: "edit_constraint.py"
 
 
 rule raxml:
-    input: "../data/fasta/alignment/{{family}}_{}_corrected.fasta".format(acid), "../data/newick/{family}_constraint.nwk"
-    output: "../data/raxml/{{family}}/{{family}}_{}.raxml.log".format(acid)
+    input: "../data/fasta/alignment/{{family}}_{}_corrected.fasta".format(datatype), "../data/newick/{family}_constraint.nwk"
+    output: "../data/raxml/{{family}}/{{family}}_{}.raxml.log".format(datatype)
     threads: config["cpu_cores"]/2
-    shell: "mkdir -p ../data/raxml/{{wildcards.family}} | ../bin/raxml-ng --msa {{input[0]}} --model GTR+G --tree-constraint {{input[1]}} --prefix ../data/raxml/{{wildcards.family}}/{{wildcards.family}}_{}".format(acid)
+    shell: "mkdir -p ../data/raxml/{{wildcards.family}} | ../bin/raxml-ng --msa {{input[0]}} --model GTR+G --tree-constraint {{input[1]}} --prefix ../data/raxml/{{wildcards.family}}/{{wildcards.family}}_{}".format(datatype)
 
 
 rule all:
-    input: dynamic("../data/raxml/{{family}}/{{family}}_{}.raxml.log".format(acid))
+    input: dynamic("../data/raxml/{{family}}/{{family}}_{}.raxml.log".format(datatype))
     threads: config["cpu_cores"]
     shell: "touch {input}"
 
@@ -115,7 +110,7 @@ rule all:
 
 
 # rule test_raxml:
-#     input: "../data/raxml/Abacionidae/Abacionidae_{}.raxml.log".format(acid)
+#     input: "../data/raxml/Abacionidae/Abacionidae_{}.raxml.log".format(datatype)
 #     threads: config["cpu_cores"]
 #     shell: 'touch {input}'
 
