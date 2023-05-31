@@ -6,6 +6,7 @@ channels:
 dependencies:
   - raxml-ng
   - macse
+  - hmmer
   - perl-bio-phylo-forest-dbtree
   - pip
   - pip:
