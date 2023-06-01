@@ -2,6 +2,9 @@
 # Used for parallelization by snakemake
 cpu_cores: 8
 
+# Used for verbosity, see `logging` from stdlib
+log_level: 'INFO'
+
 # Either use COI-5P or matK_rbcL
 marker: COI-5P
 
@@ -20,4 +23,5 @@ dependencies:
 file_names:
   bold_zip: ../data/BOLD_Public.30-Dec-2022.tar.gz
   bold_tsv: ../data/mnt/bold_public/datapackages/recent-data/BOLD_Public.30-Dec-2022.tsv
+  hmm: ../data/hmm/COI-5P.hmm
 
