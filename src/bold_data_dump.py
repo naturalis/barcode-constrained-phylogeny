@@ -3,7 +3,9 @@ import sqlite3
 import pandas as pd
 import logging
 
+logging.basicConfig(level=snakemake.params.log_level)  # noqa: F821
 logger = logging.getLogger(__name__)
+
 
 def extract_bold(conn, bold_tsv, marker, minlength):
     """
