@@ -1,6 +1,6 @@
 configfile: "config.yaml"
 
-database_file = "../data/databases/BOLD_{}_barcodes.db".format(config["datatype"])
+database_file = "../data/databases/BOLD_{}_barcodes.db".format(config["marker"])
 datatype = config['datatype']
 
 rule unzip:
@@ -16,7 +16,8 @@ rule create_database:
   output: 'temporary_database.db'
   params:
     marker=config["marker"],
-    minlength=config["minlength"]
+    minlength=config["minlength"],
+    log_level=config['log_level']
   threads: config["cpu_cores"]
   script:
       "bold_data_dump.py"
@@ -25,7 +26,9 @@ rule create_database:
 rule map_opentol:
   input: 'temporary_database.db'
   output: database_file
-  params: marker=config['marker']
+  params:
+    marker=config['marker'],
+    log_level=config['log_level']
   threads: config["cpu_cores"]
   script:
       "map_opentol.py"
