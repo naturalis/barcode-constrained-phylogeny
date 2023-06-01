@@ -4,14 +4,16 @@ import sqlite3
 import os
 import requests
 import json
+import logging
 
 
 def map_checklistbank(conn, kingdom):
     """
-    Maps bold taxon names from the database taxon table to opentol ids.  It only maps the name if its an exact
+    Maps bold taxon names from the database taxon table to opentol ids.  It only maps the name if it's an exact
     string match (no fuzzy matching). A context has to be given (args.kingdom) to determine which kingdom the
     taxon names belong to (Animals or Plants). Saves new table as opentol_temp in the database.
     :param conn: Connection object to the database.
+    :param kingdom: The kingdom context to match within
     :return:
     """
     # Change column name from taxon to scientificName
@@ -27,13 +29,13 @@ def map_checklistbank(conn, kingdom):
     names = []
     for taxons in list_df:
         tnrs_url = f"{endpoint}/tnrs/match_names"
-        # TODO instead of Animals check if its animalia or plantea kingdom and put appropiate context
+        # TODO instead of Animals check if its animalia or plantae kingdom and put appropriate context
         tnrs_params = {
-                        "names": taxons['taxon'].to_list(),
-                        "do_approximate_matching": False,
-                        "verbose": False,
-                        "context": kingdom
-                    }
+            "names": taxons['taxon'].to_list(),
+            "do_approximate_matching": False,
+            "verbose": False,
+            "context": kingdom
+        }
         tnrs_response = requests.post(tnrs_url, json=tnrs_params)
         tnrs_data = json.loads(tnrs_response.text)
 
@@ -51,7 +53,7 @@ def map_checklistbank(conn, kingdom):
     df_ot = pd.DataFrame({'ott_id': ott_ids, 'taxon': names})
 
     # Left join old table with new table containing opentol IDs
-    df_merged = pd.merge(df, df_ot, left_on='taxon', right_on='taxon', how='left').drop(columns=['opentol_id'])\
+    df_merged = pd.merge(df, df_ot, left_on='taxon', right_on='taxon', how='left').drop(columns=['opentol_id']) \
         .rename(columns={'ott_id': 'opentol_id'})
 
     # Drop duplicate rows
@@ -89,11 +91,11 @@ def map_checklistbank_fuzzy(kingdom):
         tnrs_url = f"{endpoint}/tnrs/match_names"
         # TODO instead of Animals check if its animalia or plantea kingdom and put appropiate context
         tnrs_params = {
-                        "names": taxons['taxon'].to_list(),
-                        "do_approximate_matching": True,
-                        "verbose": False,
-                        "context": kingdom
-                    }
+            "names": taxons['taxon'].to_list(),
+            "do_approximate_matching": True,
+            "verbose": False,
+            "context": kingdom
+        }
         tnrs_response = requests.post(tnrs_url, json=tnrs_params)
         tnrs_data = json.loads(tnrs_response.text)
 
@@ -158,9 +160,12 @@ def alter_db(conn, cursor):
 
 
 if __name__ == '__main__':
-    temp_database_name = snakemake.input[0] # noqa: F821
-    marker = snakemake.params.marker # noqa: F821
-    database_file = snakemake.output[0] # noqa: F821
+    temp_database_name = snakemake.input[0]  # noqa: F821
+    marker = snakemake.params.marker  # noqa: F821
+    database_file = snakemake.output[0]  # noqa: F821
+    logging.basicConfig(level=snakemake.params.log_level)  # noqa: F821
+    logger = logging.getLogger(__name__)
+
     if marker == "COI-5P":
         kingdom = 'Animals'
     else:
@@ -169,9 +174,9 @@ if __name__ == '__main__':
     conn = sqlite3.connect(temp_database_name)
     # Create a cursor
     cursor = conn.cursor()
-    print("Looking for exact matches between BOLD and OpenTOL taxon names...")
+    logger.info("Exact matching between BOLD and OpenTOL")
     map_checklistbank(conn, kingdom)
-    print("Fuzzy matching remainder taxons...")
+    logger.info("Fuzzy matching remaining taxa")
     map_checklistbank_fuzzy(kingdom)
 
     # Alter new table and remove old tables
