@@ -5,7 +5,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 def extract_bold(conn, bold_tsv, marker, minlength):
     """
     Reads a TSV file with a snapshot of the BOLD database in chunks, selects rows that match the user's
@@ -16,8 +15,13 @@ def extract_bold(conn, bold_tsv, marker, minlength):
     :param marker: String representing the desired marker
     :param minlength: Integer representing minimum length of sequences to include
     """
+    logger.info("Going to import BOLD data TSV")
     for chunk in pd.read_csv(bold_tsv, quoting=csv.QUOTE_NONE,
                              low_memory=False, sep="\t", chunksize=10000):
+
+        # Strip all '-' symbols out of the sequences, i.e. unalign them
+        chunk['nucraw'] = chunk['nucraw'].str.replace('-', '', regex=False)
+
         # Keep rows that match user arguments
         if marker == "COI-5P":
             df = chunk.loc[
@@ -43,7 +47,7 @@ def extract_bold(conn, bold_tsv, marker, minlength):
                 )
                 ]
         # Keep stated columns, do not keep rows where NAs are present
-        df_temp = df[['taxon', 'kingdom', 'family']].dropna()
+        df_temp = df[['taxon', 'kingdom', 'family', 'genus']].dropna()
         # Add rows to SQLite table (makes table if not exist yet)
         df_temp.to_sql('taxon_temp', conn, if_exists='append',
                        index=False)
@@ -61,12 +65,14 @@ def make_tables(conn, cursor):
     :param conn: Connection object to the database.
     :param cursor: Cursor object to execute SQL commands.
     """
-    # Create taxon table
+    logger.info("Initializing database")
+    # Create taxon table - XXX: added genus to split large families
     cursor.execute("""CREATE TABLE IF NOT EXISTS taxon (
         taxon_id INTEGER PRIMARY KEY,
         taxon TEXT,
         kingdom TEXT NOT NULL,
-        family TEXT NOT NULL
+        family TEXT NOT NULL,
+        genus TEXT NOT NULL
         )
     """)
     # Create barcode table
@@ -90,8 +96,9 @@ def make_distinct(conn, cursor):
     :param conn: Connection object to the database.
     :param cursor: Cursor object to execute SQL commands.
     """
+    logger.info("Post-processing database")
     # Select only the distinct taxon entries from taxon_temp, insert into taxon
-    cursor.execute("""INSERT INTO taxon (taxon, kingdom, family)
+    cursor.execute("""INSERT INTO taxon (taxon, kingdom, family, genus)
      SELECT DISTINCT * FROM taxon_temp""")
 
     # Get taxon_id from taxon table as foreign key insert
@@ -124,15 +131,12 @@ if __name__ == '__main__':
     database_cursor = connection.cursor()
 
     # Dump BOLD data into DB in temporary tables
-    logger.info("BOLD dump into database")
     extract_bold(connection, bold_tsv_file, marker_name, minimum_length)
 
     # Make new tables with different names
-    logger.info("Make new tables")
     make_tables(connection, database_cursor)
 
     # Drop duplicates
-    logger.info("Make distinct")
     make_distinct(connection, database_cursor)
 
     # Close the connection
