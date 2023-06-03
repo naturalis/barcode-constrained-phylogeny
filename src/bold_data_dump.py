@@ -29,7 +29,8 @@ def extract_bold(conn, bold_tsv, marker, minlength):
             df = chunk.loc[
                 (chunk['marker_code'] == marker) &
                 (chunk["kingdom"] == "Animalia") &
-                (chunk["nucraw"].str.len() >= minlength)
+                (chunk["nucraw"].str.len() >= minlength) &
+                (chunk["species"] is not None)
                 ]
 
         else:
@@ -40,12 +41,14 @@ def extract_bold(conn, bold_tsv, marker, minlength):
                 (
                         (chunk['marker_code'] == marker_1) &
                         (chunk["kingdom"] == "Plantae") &
-                        (chunk["nucraw"].str.len() >= minlength)
+                        (chunk["nucraw"].str.len() >= minlength) &
+                        (chunk["species"] is not None)
                 ) |
                 (
                         (chunk['marker_code'] == marker_2) &
                         (chunk["kingdom"] == "Plantae") &
-                        (chunk["nucraw"].str.len() >= minlength)
+                        (chunk["nucraw"].str.len() >= minlength) &
+                        (chunk["species"] is not None)
                 )
                 ]
         # Keep stated columns, do not keep rows where NAs are present
@@ -71,21 +74,22 @@ def make_tables(conn, cursor):
     # Create taxon table - XXX: added genus to split large families
     cursor.execute("""CREATE TABLE IF NOT EXISTS taxon (
         taxon_id INTEGER PRIMARY KEY,
-        taxon TEXT,
+        taxon TEXT NOT NULL,
         kingdom TEXT NOT NULL,
         family TEXT NOT NULL,
-        genus TEXT NOT NULL
+        genus TEXT NOT NULL,
+        opentol_id INTEGER
         )
     """)
     # Create barcode table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS barcode (
         barcode_id INTEGER PRIMARY KEY,
-        processid TEXT,
-        marker_code TEXT,
-        nucraw TEXT,
+        processid INTEGER NOT NULL,
+        marker_code TEXT NOT NULL,
+        nucraw TEXT NOT NULL,
         country TEXT,
-        taxon_id TEXT,
+        taxon_id INTEGER NOT NULL,
         FOREIGN KEY (taxon_id) REFERENCES taxon(taxon_id)
     )""")
     # Commit the changes
@@ -109,8 +113,6 @@ def make_distinct(conn, cursor):
      SELECT DISTINCT barcode_temp.processid, barcode_temp.marker_code,
      barcode_temp.nucraw, barcode_temp.country, taxon.taxon_id
      FROM barcode_temp INNER JOIN taxon ON barcode_temp.taxon = taxon.taxon""")
-
-    cursor.execute("""ALTER TABLE taxon ADD opentol_id varchar(10)""")
 
     # Drop old tables
     cursor.execute("""DROP TABLE taxon_temp""")
