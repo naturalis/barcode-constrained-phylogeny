@@ -39,6 +39,8 @@ rule family_fasta:
         database_file
     output:
         dynamic("../data/fasta/family/{family}.fasta")
+    params:
+        log_level=config['log_level']
     threads:
         config["cpu_cores"]
     script:
