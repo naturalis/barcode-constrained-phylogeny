@@ -8,8 +8,8 @@ ott_database_file = "src/data/databases/outfile.db"
 
 rule representatives_to_file:
     input:
-        "data/fasta/",
-        "data/fasta/backbone/representatives.txt"
+        "data/fasta/family/",
+        "data/fasta/family/backbone/representatives.txt"
     #output: "data/fasta/backbone/rep.fasta"
     threads: 4
     script:
@@ -17,7 +17,7 @@ rule representatives_to_file:
 
 rule replace_newick:
     input:
-        "data/fasta/backbone/rep.bestTree",
-        "data/fasta/backbone/rep.fasta"
+        "data/fasta/family/backbone/rep.bestTree",
+        "data/fasta/family/backbone/rep.fasta"
     output:
-        "data/fasta/backbone/rep_altered.bestTree"
+        "data/fasta/family/backbone/rep_altered.bestTree"

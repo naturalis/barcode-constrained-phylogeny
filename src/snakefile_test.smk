@@ -4,20 +4,14 @@ configfile: "src/config.yaml"
 
 fasta_files = glob.glob("../data/family_fastas/*.fasta")
 
-ott_database_file = "src/data/databases/outfile.db"
+ott_database_file = "data/databases/outfile.db"
 
-# For this test snakemake. The files to create the backbone are tested.
-# Data structure used for this testfile:
-# Barcode-constrained-phylogeny
-    # data
-        # families
-            # Family data (trees, fasta, alignment)cr
 
 rule create_matrix:
     # Matrix is based on the output from the tree
     # Create csv files for family
-    # Create the csv file for family in directory data/fasta/family/matrices/
-    input: "data/fasta/"
+    # Create the csv file for family in directory data/fasta/family/{familyname}/
+    input: "data/fasta/family/"
     threads: 4
     script:
         "distance_matrix.py"
@@ -29,11 +23,18 @@ rule create_matrix:
 rule create_submatrices:
     # Based on input from create_matrix n
     input:
-        "data/fasta/",
+        "data/fasta/family/",
         ott_database_file
     threads:
         config["cpu_cores"]
     script:
         "create_submatrices.py"
 
+rule write_representatives_to_file:
+    input:
+        "data/fasta/family/"
+    threads:
+        config["cpu_cores"]
+    script:
+        "get_representatives.py"
 

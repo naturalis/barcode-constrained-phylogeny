@@ -32,8 +32,8 @@ par_path = os.path.abspath(os.path.join(os.pardir))
 def loop_over_families(flist, cursor):
     for family in flist:
             #family = family.split(".")
-        outputfile = "data/fasta/{}/altered_matrix_{}.txt".format(family,family)
-        csv_file = "data/fasta/{}/dist_matrix_{}.txt".format(family,family)
+        outputfile = "data/fasta/family/{}/altered_matrix_{}.txt".format(family,family)
+        csv_file = "data/fasta/family/{}/dist_matrix_{}.txt".format(family,family)
         df = pd.read_csv(csv_file,delimiter="\t")
         print(df)
         names = get_otts_in_df(df)

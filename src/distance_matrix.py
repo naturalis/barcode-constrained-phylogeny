@@ -10,12 +10,11 @@ import os
 
 def loop_over_fam(path):
     for family in path:
-        print(family)
-        if family == path[0]:
-            print("fam",family)
-            family = family.split(".")  # Expect a X.fasta.raxml.bestTree
-            outputfile = "data/fasta/{}/dist_matrix_{}.txt".format(family,family)
+        if family != "backbone":
+            print(family)
+            outputfile = "data/fasta/family/{}/dist_matrix_{}.txt".format(family,family)
             dist_df = create_matrix(family)
+            print(dist_df)
             write_matrix_to_file(dist_df, outputfile) # write matrix to csv
 
 
@@ -28,8 +27,8 @@ def create_matrix(family):
     Use that distance to add to the dataframe.
     :return: dataframe containing distances.
     """
-    print("data/fasta/{}/{}.fasta.raxml.bestTree".format(family,family))
-    tree = Tree("data/fasta/{}/{}.fasta.raxml.bestTree".format(family,family),
+    print("data/fasta/family/{}/{}.fasta.raxml.bestTree".format(family,family))
+    tree = Tree("data/fasta/family/{}/{}.fasta.raxml.bestTree".format(family,family),
                 format=1)  # Format indicates newick structure in file
     leave = list(tree.get_leaves())  # Get all leaves
     names = []
