@@ -1,61 +1,95 @@
 import sqlite3
 import os
-import numpy as np
 import pandas as pd
+import logging
+
+logging.basicConfig(level=snakemake.params.log_level)  # noqa: F821
+logger = logging.getLogger(__name__)
+fasta_dir = snakemake.params.fasta_dir  # noqa: F821
+maxseq = snakemake.params.maxseq  # noqa: F821
 
 
-def divide_fastafiles(conn):
+def write_genera(family, fasta_dir, conn):
+    """
+    See write_families. Here the same is done for distinct genera within the provided family.
+    :param family:
+    :param conn:
+    """
+
+    # Iterate over distinct genera within family
+    famname = (family,)
+    gen = pd.read_sql_query("SELECT DISTINCT(genus) FROM taxon WHERE family = ?", conn, params=famname)
+    for genus in set(gen['genus']):
+
+        # Fetch processid, not null opentol_id, distinct nucraw within genus
+        names = (family, genus,)
+        genseq = pd.read_sql_query("""
+            SELECT b.nucraw AS sequence, MIN(b.processid) AS processid, t.opentol_id
+            FROM barcode b
+            JOIN taxon t ON b.taxon_id = t.taxon_id
+            WHERE t.family = ? AND t.genus = ? AND t.opentol_id IS NOT NULL
+            GROUP BY sequence, t.opentol_id;""",
+                                   conn, params=names)
+
+        # Write data
+        logger.info("Write to FASTA genus: %s", genus)
+        file_name = f"{fasta_dir}/{family}-{genus}.fasta"
+        with open(file_name, 'w') as f:
+            for _, row in genseq.iterrows():
+                line = f'>{row["processid"]}|{row["opentol_id"]}\n{row["sequence"]}\n'
+                f.write(line)
+
+
+def write_families(conn):
     """
     Takes the barcodes from the SQLite database and divides them into their
     taxonomic family names. For every family a fasta file is made named
-    'fasta/family/{family name}.fasta'. All barcodes in that family are
-    put in the fasta file with the barcode id from the SQLite db and their
+    'fasta/family/{family name}.fasta'. All distinct barcodes in that family are
+    put in the fasta file with the processid and opentol_id from the SQLite db and their
     nucleotide sequence in FASTA format.
     :param conn: Connection to SQLite database
     """
     # Make directory to put FASTA files in
-    os.makedirs('../data/fasta/family', exist_ok=True)
-    # Put needed data from db into a dataframe
-    df = pd.read_sql_query("SELECT barcode.barcode_id, taxon.family, "
-                           "barcode.nucraw, taxon.opentol_id FROM barcode LEFT JOIN taxon ON "
-                           "barcode.taxon_id = taxon.taxon_id", conn)
-    # Dropping rows where there is not an opentol_id
-    df = df.dropna(subset=['opentol_id'])
-    # Loop through unique family names
-    for family in set(df['family']):
-        # Takes about 25 min for COI (7,5 million barcodes)
-        print('Making FASTA file for sequences from the family %s...' % family)
+    os.makedirs(fasta_dir, exist_ok=True)
 
-        # Grab records from specific family and put them in temp dataframe
-        df_family = df[df['family'] == family]
-        # Continue if there are more than one barcode from family
-        if len(df_family) > 1:
-            # Ignore warning
-            pd.options.mode.chained_assignment = None
+    # Iterate over distinct families
+    fam = pd.read_sql_query("SELECT DISTINCT(family) from taxon", conn)
+    for family in set(fam['family']):
 
-            # Make column with the FASTA header for every barcode
-            df_family['fasta'] = df_family['barcode_id'].apply(
-                lambda barcode_id: '>' + str(barcode_id) + '\n')
+        # Fetch processid, not null opentol_id, distinct nucraw within family
+        logger.info("Writing to FASTA family: %s", family)
+        famname = (family,)
+        famseq = pd.read_sql_query("""
+            SELECT b.nucraw AS sequence, MIN(b.processid) AS processid, t.opentol_id
+            FROM barcode b
+            JOIN taxon t ON b.taxon_id = t.taxon_id
+            WHERE t.family = ? AND t.opentol_id IS NOT NULL
+            GROUP BY sequence, t.opentol_id;""",
+                                   conn, params=famname)
 
-            # Add nucraw sequence with the header
-            fasta_out = df_family['fasta'] + df_family["nucraw"]
-
-            # Write to FASTA file and name it as their respective family name
-            np.savetxt("../data/fasta/family/%s.fasta" % family, fasta_out.values,
-                               fmt="%s")
+        # Only write whole family if smaller than maxseq
+        if len(famseq) <= maxseq:
+            file_name = f"{fasta_dir}/{family}.fasta"
+            with open(file_name, 'w') as f:
+                for _, row in famseq.iterrows():
+                    line = f'>{row["processid"]}|{row["opentol_id"]}\n{row["sequence"]}\n'
+                    f.write(line)
+        else:
+            logger.debug("Family %s has more than %s sequences", family, maxseq)
+            write_genera(family, fasta_dir, conn)
 
 
 if __name__ == '__main__':
-    database_file = snakemake.input[0] # noqa: F821
-    # Connect to the database (creates a new file if it doesn't exist)
+    database_file = snakemake.input[0]  # noqa: F821
 
+    # Connect to the database (creates a new file if it doesn't exist)
     conn = sqlite3.connect(database_file)
 
     # Create a cursor
     cursor = conn.cursor()
 
     # Write barcodes to FASTA in family groups
-    divide_fastafiles(conn)
+    write_families(conn)
 
     # Close the connection
     conn.close()
