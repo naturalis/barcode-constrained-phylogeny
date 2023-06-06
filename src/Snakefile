@@ -1,3 +1,5 @@
+import glob
+
 configfile: "config.yaml"
 
 database_file = "../data/databases/BOLD_{}_barcodes.db".format(config["marker"])
@@ -40,7 +42,9 @@ rule family_fasta:
     output:
         dynamic("../data/fasta/family/{family}.fasta")
     params:
-        log_level=config['log_level']
+        log_level=config['log_level'],
+        fasta_dir=config['file_names']['fasta_dir'],
+        maxseq=config['maxseq']
     threads:
         config["cpu_cores"]
     script:
