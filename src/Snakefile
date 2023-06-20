@@ -1,9 +1,23 @@
-import glob
 
 configfile: "config.yaml"
 
 database_file = "../data/databases/BOLD_{}_barcodes.db".format(config["marker"])
 datatype = config['datatype']
+
+# Function to determine list of fasta files
+def get_output_files(wildcards):
+    # Implement logic to determine output files based on wildcards
+    # This will depend on your specific workflow and data
+    # For example, you might list a directory or read from a file
+    # dynamic("../data/raxml/Cercopithecidae/Cercopithecidae_{}.raxml.log".format(datatype))
+    return "../data/raxml/Cercopithecidae/Cercopithecidae_{}.raxml.log".format(datatype)
+
+
+rule all:
+    input: get_output_files
+    threads: config["cpu_cores"]
+    shell: "touch {input}"
+
 
 rule unzip:
     input: config["file_names"]["bold_zip"]
@@ -50,12 +64,26 @@ rule family_fasta:
     script:
         "family_fasta.py"
 
-# could be rewritten to just use shell)
-rule align_macse:
+
+rule hmm_align:
     input:  "../data/fasta/family/{family}.fasta"
     output: "../data/fasta/alignment/{{family}}_{}.fasta".format(datatype)
-    threads: config["cpu_cores"]
-    script: "create_MSA.py"
+    params:
+        log_level=config['log_level'],
+        fasta_dir=config['file_names']['fasta_dir'],
+        hmm=config['file_names']['hmm']
+    threads:
+        config["cpu_cores"]
+    script:
+        "create_MSA_HMM.py"
+
+
+# could be rewritten to just use shell)
+# rule align_macse:
+#     input:  "../data/fasta/family/{family}.fasta"
+#     output: "../data/fasta/alignment/{{family}}_{}.fasta".format(datatype)
+#     threads: config["cpu_cores"]
+#     script: "create_MSA.py"
 
 
 rule get_opentree_zip:
@@ -106,10 +134,6 @@ rule raxml:
     shell: "mkdir -p ../data/raxml/{{wildcards.family}} | ../bin/raxml-ng --msa {{input[0]}} --model GTR+G --tree-constraint {{input[1]}} --prefix ../data/raxml/{{wildcards.family}}/{{wildcards.family}}_{}".format(datatype)
 
 
-rule all:
-    input: dynamic("../data/raxml/{{family}}/{{family}}_{}.raxml.log".format(datatype))
-    threads: config["cpu_cores"]
-    shell: "touch {input}"
 
 
 # rule test_change_ids_all:
