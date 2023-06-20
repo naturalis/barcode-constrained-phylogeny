@@ -3,7 +3,7 @@
 cpu_cores: 8
 
 # Used for verbosity, see `logging` from stdlib
-log_level: 'INFO'
+log_level: 'DEBUG'
 
 # Either use COI-5P or matK_rbcL
 marker: COI-5P
