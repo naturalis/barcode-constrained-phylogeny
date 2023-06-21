@@ -50,6 +50,17 @@ rule family_fasta:
     script:
         "family_fasta.py"
 
+rule hmm_align:
+    input:  "../data/fasta/family/{family}.fasta"
+    output: "../data/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype)
+    params:
+        log_level=config['log_level'],
+        hmm=config['file_names']['hmm']
+    threads:
+        config["cpu_cores"]
+    script:
+        "hmmer_align.py"
+
 # could be rewritten to just use shell)
 rule align_macse:
     input:  "../data/fasta/family/{family}.fasta"
@@ -139,6 +150,9 @@ rule all:
 #         4
 #     shell: "touch {input}"
 
-
+# rule test_hmmer:
+#     input: "../data/fasta/alignment/Abronicidae_{}_hmm.fasta".format(datatype)
+#     threads: config["cpu_cores"]
+#     shell: "touch {input}"
 
 
