@@ -67,15 +67,27 @@ rule family_fasta:
 
 rule hmm_align:
     input:  "../data/fasta/family/{family}.fasta"
-    output: "../data/fasta/alignment/{{family}}_{}.fasta".format(datatype)
+    output: "../data/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype)
     params:
         log_level=config['log_level'],
-        fasta_dir=config['file_names']['fasta_dir'],
         hmm=config['file_names']['hmm']
     threads:
         config["cpu_cores"]
     script:
-        "create_MSA_HMM.py"
+        "hmmer_align.py"
+
+# TODO: Green light on hmm_align above?
+# rule hmm_align:
+#     input:  "../data/fasta/family/{family}.fasta"
+#     output: "../data/fasta/alignment/{{family}}_{}.fasta".format(datatype)
+#     params:
+#         log_level=config['log_level'],
+#         fasta_dir=config['file_names']['fasta_dir'],
+#         hmm=config['file_names']['hmm']
+#     threads:
+#         config["cpu_cores"]
+#     script:
+#         "create_MSA_HMM.py"
 
 
 # could be rewritten to just use shell)
@@ -163,6 +175,9 @@ rule raxml:
 #         4
 #     shell: "touch {input}"
 
-
+# rule test_hmmer:
+#     input: "../data/fasta/alignment/Abronicidae_{}_hmm.fasta".format(datatype)
+#     threads: config["cpu_cores"]
+#     shell: "touch {input}"
 
 
