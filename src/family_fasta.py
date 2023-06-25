@@ -7,6 +7,8 @@ logging.basicConfig(level=snakemake.params.log_level)  # noqa: F821
 logger = logging.getLogger(__name__)
 fasta_dir = snakemake.params.fasta_dir  # noqa: F821
 maxseq = snakemake.params.maxseq  # noqa: F821
+minseq = snakemake.params.minseq  # noqa: F821
+
 
 
 def write_genera(family, fasta_dir, conn):
@@ -67,14 +69,20 @@ def write_families(conn):
             GROUP BY sequence, t.opentol_id;""",
                                    conn, params=famname)
 
-        # Only write whole family if smaller than maxseq
-        if len(famseq) <= maxseq:
+        # Only write whole family if smaller than maxseq and higher than minseq
+        if maxseq >= len(famseq) > minseq:
             file_name = f"{fasta_dir}/{family}.fasta"
             with open(file_name, 'w') as f:
                 for _, row in famseq.iterrows():
                     line = f'>{row["processid"]}|{row["opentol_id"]}\n{row["sequence"]}\n'
                     f.write(line)
-        else:
+        elif len(famseq) <= minseq:
+            file_name = f"{fasta_dir}/combined_families.fasta"
+            with open(file_name, 'a+') as f:
+                for _, row in famseq.iterrows():
+                    line = f'>{row["processid"]}|{row["opentol_id"]}\n{row["sequence"]}\n'
+                    f.write(line)
+        elif len(famseq) > maxseq:
             logger.debug("Family %s has more than %s sequences", family, maxseq)
             write_genera(family, fasta_dir, conn)
 

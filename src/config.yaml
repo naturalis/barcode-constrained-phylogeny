@@ -6,10 +6,13 @@ cpu_cores: 8
 log_level: 'DEBUG'
 
 # Either use COI-5P or matK_rbcL
-marker: COI-5P
+marker: matK_rbcL
 
 # Minimum length to include (this fits COI-5P)
 minlength: 600
+
+# Minimum number of sequences per alignment
+minseq: 3
 
 # Maximum number of sequences per alignment
 maxseq: 5000
