@@ -7,49 +7,66 @@ from subprocess import run
 logging.basicConfig(level=snakemake.params.log_level)  # noqa: F821
 logger = logging.getLogger(__name__)
 
-# TODO add documentation and logging
 
 def write_alignments(hmmfile, seqfile, outfile):
     """
     Read a fasta file per record, align record using hmmer with and without reverse complementing the sequence,
-    check which one to keep(highest "8" count returned from with align_score()),
+    check which one to keep(highest "*" count returned from with align_score()),
     and write all sequences together to a FASTA file.
-    :param hmmfile:
-    :param seqfile:
-    :param outfile:
+    :param hmmfile: HMM model file
+    :param seqfile: name of FASTA file input
+    :param outfile: name of alignment fasta file output
     :return:
     """
     with open(outfile, "w") as output:
+        logger.info("Aligning sequences in FASTA file %s" % in_file)
         alignments = []
-        for r in SeqIO.parse(seqfile, "fasta"):
-            count_1, alignment_original = align_score(r, hmmfile)
-            r.seq = r.seq.reverse_complement()
-            count_2, alignment_reverse = align_score(r, hmmfile)
+        log_reverse = 0
+        # Read each sequence record from fasta file
+        for record in SeqIO.parse(seqfile, "fasta"):
+            # Run align_score with original sequence
+            count_1, alignment_original = align_score(record, hmmfile)
+            # Reverse complement the sequence
+            record.seq = record.seq.reverse_complement()
+            # run align_score with reverse complemented sequence
+            count_2, alignment_reverse = align_score(record, hmmfile)
+            # Check if the first count is higher
             if count_1 >= count_2:
+                # Add alignment to list
                 alignments.append(alignment_original)
             else:
-                logger.info('Record %s is in reverse complement.' % r.id)
+                logger.debug('Record %s is in reverse complement.' % record.id)
+                # Add alignment to list
                 alignments.append(alignment_reverse)
+                # Log counter
+                log_reverse += 1
+        logger.info("There were %i sequences that were reverse complemented before alignment." % log_reverse)
+        # Rewrite stockholm file to a fasta alignment file
         AlignIO.write(alignments, output, "fasta")
 
-def align_score(r, hmmfile):
+
+def align_score(record, hmmfile):
     """
     Uses a Hidden Markov Model to align a sequence using hmmalign. This gives an stockholm file as output.
     Returns the number of "*" in the stockholm file. Reads the output file and saves its contents in the
     variable 'alignment'.
-    :param r:
-    :param hmmfile:
+    :param record: a sequence from the fasta input
+    :param hmmfile: HMM model file
     :return: int number of "*" in a stockholm file, content of the hmmalignment output file
     """
-    with tempfile.NamedTemporaryFile(mode='w+') as tempf, tempfile.NamedTemporaryFile(mode='w+') as tempf_rc:
-        SeqIO.write(r, tempf.name, 'fasta')
-        run(['hmmalign', '-o', tempf_rc.name, hmmfile, tempf.name])
-        alignment = read_alignment(tempf_rc.name, "stockholm")
+    # Open two temporary files to store a fasta sequence and a stockholm sequence
+    with tempfile.NamedTemporaryFile(mode='w+') as temp_fasta, tempfile.NamedTemporaryFile(mode='w+') as temp_stockholm:
+        # Save the sequence to the temporary file
+        SeqIO.write(record, temp_fasta.name, 'fasta')
+        # Run hmm align (arguments: output file, model file, input file)
+        run(['hmmalign', '-o', temp_stockholm.name, hmmfile, temp_fasta.name])
+        # Read the stockholm alignment
+        alignment = read_alignment(temp_stockholm.name, "stockholm")
+    # Return number of "*" from stockholm alignment and the alignment itself
     return alignment.column_annotations['posterior_probability'].count('*'), alignment
 
 
 if __name__ == '__main__':
-    # TODO change to snakemake inputs
     hmmfile = snakemake.params.hmm  # noqa: F821
     in_file = snakemake.input[0]  # noqa: F821
     out_file = snakemake.output[0]  # noqa: F821
