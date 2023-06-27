@@ -146,6 +146,10 @@ rule raxml:
     shell: "mkdir -p ../data/raxml/{{wildcards.family}} | ../bin/raxml-ng --msa {{input[0]}} --model GTR+G --tree-constraint {{input[1]}} --prefix ../data/raxml/{{wildcards.family}}/{{wildcards.family}}_{}".format(datatype)
 
 
+rule all:
+    input: dynamic("data/fasta/alignment/{{family}}_{}.fasta").format(datatype)
+    threads: config["cpu_cores"]
+    shell: "touch {input}"
 
 
 # rule test_change_ids_all:
@@ -175,9 +179,9 @@ rule raxml:
 #         4
 #     shell: "touch {input}"
 
-rule test_hmmer:
-    input: "../data/fasta/alignment/Abronicidae_{}_hmm.fasta".format(datatype)
-    threads: config["cpu_cores"]
-    shell: "touch {input}"
+# rule test_hmmer:
+#     input: "../data/fasta/alignment/Abronicidae_{}_hmm.fasta".format(datatype)
+#     threads: config["cpu_cores"]
+#     shell: "touch {input}"
 
 
