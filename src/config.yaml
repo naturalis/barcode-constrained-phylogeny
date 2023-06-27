@@ -3,10 +3,10 @@
 cpu_cores: 8
 
 # Used for verbosity, see `logging` from stdlib
-log_level: 'DEBUG'
+log_level: 'INFO'
 
 # Either use COI-5P or matK_rbcL
-marker: matK_rbcL
+marker: mCOI-5P
 
 # Minimum length to include (this fits COI-5P)
 minlength: 600

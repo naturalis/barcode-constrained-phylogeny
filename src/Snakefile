@@ -5,18 +5,18 @@ database_file = "../data/databases/BOLD_{}_barcodes.db".format(config["marker"])
 datatype = config['datatype']
 
 # Function to determine list of fasta files
-def get_output_files(wildcards):
-    # Implement logic to determine output files based on wildcards
-    # This will depend on your specific workflow and data
-    # For example, you might list a directory or read from a file
-    # dynamic("../data/raxml/Cercopithecidae/Cercopithecidae_{}.raxml.log".format(datatype))
-    return "../data/raxml/Cercopithecidae/Cercopithecidae_{}.raxml.log".format(datatype)
+# def get_output_files(wildcards):
+#     # Implement logic to determine output files based on wildcards
+#     # This will depend on your specific workflow and data
+#     # For example, you might list a directory or read from a file
+#     # dynamic("../data/raxml/Cercopithecidae/Cercopithecidae_{}.raxml.log".format(datatype))
+#     return "../data/raxml/Cercopithecidae/Cercopithecidae_{}.raxml.log".format(datatype)
 
 
-rule all:
-    input: get_output_files
-    threads: config["cpu_cores"]
-    shell: "touch {input}"
+# rule all:
+#     input: get_output_files
+#     threads: config["cpu_cores"]
+#     shell: "touch {input}"
 
 
 rule unzip:
@@ -175,9 +175,9 @@ rule raxml:
 #         4
 #     shell: "touch {input}"
 
-# rule test_hmmer:
-#     input: "../data/fasta/alignment/Abronicidae_{}_hmm.fasta".format(datatype)
-#     threads: config["cpu_cores"]
-#     shell: "touch {input}"
+rule test_hmmer:
+    input: "../data/fasta/alignment/Abronicidae_{}_hmm.fasta".format(datatype)
+    threads: config["cpu_cores"]
+    shell: "touch {input}"
 
 
