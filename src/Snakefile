@@ -91,11 +91,11 @@ rule hmm_align:
 
 
 # could be rewritten to just use shell)
-# rule align_macse:
-#     input:  "../data/fasta/family/{family}.fasta"
-#     output: "../data/fasta/alignment/{{family}}_{}.fasta".format(datatype)
-#     threads: config["cpu_cores"]
-#     script: "create_MSA.py"
+rule align_macse:
+    input:  "../data/fasta/family/{family}.fasta"
+    output: "../data/fasta/alignment/{{family}}_{}.fasta".format(datatype)
+    threads: config["cpu_cores"]
+    script: "create_MSA.py"
 
 
 rule get_opentree_zip:
