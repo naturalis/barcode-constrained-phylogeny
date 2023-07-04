@@ -6,7 +6,7 @@ cpu_cores: 8
 log_level: 'INFO'
 
 # Either use COI-5P or matK_rbcL
-marker: mCOI-5P
+marker: COI-5P
 
 # Minimum length to include (this fits COI-5P)
 minlength: 600
