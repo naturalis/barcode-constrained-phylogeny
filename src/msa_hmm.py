@@ -30,6 +30,8 @@ def write_alignments(hmmfile, seqfile, outfile):
             record.seq = record.seq.reverse_complement()
             # run align_score with reverse complemented sequence
             count_2, alignment_reverse = align_score(record, hmmfile)
+            logger.debug('Record %s original alignment score:%.2f\nRecord %s reverse complement alignment score:%.2f'
+                         % (record.id, count_1, record.id, count_2))
             # Check if the first count is higher
             if count_1 >= count_2:
                 # Add alignment to list
@@ -62,8 +64,25 @@ def align_score(record, hmmfile):
         run(['hmmalign', '-o', temp_stockholm.name, hmmfile, temp_fasta.name])
         # Read the stockholm alignment
         alignment = read_alignment(temp_stockholm.name, "stockholm")
-    # Return number of "*" from stockholm alignment and the alignment itself
-    return alignment.column_annotations['posterior_probability'].count('*'), alignment
+    # Return probability colum of the stockholm file
+    str1 = alignment.column_annotations['posterior_probability']
+
+    count = 0
+    # Count . and * characters
+    dot_count = str1.count('.')
+    star_count = str1.count('*')
+    # Give value 0 to . and value 10 to *
+    count += dot_count * 0
+    count += star_count * 10
+    # Add all numbers
+    digit_sum = sum(int(char) for char in str1 if char.isdigit())
+    # Add numbers to the values calculated from . and *
+    count += digit_sum
+    # Calculate average count to account for gaps (0's)
+    average_count = count/len(str1)
+    return average_count, alignment
+
+
 
 
 if __name__ == '__main__':
