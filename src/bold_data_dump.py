@@ -19,7 +19,7 @@ def extract_bold(conn, bold_tsv, marker, minlength):
     """
     logger.info("Going to import BOLD data TSV")
     for chunk in pd.read_csv(bold_tsv, quoting=csv.QUOTE_NONE,
-                             low_memory=False, sep="\t", chunksize=1000):
+                             low_memory=False, sep="\t", chunksize=10000):
         # Strip all '-' symbols out of the sequences, i.e. unalign them
         chunk['nucraw'] = chunk['nucraw'].str.replace('-', '', regex=False)
 
@@ -44,17 +44,18 @@ def extract_bold(conn, bold_tsv, marker, minlength):
                         (chunk["species"] is not None)
                 ) |
                 (
-                        (chunk['marker_code'] == marker_2) &
-                        (chunk["kingdom"] == "Plantae") &
-                        (chunk["nucraw"].str.len() >= minlength) &
-                        (chunk["species"] is not None)
+                            (chunk['marker_code'] == marker_2) &
+                            (chunk["kingdom"] == "Plantae") &
+                            (chunk["nucraw"].str.len() >= minlength) &
+                            (chunk["species"] is not None)
                 )
                 ]
         # Keep stated columns, do not keep rows where NAs are present
-        df_temp = df[['taxon', 'kingdom', 'class', 'family', 'genus']].dropna()
+        df_temp = df[['taxon', 'kingdom', 'class', 'order', 'family', 'genus']].dropna()
+        df_temp.rename(columns={'order': 'ord'})
         # Add rows to SQLite table (makes table if not exist yet)
         df_temp.to_sql('taxon_temp', conn, if_exists='append',
-                           index=False)
+                               index=False)
 
         # Keep stated columns
         df_temp = df[['processid', 'marker_code', 'nucraw', 'country', 'taxon']]
@@ -71,15 +72,16 @@ def make_tables(conn, cursor):
     logger.info("Initializing database")
     # Create taxon table - XXX: added genus to split large families
     cursor.execute("""CREATE TABLE IF NOT EXISTS taxon (
-        taxon_id INTEGER PRIMARY KEY,
-        taxon TEXT NOT NULL,
-        kingdom TEXT NOT NULL,
-        class TEXT NOT NULL,
-        family TEXT NOT NULL,
-        genus TEXT NOT NULL,
-        opentol_id INTEGER
-        )
-    """)
+            taxon_id INTEGER PRIMARY KEY,
+            taxon TEXT NOT NULL,
+            kingdom TEXT NOT NULL,
+            ord TEXT NOT NULL,
+            class TEXT NOT NULL,
+            family TEXT NOT NULL,
+            genus TEXT NOT NULL,
+            opentol_id INTEGER
+            )
+        """)
     # Create barcode table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS barcode (
@@ -103,7 +105,7 @@ def make_distinct(conn, cursor):
     """
     logger.info("Post-processing database")
     # Select only the distinct taxon entries from taxon_temp, insert into taxon
-    cursor.execute("""INSERT INTO taxon (taxon, kingdom, class, family, genus)
+    cursor.execute("""INSERT INTO taxon (taxon, kingdom, class, ord, family, genus)
      SELECT DISTINCT * FROM taxon_temp""")
 
     # Get taxon_id from taxon table as foreign key insert

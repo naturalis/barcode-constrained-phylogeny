@@ -7,7 +7,8 @@ import logging
 logging.basicConfig(level=snakemake.params.log_level)  # noqa: F821
 logger = logging.getLogger(__name__)
 fasta_dir = snakemake.params.fasta_dir  # noqa: F821
-classe = snakemake.params.classe  # noqa: F821
+filter_level = snakemake.params.filter_level  # noqa: F821
+filter_name = snakemake.params.filter_name  # noqa: F821
 maxseq = snakemake.params.maxseq  # noqa: F821
 minseq = snakemake.params.minseq  # noqa: F821
 
@@ -43,7 +44,7 @@ def write_genera(family, fasta_dir, conn):
                 f.write(line)
 
 
-def write_families(conn):
+def write_families(conn, filter_level):
     """
     Takes the barcodes from the SQLite database and divides them into their
     taxonomic family names. For every family a fasta file is made named
@@ -54,21 +55,23 @@ def write_families(conn):
     """
     # Make directory to put FASTA files in
     os.makedirs(fasta_dir, exist_ok=True)
-    clas = pd.read_sql_query("""SELECT COUNT(class) FROM taxon WHERE taxon.class = ?""",
-                             conn, params=(classe,))
-    if not classe:
-        fam = pd.read_sql_query("SELECT DISTINCT(family) from taxon", conn)
-        logger.info("There is not a filter for class or order. Making FASTA files for all records...")
-    elif clas["COUNT(class)"].values == 0:
-        logger.info(
-            "There are no records found in database for class %s, check if there are not any spelling mistakes and"
-            " if the class is present for the chosen DNA marker (e.g Mammalia for Matk/RcbL markers will not show"
-            " any results...)" % classe)
-        exit()
-    # Iterate over distinct families
+    if filter_level.lower() in ['kingdom', 'class', 'order', 'ord', 'family', 'genus', 'all']:
+        if filter_level.lower() == 'order':
+            filter_level = 'ord'
+        fam = pd.read_sql_query("SELECT DISTINCT(family) from taxon WHERE taxon.%s == ?" % filter_level, conn, params=(filter_name,))
+        logger.info("Making FASTA files for records with %s %s..." % (filter_level, filter_name))
+        if filter_level.lower == 'all' or len(fam) == 0:
+            if len(fam) == 0:
+                logger.info("No records found with %s %s." % (filter_level, filter_name))
+            fam = pd.read_sql_query("SELECT DISTINCT(family) from taxon", conn)
+            logger.info("Making FASTA files for all records...")
     else:
-        fam = pd.read_sql_query("SELECT DISTINCT(family) from taxon WHERE taxon.class = ?", conn, params=(classe,))
-        logger.info("Making FASTA files for records with class %s" % classe)
+        logger.info("The filter level %s stated in the config file does not exists as a column in the database..."
+                    % filter_level)
+        fam = pd.read_sql_query("SELECT DISTINCT(family) from taxon", conn)
+        logger.info("Making FASTA files for all records...")
+
+    # Iterate over distinct families
     for family in set(fam['family']):
 
         # Fetch processid, not null opentol_id, distinct nucraw within family
@@ -110,7 +113,7 @@ if __name__ == '__main__':
     cursor = conn.cursor()
 
     # Write barcodes to FASTA in family groups
-    write_families(conn)
+    write_families(conn, filter_level)
 
     # Close the connection
     conn.close()
