@@ -20,6 +20,10 @@ maxseq: 5000
 # Nucleotide alignments (NT) or aminoacid (AA) for MACSE alignment
 datatype: NT
 
+# Which class will be used in the pipeline (remove Mammalia for all classes, see ...txt for more classes to use. If
+# matk/rcbl is used see ....txt for more classes to use.
+class: Mammaliasss
+
 name: phylogeny
 
 dependencies:

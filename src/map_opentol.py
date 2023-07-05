@@ -80,6 +80,7 @@ def match_opentol(database, kingdom, chunksize, fuzzy):
         taxon_id INTEGER PRIMARY KEY,
         taxon TEXT,
         kingdom TEXT NOT NULL,
+        class TEXT NOT NULL,
         family TEXT NOT NULL,
         genus TEXT NOT NULL,
         opentol_id INTEGER)""")
@@ -98,6 +99,7 @@ def match_opentol(database, kingdom, chunksize, fuzzy):
             taxon_id = int(chunk_df['taxon_id'].iloc[i])
             taxon = str(chunk_df['taxon'].iloc[i])
             kingdom = str(chunk_df['kingdom'].iloc[i])
+            classe = str(chunk_df['class'].iloc[i])
             family = str(chunk_df['family'].iloc[i])
             genus = str(chunk_df['genus'].iloc[i])
 
@@ -105,18 +107,18 @@ def match_opentol(database, kingdom, chunksize, fuzzy):
             ott_id = tnrs_response(tnrs_data['results'][i]['matches'])
             if ott_id is not None:
                 opentol_id = int(ott_id)
-                data_to_insert = (taxon_id, taxon, kingdom, family, genus, opentol_id)
+                data_to_insert = (taxon_id, taxon, kingdom, classe, family, genus, opentol_id)
                 sql_command = """
-                    INSERT INTO taxon_temp (taxon_id, taxon, kingdom, family, genus, opentol_id)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO taxon_temp (taxon_id, taxon, kingdom, class, family, genus, opentol_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                 """
                 cursor.execute(sql_command, data_to_insert)
 
             else:
-                data_to_insert = (taxon_id, taxon, kingdom, family, genus)
+                data_to_insert = (taxon_id, taxon, kingdom, classe, family, genus)
                 sql_command = """
-                    INSERT INTO taxon_temp (taxon_id, taxon, kingdom, family, genus)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO taxon_temp (taxon_id, taxon, kingdom, class, family, genus)
+                    VALUES (?, ?, ?, ?, ?, ?)
                 """
                 cursor.execute(sql_command, data_to_insert)
             conn.commit()
@@ -138,6 +140,7 @@ def postprocess_db(database):
     # create indexes on family, genus, opentol_id, taxon_id country and nucraw
     conn = sqlite3.connect(database, isolation_level=None)
     cursor = conn.cursor()
+    cursor.execute("""CREATE INDEX IF NOT EXISTS class_idx ON taxon (class)""")
     cursor.execute("""CREATE INDEX IF NOT EXISTS family_idx ON taxon (family)""")
     cursor.execute("""CREATE INDEX IF NOT EXISTS genus_idx ON taxon (genus)""")
     cursor.execute("""CREATE INDEX IF NOT EXISTS opentol_id_idx ON taxon (opentol_id)""")

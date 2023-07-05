@@ -1,3 +1,4 @@
+import errno
 import sqlite3
 import os
 import pandas as pd
@@ -6,9 +7,9 @@ import logging
 logging.basicConfig(level=snakemake.params.log_level)  # noqa: F821
 logger = logging.getLogger(__name__)
 fasta_dir = snakemake.params.fasta_dir  # noqa: F821
+classe = snakemake.params.classe  # noqa: F821
 maxseq = snakemake.params.maxseq  # noqa: F821
 minseq = snakemake.params.minseq  # noqa: F821
-
 
 
 def write_genera(family, fasta_dir, conn):
@@ -53,9 +54,21 @@ def write_families(conn):
     """
     # Make directory to put FASTA files in
     os.makedirs(fasta_dir, exist_ok=True)
-
+    clas = pd.read_sql_query("""SELECT COUNT(class) FROM taxon WHERE taxon.class = ?""",
+                             conn, params=(classe,))
+    if not classe:
+        fam = pd.read_sql_query("SELECT DISTINCT(family) from taxon", conn)
+        logger.info("There is not a filter for class or order. Making FASTA files for all records...")
+    elif clas["COUNT(class)"].values == 0:
+        logger.info(
+            "There are no records found in database for class %s, check if there are not any spelling mistakes and"
+            " if the class is present for the chosen DNA marker (e.g Mammalia for Matk/RcbL markers will not show"
+            " any results...)" % classe)
+        exit()
     # Iterate over distinct families
-    fam = pd.read_sql_query("SELECT DISTINCT(family) from taxon", conn)
+    else:
+        fam = pd.read_sql_query("SELECT DISTINCT(family) from taxon WHERE taxon.class = ?", conn, params=(classe,))
+        logger.info("Making FASTA files for records with class %s" % classe)
     for family in set(fam['family']):
 
         # Fetch processid, not null opentol_id, distinct nucraw within family
