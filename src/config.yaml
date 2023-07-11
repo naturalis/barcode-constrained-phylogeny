@@ -20,6 +20,12 @@ maxseq: 5000
 # Nucleotide alignments (NT) or aminoacid (AA) for MACSE alignment
 datatype: NT
 
+# Choose which records to use from the database for the pipeline. filter_name only takes one name, so does filter level.
+# filter levels: class, order, family, genus, all (no filter)
+fasta_filter:
+  filter_level: order
+  filter_name: Primates
+
 name: phylogeny
 
 dependencies:
