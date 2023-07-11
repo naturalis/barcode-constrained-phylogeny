@@ -141,8 +141,8 @@ rule all:
 #     shell: "touch {input}"
 
 # rule test_hmmer:
-#     input: "../data/fasta/alignment/Psychodidae_{}_hmm.fasta".format(datatype)
+#     input: "../data/fasta/alignment/Hominidae_{}_hmm.fasta".format(datatype)
 #     threads: config["cpu_cores"]
 #     shell: "touch {input}"
-
+#
 

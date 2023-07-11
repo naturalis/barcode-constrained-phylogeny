@@ -50,24 +50,31 @@ def write_families(conn, filter_level):
     taxonomic family names. For every family a fasta file is made named
     'fasta/family/{family name}.fasta'. All distinct barcodes in that family are
     put in the fasta file with the processid and opentol_id from the SQLite db and their
-    nucleotide sequence in FASTA format.
+    nucleotide sequence in FASTA format. The barcodes are filtered on taxonomic level using given arguments
+    in config.yaml.
     :param conn: Connection to SQLite database
     """
     # Make directory to put FASTA files in
     os.makedirs(fasta_dir, exist_ok=True)
+    # Check if filter_level in config.yaml is usable
     if filter_level.lower() in ['kingdom', 'class', 'order', 'ord', 'family', 'genus', 'all']:
         if filter_level.lower() == 'order':
+            # Change order to ord so it matches database column
             filter_level = 'ord'
+        # Select all distinc family names which match config.yaml filters
         fam = pd.read_sql_query("SELECT DISTINCT(family) from taxon WHERE taxon.%s == ?" % filter_level, conn, params=(filter_name,))
         logger.info("Making FASTA files for records with %s %s..." % (filter_level, filter_name))
+        # Check if filter is all or if used filter did not resulted in any records
         if filter_level.lower == 'all' or len(fam) == 0:
             if len(fam) == 0:
                 logger.info("No records found with %s %s." % (filter_level, filter_name))
+            # Get all records
             fam = pd.read_sql_query("SELECT DISTINCT(family) from taxon", conn)
             logger.info("Making FASTA files for all records...")
     else:
         logger.info("The filter level %s stated in the config file does not exists as a column in the database..."
                     % filter_level)
+        # Get all records if filter_level was not usable
         fam = pd.read_sql_query("SELECT DISTINCT(family) from taxon", conn)
         logger.info("Making FASTA files for all records...")
 
