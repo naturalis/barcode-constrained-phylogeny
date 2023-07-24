@@ -40,7 +40,7 @@ rule family_fasta:
     input:
         database_file
     output:
-        dynamic("../data/fasta/family/test/{family}.fasta")
+        dynamic("../data/fasta/family/{family}.fasta")
     params:
         log_level=config['log_level'],
         fasta_dir=config['file_names']['fasta_dir'],
@@ -55,7 +55,7 @@ rule family_fasta:
 
 
 rule hmm_align:
-    input:  "../data/fasta/family/test/{family}.fasta"
+    input:  "../data/fasta/family/{family}.fasta"
     output: "../data/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype)
     params:
         log_level=config['log_level'],
@@ -104,7 +104,7 @@ rule raxml:
     input: "../data/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype), "../data/newick/{family}_constraint.nwk"
     output: "../data/raxml/{{family}}/{{family}}_{}.raxml.log".format(datatype)
     threads: config["cpu_cores"]/2
-    shell: "mkdir -p ../data/raxml/{{wildcards.family}} | ../bin/raxml-ng --msa {{input[0]}} --model GTR+G --tree-constraint {{input[1]}} --prefix ../data/raxml/{{wildcards.family}}/{{wildcards.family}}_{}".format(datatype)
+    shell: "mkdir -p ../data/raxml/{{wildcards.family}} | raxml-ng --msa {{input[0]}} --model GTR+G --tree-constraint {{input[1]}} --prefix ../data/raxml/{{wildcards.family}}/{{wildcards.family}}_{}".format(datatype)
 
 
 rule all:
@@ -120,7 +120,7 @@ rule all:
 
 
 # rule test_raxml:
-#     input: "../data/raxml/Abacionidae/Abacionidae_{}.raxml.log".format(datatype)
+#     input: "../data/raxml/Hominidae-Homo/Hominidae-Homo_{}.raxml.log".format(datatype)
 #     threads: config["cpu_cores"]
 #     shell: 'touch {input}'
 
@@ -141,8 +141,8 @@ rule all:
 #     shell: "touch {input}"
 
 # rule test_hmmer:
-#     input: "../data/fasta/alignment/Hominidae_{}_hmm.fasta".format(datatype)
+#     input: "../data/fasta/alignment/Hominidae-Homo_{}_hmm.fasta".format(datatype)
 #     threads: config["cpu_cores"]
 #     shell: "touch {input}"
-#
+
 
