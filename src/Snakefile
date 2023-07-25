@@ -53,6 +53,19 @@ rule family_fasta:
     script:
         "family_fasta.py"
 
+rule hmm_build:
+    #input:
+    output:
+        sequence_file = "../data/fasta/family/hmm/seq_all_{}.fasta".format(config["marker"]),
+        alignment_file = "../data/fasta/family/hmm/seq_aln_{}.fasta".format(config["marker"])
+    params:
+        log_level=config['log_level'],
+        hmm=config['file_names']['hmm']
+    threads:
+        config["cpu_cores"]
+    script:
+        "hmm_build.py"
+
 
 rule hmm_align:
     input:  "../data/fasta/family/{family}.fasta"
