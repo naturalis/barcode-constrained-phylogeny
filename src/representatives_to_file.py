@@ -34,9 +34,9 @@ def representatives_to_file(representatives, inputfile, output, mode):
                 # Iterate over the representatives to find their corresponding sequences
                 for header in representatives:
                     print(record.id)
-                    id = record.id.split("_")
-                    print(id[0])
-                    if id[0] == header:
+                    id = record.id.split("|")
+                    print(id[1])
+                    if id[1] == header:
                         # Write to fasta file
                         SeqIO.write(record, outputs, 'fasta')
 
@@ -46,13 +46,10 @@ if __name__ == '__main__':
     path = snakemake.input[0]  # noqa: F821
     total_path = os.path.join(path2, path)
     family_list = os.listdir(os.path.join(path2, path))
-
     repr = snakemake.input[1]  # noqa: F821
     representatives = get_representatives_as_list(repr)
-
     outputfile = "data/fasta/backbone/rep.fasta"
     loop_over_fam(family_list, representatives)
-
     #outputfile = snakemake.output[0]     # noqa: F821
 
     #representatives_to_file(representatives, inputfile, outputfile)
