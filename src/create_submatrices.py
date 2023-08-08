@@ -26,8 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 def loop_over_families(cursor, input_file, outputfile):
-    family = input_file.rstrip("fasta")
-    family = "fasta/alignment/Aethionema_hmmer.fasta"
+    #family = input_file.rstrip("fasta")
+    #family = "fasta/alignment/Aethionema_hmmer.fasta"
     logger.info(f"Creating altered submatrix {input_file}")
     df = pd.read_csv(input_file,delimiter="\t")
     print(df)
@@ -75,12 +75,13 @@ if __name__ == "__main__":
     #family_list = os.listdir(os.path.join(path2, path))
     #print(family_list)
     #db_file = snakemake.input[1]    # noqa: F821
-    db_file="../data/databases/outfile.db"
+   # db_file="../data/databases/outfile.db"
     input_file = snakemake.input[0] # noqa: F821
-    output_file = snakemake.output[0]   #noqa: F821
+    db_file = snakemake.input[1] # noqa: F821
+    output_file = snakemake.output[0]   # noqa: F821
     conn = sqlite3.connect(db_file)
     # Create a cursor
     cursor = conn.cursor()
-    loop_over_families( cursor, input_file, output_file)
+    loop_over_families(cursor, input_file, output_file)
     # Close the connection
     conn.close()

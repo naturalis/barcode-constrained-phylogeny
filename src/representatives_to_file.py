@@ -10,18 +10,10 @@ def get_representatives_as_list(representatives):
             line = line.rstrip("\n")
             list.append(line)
     return list
-def loop_over_fam(path,rep):
-    for family in path:
-        print(family)
-        if family == path[0]:
-            mode = "w"
-            print("write")
-        else:
-            mode = "a"
-        if family == path[0]:
-            print("same")
-            print(rep)
-            representatives_to_file(rep, "data/fasta/{}/{}.fasta".format(family,family), outputfile, mode)
+def loop_over_fam(family_fasta,rep, outputfile):
+    print(family_fasta)
+    mode = "a+"
+    representatives_to_file(rep, family_fasta, outputfile, mode)
 
 
 def representatives_to_file(representatives, inputfile, output, mode):
@@ -42,15 +34,9 @@ def representatives_to_file(representatives, inputfile, output, mode):
 
 
 if __name__ == '__main__':
-    path2 = os.getcwd()  # Get current working directory
-    path = snakemake.input[0]  # noqa: F821
-    total_path = os.path.join(path2, path)
-    family_list = os.listdir(os.path.join(path2, path))
+    family_fasta = snakemake.input[0]   # noqa: F821
     repr = snakemake.input[1]  # noqa: F821
+    outputfile = snakemake.output[0] # noqa: F821
     representatives = get_representatives_as_list(repr)
-    outputfile = "data/fasta/backbone/rep.fasta"
-    loop_over_fam(family_list, representatives)
-    #outputfile = snakemake.output[0]     # noqa: F821
-
-    #representatives_to_file(representatives, inputfile, outputfile)
+    loop_over_fam(family_fasta, representatives, outputfile)
 

@@ -4,7 +4,7 @@ import os
 import logging
 
 
-logging.basicConfig(snakemake.params.log_level) # noqa: F821
+#logging.basicConfig(snakemake.params.log_level) # noqa: F821
 logger = logging.getLogger(__name__)
 
 
@@ -21,22 +21,21 @@ def get_highest(df, representatives_file):
     Use that position to find the corresponding highest value.
     """
     highest = df.max()  # The highest value in the dataframe
-    result_list = search_pos(df, {max(highest)})    # Search for position of the highest value
-    print(result_list)
-    logger.info(f"{highest} found at position {result_list}")
+    row_index = search_pos(df, highest[0], df[highest[0]].max())    # Search for position of the highest value
+    #print(result_list[0])
+    logger.info(f"{highest} found at position {row_index}")
     # Get row and column name
-    representatives = get_corresponding_ott(df, result_list[0][0], result_list[0][1], representatives_file)
+    representatives = get_corresponding_ott(highest, highest[0], row_index, representatives_file)
     logger.info(f"Writing the highest otts {representatives} to representatives file")
 
 
-def search_pos(df_data: pd.DataFrame, search: set) -> list:
+def search_pos(df_data: pd.DataFrame, col_name, value):
     """Search in dataframe for the highest value and return the corresponding otts.
     return the values and correspongding otts if found, else return an empty list.
     """
     try:
-        nda_values = df_data.values
-        tuple_index = np.where(np.isin(nda_values, [e for e in search]))
-        return [(row, col, nda_values[row][col]) for row, col in zip(tuple_index[0], tuple_index[1])]
+        row_index = df_data[df_data[col_name] == value].index[0]
+        return row_index
     except:
         print("Unknown errror occurred.")
         logger.debug("Something went wrong.")
@@ -44,13 +43,13 @@ def search_pos(df_data: pd.DataFrame, search: set) -> list:
 
 
 
-def get_corresponding_ott(df, col_pos, row_pos, representatives_file):
+def get_corresponding_ott(df, colname, row_pos, representatives_file):
     """Get the corresponding ott from certain value.
     This is done using the position of the value.
     A file i
     """
     representatives = ""
-    colname = df.columns[col_pos]
+    #print("name", colname)
     rowname = df.index[row_pos]
     representatives += colname + "\n"
     representatives += rowname + "\n"
@@ -65,5 +64,5 @@ if __name__ == "__main__":
     #family_list = os.listdir(os.path.join(path2, path))
     #print(family_list)
     csv_file = snakemake.input[0]  # noqa: F821
-    representatives_file = snakemake.input[1] # noqa: F821
+    representatives_file = snakemake.output[0] # noqa: F821
     loop_over_families(csv_file, representatives_file)
