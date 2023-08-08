@@ -170,7 +170,7 @@ rule write_representatives:
 
 rule insert_backbone:
     input:
-        "../data/raxml/Aethionem/{family}.fasta.raxml.bestTree",
+        "../data/raxml/{family}/{family}.fasta.raxml.bestTree",
         "../data/raxml/representatives/representatives.fasta.raxml.bestTree"
     output:
         "../data/representatives/altered_backbone.nwk"
