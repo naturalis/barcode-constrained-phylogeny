@@ -3,7 +3,7 @@ configfile: "config.yaml"
 
 database_file = "../data/databases/BOLD_{}_barcodes.db".format(config["marker"])
 datatype = config['datatype']
-ott_database_file = "data/databases/outfile.db"
+ott_database_file = "../data/databases/outfile.db"
 
 
 rule unzip:
@@ -125,8 +125,8 @@ rule create_matrix:
     # Matrix is based on the output from the tree
     # Create csv files for family
     # Create the csv file for family in directory data/fasta/family/{familyname}/
-    input: "data/raxml/{family}/{family}.fasta.raxml.bestTree"
-    output: "data/fasta/distance_matrix/{family}.txt"
+    input: "../data/raxml/{family}/{family}.fasta.raxml.bestTree"
+    output: "../data/fasta/distance_matrix/{family}.txt"
     threads: 4
     script:
         "distance_matrix.py"
@@ -135,10 +135,10 @@ rule create_matrix:
 rule create_submatrices:
     # Based on input from create_matrix n
     input:
-        "data/fasta/distance_matrix/{family}.txt",
+        "../data/fasta/distance_matrix/{family}.txt",
         ott_database_file
     output:
-        "data/fasta/submatrix/{family}.txt"
+        "../data/fasta/submatrix/{family}.txt"
     threads:
         config["cpu_cores"]
     script:
@@ -147,9 +147,9 @@ rule create_submatrices:
 
 rule get_representatives:
     input:
-        "data/fasta/distance_matrix/{family}.txt",
+        "../data/fasta/distance_matrix/{family}.txt",
     output:
-        "data/fasta/representatives/rep.txt"
+        "../data/fasta/representatives/rep.txt"
     threads:
         config["cpu_cores"]
     script:
@@ -158,10 +158,10 @@ rule get_representatives:
 
 rule write_representatives:
     input:
-        "data/fasta/family/{family}.fasta",
-        "data/fasta/representatives/rep.txt"
+        "../data/fasta/family/{family}.fasta",
+        "../data/fasta/representatives/rep.txt"
     output:
-        "data/fasta/representatives/representatives.fasta"
+        "../data/fasta/representatives/representatives.fasta"
     threads:
         config["cpu_cores"]
     script:
@@ -170,10 +170,10 @@ rule write_representatives:
 
 rule insert_backbone:
     input:
-        "data/raxml/Aethionem/{family}.fasta.raxml.bestTree",
-        "data/raxml/representatives/representatives.fasta.raxml.bestTree"
+        "../data/raxml/Aethionem/{family}.fasta.raxml.bestTree",
+        "../data/raxml/representatives/representatives.fasta.raxml.bestTree"
     output:
-        "data/representatives/altered_backbone.nwk"
+        "../data/representatives/altered_backbone.nwk"
     threads:
         config["cpu_cores"]
     script:
