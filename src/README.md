@@ -11,8 +11,11 @@
 ### [family_fasta.py](family_fasta.py)
 - Barcodes from the custom database are divided into their taxonomic family groups and written to FASTA files: 'fasta/family/{family}.fasta'
 
-### [create_MSA.py](create_MSA.py)
-- Uses masce to create a Multiple Sequence Alignment as output files:'{family_NT}.fasta' and '{family_AA}.fasta'.
+### [hmm_build.py](hmm_build.py)
+- Create a HMM profile for marker.
+
+### [msa_hmm.py](msa_hmm.py)
+- Create MSA using the HMM profile for marker.
 
 ### [replace_alignment_ids.py](replace_alignment_ids.py)
 - Replaces the FASTA headers in alignments from '>{barcode_id}' to '>{opentol_id}\_{barcode_id}' 
