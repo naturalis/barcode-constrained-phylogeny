@@ -56,8 +56,8 @@ def write_alignments(hmmfile, seqfile, outfile):
         SeqIO.write(alignments, temp_fasta.name, 'fasta')
         logger.info("Alignn all family barcodes in one file.")
         # Run hmm align (arguments: output file, model file, input file)
-        run(['hmmalign','-o', outfile, hmmfile, temp_fasta.name])
-
+        run(['hmmalign','-o', 'stockholmfile.fasta', hmmfile, temp_fasta.name])
+        SeqIO.convert('stockholmfile.fasta', "stockholm", outfile, "fasta")
 
 def align_score(record, hmmfile):
     """
@@ -82,8 +82,8 @@ def align_score(record, hmmfile):
 
     count = 0
     # Count . and * characters
-    dot_count = quality_string .count('.')
-    star_count = quality_string .count('*')
+    dot_count = quality_string.count('.')
+    star_count = quality_string.count('*')
     # Give value 0 to . and value 10 to *
     count += dot_count * 0
     count += star_count * 10

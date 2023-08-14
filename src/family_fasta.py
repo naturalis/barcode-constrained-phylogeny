@@ -40,7 +40,7 @@ def write_genera(family, fasta_dir, conn):
         file_name = f"{fasta_dir}/{family}-{genus}.fasta"
         with open(file_name, 'w') as f:
             for _, row in genseq.iterrows():
-                line = f'>{row["processid"]}|{row["opentol_id"]}\n{row["sequence"]}\n'
+                line = f'>{row["processid"]}|ott{row["opentol_id"]}\n{row["sequence"]}\n'
                 f.write(line)
 
 
@@ -97,7 +97,7 @@ def write_families(conn, filter_level):
             file_name = f"{fasta_dir}/{family}.fasta"
             with open(file_name, 'w') as f:
                 for _, row in famseq.iterrows():
-                    line = f'>{row["processid"]}|{row["opentol_id"]}\n{row["sequence"]}\n'
+                    line = f'>{row["processid"]}|ott{row["opentol_id"]}\n{row["sequence"]}\n'
                     f.write(line)
         elif len(famseq) <= minseq:
             file_name = f"{fasta_dir}/combined_families.fasta"
