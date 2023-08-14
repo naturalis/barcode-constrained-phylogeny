@@ -34,15 +34,15 @@ def write_alignments(hmmfile, seqfile, outfile):
         record.seq = record.seq.reverse_complement()
         # run align_score with reverse complemented sequence
         count_2, alignment_reverse = align_score(record, hmmfile)
-        # logger.debug('Record %s original alignment score:%.2f\nRecord %s reverse complement alignment score:%.2f'
-        #              % (record.id, count_1, record.id, count_2))
+        logger.debug('Record %s original alignment score:%.2f\nRecord %s reverse complement alignment score:%.2f'
+                     % (record.id, count_1, record.id, count_2))
         # Check if the first count is higher
         if count_1 >= count_2:
             # Add alignment to list
             record.seq = record.seq.reverse_complement()
             alignments.append(record)
         else:
-            # logger.debug('Record %s is in reverse complement.' % record.id)
+            logger.debug('Record %s is in reverse complement.' % record.id)
             # Add alignment to list
             alignments.append(record)
             # Log counter
@@ -50,14 +50,14 @@ def write_alignments(hmmfile, seqfile, outfile):
     logger.info("There were %i sequences that were reverse complemented before alignment." % log_reverse)
     # Rewrite stockholm file to a fasta alignment file
     # msa = MultipleSeqAlignment(alignments)
-    # print(msa)
     # AlignIO.write(alignments, output, "fasta")
     with tempfile.NamedTemporaryFile(mode='w+') as temp_fasta:
         # Save the sequence to the temporary file
-        print(alignments)
         SeqIO.write(alignments, temp_fasta.name, 'fasta')
+        logger.info("Alignn all family barcodes in one file.")
         # Run hmm align (arguments: output file, model file, input file)
         run(['hmmalign','-o', outfile, hmmfile, temp_fasta.name])
+
 
 def align_score(record, hmmfile):
     """
@@ -78,21 +78,21 @@ def align_score(record, hmmfile):
         alignment = read_alignment(temp_stockholm.name, "stockholm")
         test = SeqIO.read(temp_stockholm.name, "stockholm")
     # Return probability colum of the stockholm file
-    str1 = alignment.column_annotations['posterior_probability']
+    quality_string = alignment.column_annotations['posterior_probability']
 
     count = 0
     # Count . and * characters
-    dot_count = str1.count('.')
-    star_count = str1.count('*')
+    dot_count = quality_string .count('.')
+    star_count = quality_string .count('*')
     # Give value 0 to . and value 10 to *
     count += dot_count * 0
     count += star_count * 10
     # Add all numbers
-    digit_sum = sum(int(char) for char in str1 if char.isdigit())
+    digit_sum = sum(int(char) for char in quality_string if char.isdigit())
     # Add numbers to the values calculated from . and *
     count += digit_sum
     # Calculate average count to account for gaps (0's)
-    average_count = count/len(str1)
+    average_count = count/len(quality_string)
     return average_count, test
 
 
