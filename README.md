@@ -51,7 +51,7 @@ snakemake -R all --snakefile snakefile_phylogeny -j {number of threads}
 
 Snakemake rules can be performed separately:
 ```bash 
-snakemake -R {Rule} --snakefile snakefile_phylogeny -j {number of threads}
+snakemake -R {Rule} --snakefile Snakefile -j {number of threads}
 ```
 
 Enter the same number at {number of threads} as you filled in previously in src/config.yaml.
