@@ -46,7 +46,7 @@ cd src/
 
 How to run the pipeline for all family alignments:
 ```bash 
-snakemake -R all --snakefile snakefile_phylogeny -j {number of threads}
+snakemake -R all --snakefile Snakeile -j {number of threads}
 ```
 
 Snakemake rules can be performed separately:
