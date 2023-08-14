@@ -2,8 +2,13 @@ import logging
 import tempfile
 
 from Bio import SeqIO, AlignIO
+from Bio.Align import MultipleSeqAlignment
 from Bio.AlignIO import read as read_alignment
 from subprocess import run
+
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+
 logging.basicConfig(level=snakemake.params.log_level)  # noqa: F821
 logger = logging.getLogger(__name__)
 
@@ -18,33 +23,40 @@ def write_alignments(hmmfile, seqfile, outfile):
     :param outfile: name of alignment fasta file output
     :return:
     """
-    with open(outfile, "w") as output:
-        logger.info("Aligning sequences in FASTA file %s" % in_file)
-        alignments = []
-        log_reverse = 0
-        # Read each sequence record from fasta file
-        for record in SeqIO.parse(seqfile, "fasta"):
-            # Run align_score with original sequence
-            count_1, alignment_original = align_score(record, hmmfile)
-            # Reverse complement the sequence
+    logger.info("Aligning sequences in FASTA file %s" % in_file)
+    alignments = []
+    log_reverse = 0
+    # Read each sequence record from fasta file
+    for record in SeqIO.parse(seqfile, "fasta"):
+        # Run align_score with original sequence
+        count_1, alignment_original = align_score(record, hmmfile)
+        # Reverse complement the sequence
+        record.seq = record.seq.reverse_complement()
+        # run align_score with reverse complemented sequence
+        count_2, alignment_reverse = align_score(record, hmmfile)
+        logger.debug('Record %s original alignment score:%.2f\nRecord %s reverse complement alignment score:%.2f'
+                     % (record.id, count_1, record.id, count_2))
+        # Check if the first count is higher
+        if count_1 >= count_2:
+            # Add alignment to list
             record.seq = record.seq.reverse_complement()
-            # run align_score with reverse complemented sequence
-            count_2, alignment_reverse = align_score(record, hmmfile)
-            logger.debug('Record %s original alignment score:%.2f\nRecord %s reverse complement alignment score:%.2f'
-                         % (record.id, count_1, record.id, count_2))
-            # Check if the first count is higher
-            if count_1 >= count_2:
-                # Add alignment to list
-                alignments.append(alignment_original)
-            else:
-                logger.debug('Record %s is in reverse complement.' % record.id)
-                # Add alignment to list
-                alignments.append(alignment_reverse)
-                # Log counter
-                log_reverse += 1
-        logger.info("There were %i sequences that were reverse complemented before alignment." % log_reverse)
-        # Rewrite stockholm file to a fasta alignment file
-        AlignIO.write(alignments, output, "fasta")
+            alignments.append(record)
+        else:
+            logger.debug('Record %s is in reverse complement.' % record.id)
+            # Add alignment to list
+            alignments.append(record)
+            # Log counter
+            log_reverse += 1
+    logger.info("There were %i sequences that were reverse complemented before alignment." % log_reverse)
+    # Rewrite stockholm file to a fasta alignment file
+    # msa = MultipleSeqAlignment(alignments)
+    # AlignIO.write(alignments, output, "fasta")
+    with tempfile.NamedTemporaryFile(mode='w+') as temp_fasta:
+        # Save the sequence to the temporary file
+        SeqIO.write(alignments, temp_fasta.name, 'fasta')
+        logger.info("Alignn all family barcodes in one file.")
+        # Run hmm align (arguments: output file, model file, input file)
+        run(['hmmalign','-o', outfile, hmmfile, temp_fasta.name])
 
 
 def align_score(record, hmmfile):
@@ -61,26 +73,27 @@ def align_score(record, hmmfile):
         # Save the sequence to the temporary file
         SeqIO.write(record, temp_fasta.name, 'fasta')
         # Run hmm align (arguments: output file, model file, input file)
-        run(['hmmalign', '-o', temp_stockholm.name, hmmfile, temp_fasta.name])
+        run(['hmmalign', '-o',temp_stockholm.name, hmmfile, temp_fasta.name])
         # Read the stockholm alignment
         alignment = read_alignment(temp_stockholm.name, "stockholm")
+        test = SeqIO.read(temp_stockholm.name, "stockholm")
     # Return probability colum of the stockholm file
-    str1 = alignment.column_annotations['posterior_probability']
+    quality_string = alignment.column_annotations['posterior_probability']
 
     count = 0
     # Count . and * characters
-    dot_count = str1.count('.')
-    star_count = str1.count('*')
+    dot_count = quality_string .count('.')
+    star_count = quality_string .count('*')
     # Give value 0 to . and value 10 to *
     count += dot_count * 0
     count += star_count * 10
     # Add all numbers
-    digit_sum = sum(int(char) for char in str1 if char.isdigit())
+    digit_sum = sum(int(char) for char in quality_string if char.isdigit())
     # Add numbers to the values calculated from . and *
     count += digit_sum
     # Calculate average count to account for gaps (0's)
-    average_count = count/len(str1)
-    return average_count, alignment
+    average_count = count/len(quality_string)
+    return average_count, test
 
 
 
