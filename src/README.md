@@ -19,3 +19,20 @@
 
 ### [edit_constraint.py](edit_constraint.py)
 - Edits the constraint trees to accomodate for multiple barcodes from one species and prepares the newick files for raxml.
+
+### [distance_matrix.py](distance_matrix.py)
+- Create distance matrix from newick RAXML output.
+
+### [create_submatrices.py](create_submatrices.py)
+- Create submatrix from distance matrix, containing only entries which are found in the opentol database.
+
+### [get_representatives.py](representatives.py)
+- Get the two entries with the highest distance between them. Those are used as representatives.
+
+### [representatives_to_file.py](representatives_to_file.py)
+- Write the two representatives to a fasta file.
+
+### [insert_backbone.py](insert_backbone.py)
+- Insert the subtree into the backbone.
+
+
