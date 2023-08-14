@@ -116,7 +116,7 @@ rule edit_newick:
 
 rule raxml:
     input: "../data/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype), "../data/newick/{family}_constraint.nwk"
-    output: "../data/raxml/{{family}}/{{family}}_{}.raxml.log".format(datatype)
+    output: "../data/raxml/{family}/{family}.fasta.raxml.bestTree"
     threads: config["cpu_cores"]/2
     shell: "mkdir -p ../data/raxml/{{wildcards.family}} | raxml-ng --msa {{input[0]}} --model GTR+G --tree-constraint {{input[1]}} --prefix ../data/raxml/{{wildcards.family}}/{{wildcards.family}}_{}".format(datatype)
 
@@ -181,7 +181,7 @@ rule insert_backbone:
 
 
 rule all:
-    input: dynamic("../data/raxml/{{family}}/{{family}}_{}.raxml.log".format(datatype))
+    input: dynamic("../data/fasta/distance_matrix/{{family}}.txt")
     threads: config["cpu_cores"]
     shell: "touch {input}"
 
