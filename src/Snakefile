@@ -117,7 +117,7 @@ rule edit_newick:
 rule raxml:
     input:  "../data/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype), "../data/newick/{family}_constraint.nwk"
     output: "../data/raxml/{family}/{family}.raxml.bestTree"
-    threads: config["cpu_cores"]/2
+    threads: config["cpu_cores"]
     script:
         "raxml.py"
 
