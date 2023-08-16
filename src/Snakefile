@@ -90,7 +90,7 @@ rule unique_otts:
     input: "../data/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype)
     output: "../data/ott_lists/{family}_otts.txt"
     threads: config["cpu_cores"]/2
-    shell: "cat {input} | egrep '>' | cut -f2 -d '|' | sort -u | sed -e 's/^/ott/' > {output}"
+    shell: "cat {input} | egrep '>' | cut -f1 -d  '|' | cut -c 2- | sort -u > {output}"
 
 
 rule megatree_loader:

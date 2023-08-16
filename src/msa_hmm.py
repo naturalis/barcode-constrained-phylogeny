@@ -28,6 +28,9 @@ def write_alignments(hmmfile, seqfile, outfile):
     log_reverse = 0
     # Read each sequence record from fasta file
     for record in SeqIO.parse(seqfile, "fasta"):
+        # record_header_split = record.id.split("|")
+        # record.id = record_header_split[1] + "|" + record_header_split[0]
+        # record.description = record_header_split[1] + "|" + record_header_split[0]
         # Run align_score with original sequence
         count_1, alignment_original = align_score(record, hmmfile)
         # Reverse complement the sequence
