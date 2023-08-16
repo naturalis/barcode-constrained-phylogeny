@@ -90,7 +90,7 @@ rule unique_otts:
     input: "../data/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype)
     output: "../data/ott_lists/{family}_otts.txt"
     threads: config["cpu_cores"]/2
-    shell: 'cat {input} | egrep ">" | cut -f1 -d "_" | tr -d ">" | sort -u > {output}'
+    shell: "cat {input} | egrep '>' | cut -f1 -d  '|' | cut -c 2- | sort -u > {output}"
 
 
 rule megatree_loader:
@@ -115,17 +115,17 @@ rule edit_newick:
 
 
 rule raxml:
-    input: "../data/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype), "../data/newick/{family}_constraint.nwk"
-    output: "../data/raxml/{{family}}/{{family}}_{}.raxml.log".format(datatype)
-    threads: config["cpu_cores"]/2
-    shell: "mkdir -p ../data/raxml/{{wildcards.family}} | raxml-ng --msa {{input[0]}} --model GTR+G --tree-constraint {{input[1]}} --prefix ../data/raxml/{{wildcards.family}}/{{wildcards.family}}_{}".format(datatype)
-
+    input:  "../data/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype), "../data/newick/{family}_constraint.nwk"
+    output: "../data/raxml/{family}/{family}.raxml.bestTree"
+    threads: config["cpu_cores"]
+    script:
+        "raxml.py"
 
 rule create_matrix:
     # Matrix is based on the output from the tree
     # Create csv files for family
     # Create the csv file for family in directory data/fasta/family/{familyname}/
-    input: "../data/raxml/{family}/{family}.fasta.raxml.bestTree"
+    input: "../data/raxml/{family}/{family}.raxml.bestTree"
     output: "../data/fasta/distance_matrix/{family}.txt"
     threads: 4
     script:
@@ -170,7 +170,7 @@ rule write_representatives:
 
 rule insert_backbone:
     input:
-        "../data/raxml/{family}/{family}.fasta.raxml.bestTree",
+        "../data/raxml/{family}/{family}.raxml.bestTree",
         "../data/raxml/representatives/representatives.fasta.raxml.bestTree"
     output:
         "../data/representatives/altered_backbone.nwk"
@@ -181,7 +181,7 @@ rule insert_backbone:
 
 
 rule all:
-    input: dynamic("../data/raxml/{{family}}/{{family}}_{}.raxml.log".format(datatype))
+    input: dynamic("../data/fasta/distance_matrix/{family}.txt")
     threads: config["cpu_cores"]
     shell: "touch {input}"
 

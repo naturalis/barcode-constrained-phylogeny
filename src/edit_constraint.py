@@ -14,6 +14,7 @@ def replace_newick(alignment_input, newick_input, newick_output):
         with open(newick_output, "w+") as output:
             ott = input.readline()
             ott = ott.replace(":0", "")
+            ott = ott.replace(";", "")
             for key in headers_dict.keys():
                 if len(headers_dict[key]) > 1:
                     ott = ott.replace(key, "(" + str(headers_dict[key]) + ")")
