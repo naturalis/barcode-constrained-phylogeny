@@ -2,9 +2,12 @@ from Bio import SeqIO
 
 
 def replace_newick(alignment_input, newick_input, newick_output):
-    """
+    """Iterate over the entries in the file {alignemnt_input}.
+    From the file change the header. 
+    Open the newick file replace the :0 and ; with "". 
+    If there is more than one entry with the same ott use ( ) to group them together.
     :param dict: To retrieve the values from the dict (consisting of ott and barcode id)
-    :return:
+    :return: nothing. Write output to file instead.
     """
     headers_dict = {}
     for record in SeqIO.parse(alignment_input, "fasta"):
