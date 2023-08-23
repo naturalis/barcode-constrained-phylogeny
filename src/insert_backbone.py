@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 def read_backbone(backbone_file):
+    """Read the backbone tree file and return it.
+    :return: newick string"""
     with open(backbone_file, "r") as output:
         backbone = output.read()
     return backbone
@@ -40,6 +42,18 @@ def alter_backbone(backbone_file, subtree_file):
     return tree
 
 def evaluate(leave,subtree):
+    """Compare the newick subtree with the names from the leave.
+    Open the subtree file.
+    Get the newick from the subtree.
+    If the newick is empty the tree is empty.
+    If the newick is not empty perform operations.
+    Transform the newick string to a Tree object. 
+    Get the leave(from backbone), use [3:] so you get the name.
+    Change the format of the leave.
+    Iterate over the leaves and check:
+        Check if leave from subtree is the same as leave from backbone.
+    :return: {found} empty if no similarities are found, else return the leave"""
+    
     found = ""
     with open(subtree, "r") as sub:
         subtree = sub.read()
@@ -53,12 +67,12 @@ def evaluate(leave,subtree):
         found = tree2.get_leaves_by_name(name=f"{leave2}")
     return found, tree2
 
-def loop_over_fam(subtree, backbone, altered_file):
+def call_functions(subtree, backbone, altered_file):
+    """Call the functions that need to be performed"""
     backbone = read_backbone(backbone)
     tree = alter_backbone(backbone, subtree)
     logger.info("Added subtree to backbone")
     logger.info("Writing tree to file")
-    #tree.write(format=1, outfile="../data/fasta/backbone/filled_backbone.tree")
     tree.write(format=1, outfile=altered_file)
 
 
@@ -67,4 +81,4 @@ if __name__ == "__main__":
     subtree = snakemake.input[0]    # noqa: F821
     backbone = snakemake.input[1]   # noqa: F821
     altered_backbone = snakemake.output[0]  # noqa: F821
-    loop_over_fam(subtree, backbone, altered_backbone)
+    call_functions(subtree, backbone, altered_backbone)
