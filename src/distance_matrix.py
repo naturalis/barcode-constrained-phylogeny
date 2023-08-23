@@ -7,7 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def loop_over_fam(family, outfile):
+def call_functions(family, outfile):
     logger.info(f"Creating distance matrix for {family}")
     dist_df = create_matrix(family)
     write_matrix_to_file(dist_df, outfile) # write matrix to csv
@@ -53,5 +53,5 @@ def write_matrix_to_file(dist_df, outputfile):
 if __name__ == "__main__":
     input_file = snakemake.input[0]   # noqa: F821
     output_file = snakemake.output[0]    # noqa: F821
-    loop_over_fam(input_file, output_file)
+    call_functions(input_file, output_file)
 
