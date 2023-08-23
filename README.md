@@ -63,11 +63,18 @@ Here is an overview of all the rules in the snakefile_phylogeny:
 
 ## To do
 
-The project is under active development, with the following action items for the short term:
+The project is has a snakemake pipeline, however not everything runs on the snakemake smoothly yet:
 
-- Select exemplars from each subset, align the exemplars across subsets, infer a backbone
-- Graft the subtrees into the backbone
-- Develop a data package with inputs and outputs of an example run
+- Pipeline works smoothly up until raxml
+- For the further  steps, manually is advised.  Because after write representatives steps (for example): HMM align up until raxml needs to be redone again.
+
+##  Bugs
+- if file is empty in the ../data/fasta/family/ directory it will still be used and iterated over in the family fasta steps.
+  Current fix: delete the file.
+- Sometimes snakemake claims pandas is not installed.
+  Current fix: sudo apt-get install python3 pandas (in the terminal).
+- If multiple modules are not installed according to snakemake:
+  Fix: sudo apt-gete install python3 {module name} ( in the terminal).
 
 ## Repository layout
 
