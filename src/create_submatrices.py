@@ -10,7 +10,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def loop_over_families(cursor, input_file, outputfile):
+def call_functions(cursor, input_file, outputfile):
     """Call all the functions that need to be done"""
     logger.info(f"Creating altered submatrix {input_file}")
     df = pd.read_csv(input_file,delimiter="\t")
@@ -62,6 +62,6 @@ if __name__ == "__main__":
     conn = sqlite3.connect(db_file)
     # Create a cursor
     cursor = conn.cursor()
-    loop_over_families(cursor, input_file, output_file)
+    call_functions(cursor, input_file, output_file)
     # Close the connection
     conn.close()
