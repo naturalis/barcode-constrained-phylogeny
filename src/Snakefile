@@ -122,9 +122,6 @@ rule raxml:
         "raxml.py"
 
 rule create_matrix:
-    # Matrix is based on the output from the tree
-    # Create csv files for family
-    # Create the csv file for family in directory data/fasta/family/{familyname}/
     input: "../data/raxml/{family}/{family}.raxml.bestTree"
     output: "../data/fasta/distance_matrix/{family}.txt"
     threads: 4
@@ -133,7 +130,6 @@ rule create_matrix:
 
 
 rule create_submatrices:
-    # Based on input from create_matrix n
     input:
         "../data/fasta/distance_matrix/{family}.txt",
         ott_database_file
@@ -185,35 +181,3 @@ rule all:
     threads: config["cpu_cores"]
     shell: "touch {input}"
 
-
-# rule test_change_ids_all:
-#     input: dynamic("../data/raxml/{family}.raxml.log")
-#     threads: config["cpu_cores"]
-#     shell: "touch {input}"
-
-
-# rule test_raxml:
-#     input: "../data/raxml/Hominidae-Homo/Hominidae-Homo_{}.raxml.log".format(datatype)
-#     threads: config["cpu_cores"]
-#     shell: 'touch {input}'
-
-#     # rule test_constraint:
-#     #     input: "data/newick/Acanthosomatidae_constraint.nwk"
-#     #     threads: config["cpu_cores"]
-#     #     shell: 'touch {input}'
-#
-# rule test_change_ids_acantho:
-#     input:"data/fasta/alignment/Acanthosomatidae_NT_corrected.fasta"
-#     threads: 4
-#     shell: "touch {input}"
-
-# rule test_change_ids_all:
-#     input: dynamic("data/fasta/alignment/{family}_NT_corrected.fasta")
-#     threads:
-#         4
-#     shell: "touch {input}"
-
-# rule test_hmmer:
-#     input: "../data/fasta/alignment/Hominidae-Homo_{}_hmm.fasta".format(datatype)
-#     threads: config["cpu_cores"]
-#     shell: "touch {input}"
