@@ -13,6 +13,8 @@ phylogenies is computationally intensive, and barcodes are not considered ideal 
 building big trees because they are short (providing insufficient signal to resolve large 
 trees) and because they tend to saturate across large patristic distances.
 
+![concept](doc/concept.png)
+
 Both problems can be mitigated by using the 
 [Open Tree of Life](https://tree.opentreeoflife.org/opentree/argus/opentree13.4@ott93302) 
 as a further source of phylogenetic signal. The BOLD data can be split into chunks that 
