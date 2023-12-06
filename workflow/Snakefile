@@ -1,9 +1,12 @@
+from snakemake.io import dynamic
+from snakemake.utils import min_version
+min_version("6.0")
 
-configfile: "config.yaml"
+configfile: "config/config.yaml"
 
-database_file = "../data/databases/BOLD_{}_barcodes.db".format(config["marker"])
+database_file = "../results/databases/BOLD_{}_barcodes.db".format(config["marker"])
 datatype = config['datatype']
-ott_database_file = "../data/databases/outfile.db"
+ott_database_file = "../results/databases/outfile.db"
 
 
 rule unzip:
@@ -11,7 +14,7 @@ rule unzip:
     output: config["file_names"]["bold_tsv"]
     threads: config["cpu_cores"]
     script:
-        "unzip_targz.py"
+        "scripts/unzip_targz.py"
 
 
 rule create_database:
@@ -23,7 +26,7 @@ rule create_database:
     log_level=config['log_level']
   threads: config["cpu_cores"]
   script:
-      "bold_data_dump.py"
+      "scripts/bold_data_dump.py"
 
 
 rule map_opentol:
@@ -34,14 +37,14 @@ rule map_opentol:
     log_level=config['log_level']
   threads: config["cpu_cores"]
   script:
-      "map_opentol.py"
+      "scripts/map_opentol.py"
 
 
 rule family_fasta:
     input:
         database_file
     output:
-        dynamic("../data/fasta/family/{family}.fasta")
+        dynamic("../results/fasta/family/{family}.fasta")
     params:
         log_level=config['log_level'],
         fasta_dir=config['file_names']['fasta_dir'],
@@ -52,131 +55,131 @@ rule family_fasta:
     threads:
         config["cpu_cores"]
     script:
-        "family_fasta.py"
+        "scripts/family_fasta.py"
 
 rule hmm_build:
     output:
-        sequence_file = "../data/fasta/family/hmm/seq_all_{}.fasta".format(config["marker"]),
-        alignment_file = "../data/fasta/family/hmm/seq_aln_{}.fasta".format(config["marker"])
+        sequence_file = "../results/fasta/family/hmm/seq_all_{}.fasta".format(config["marker"]),
+        alignment_file = "../results/fasta/family/hmm/seq_aln_{}.fasta".format(config["marker"])
     params:
         log_level=config['log_level'],
         hmm=config['file_names']['hmm']
     threads:
         config["cpu_cores"]
     script:
-        "hmm_build.py"
+        "scripts/hmm_build.py"
 
 
 rule hmm_align:
-    input:  "../data/fasta/family/{family}.fasta"
-    output: "../data/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype)
+    input:  "../results/fasta/family/{family}.fasta"
+    output: "../results/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype)
     params:
         log_level=config['log_level'],
         hmm=config['file_names']['hmm']
     threads:
         config["cpu_cores"]
     script:
-        "msa_hmm.py"
+        "scripts/msa_hmm.py"
 
 
 rule get_opentree_zip:
-    output: "../data/opentree/opentree13.4_tree/labelled_supertree/labelled_supertree.tre"
+    output: "../results/opentree/opentree13.4_tree/labelled_supertree/labelled_supertree.tre"
     threads: config["cpu_cores"]
-    shell:  "wget -P ../data/opentree/ https://files.opentreeoflife.org/synthesis/opentree13.4/opentree13.4tree.tgz && tar -xvzf ../data/opentree/opentree13.4tree.tgz --directory ../data/opentree"
+    shell:  "wget -P ../results/opentree/ https://files.opentreeoflife.org/synthesis/opentree13.4/opentree13.4tree.tgz && tar -xvzf ../results/opentree/opentree13.4tree.tgz --directory ../results/opentree"
 
 
 rule unique_otts:
-    input: "../data/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype)
-    output: "../data/ott_lists/{family}_otts.txt"
+    input: "../results/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype)
+    output: "../results/ott_lists/{family}_otts.txt"
     threads: config["cpu_cores"]/2
     shell: "cat {input} | egrep '>' | cut -f1 -d  '|' | cut -c 2- | sort -u > {output}"
 
 
 rule megatree_loader:
-    input: "../data/opentree/opentree13.4_tree/labelled_supertree/labelled_supertree.tre"
-    output: "../data/databases/opentree_nodes.db"
+    input: "../results/opentree/opentree13.4_tree/labelled_supertree/labelled_supertree.tre"
+    output: "../results/databases/opentree_nodes.db"
     threads: config["cpu_cores"]
     shell: "megatree-loader -i {input} -d {output}"
 
 
 rule megatree_pruner:
-    input: "../data/databases/opentree_nodes.db", "../data/ott_lists/{family}_otts.txt"
-    output: "../data/newick/{family}_constraint_temp.nwk"
+    input: "../results/databases/opentree_nodes.db", "../results/ott_lists/{family}_otts.txt"
+    output: "../results/newick/{family}_constraint_temp.nwk"
     threads: config["cpu_cores"]/2
     shell: "megatree-pruner -d {input[0]} -i {input[1]} > {output}"
 
 
 rule edit_newick:
-    input: "../data/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype), "../data/newick/{family}_constraint_temp.nwk"
-    output:  "../data/newick/{family}_constraint.nwk"
+    input: "../results/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype), "../results/newick/{family}_constraint_temp.nwk"
+    output:  "../results/newick/{family}_constraint.nwk"
     threads: config["cpu_cores"]/2
-    script: "edit_constraint.py"
+    script: "scripts/edit_constraint.py"
 
 
 rule raxml:
-    input:  "../data/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype), "../data/newick/{family}_constraint.nwk"
-    output: "../data/raxml/{family}/{family}.raxml.bestTree"
+    input:  "../results/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype), "../results/newick/{family}_constraint.nwk"
+    output: "../results/raxml/{family}/{family}.raxml.bestTree"
     threads: config["cpu_cores"]
     script:
-        "raxml.py"
+        "scripts/raxml.py"
 
 rule create_matrix:
-    input: "../data/raxml/{family}/{family}.raxml.bestTree"
-    output: "../data/fasta/distance_matrix/{family}.txt"
+    input: "../results/raxml/{family}/{family}.raxml.bestTree"
+    output: "../results/fasta/distance_matrix/{family}.txt"
     threads: 4
     script:
-        "distance_matrix.py"
+        "scripts/distance_matrix.py"
 
 
 rule create_submatrices:
     input:
-        "../data/fasta/distance_matrix/{family}.txt",
+        "../results/fasta/distance_matrix/{family}.txt",
         ott_database_file
     output:
-        "../data/fasta/submatrix/{family}.txt"
+        "../results/fasta/submatrix/{family}.txt"
     threads:
         config["cpu_cores"]
     script:
-        "create_submatrices.py"
+        "scripts/create_submatrices.py"
 
 
 rule get_representatives:
     input:
-        "../data/fasta/distance_matrix/{family}.txt",
+        "../results/fasta/distance_matrix/{family}.txt",
     output:
-        "../data/fasta/representatives/rep.txt"
+        "../results/fasta/representatives/rep.txt"
     threads:
         config["cpu_cores"]
     script:
-        "get_representatives.py"
+        "scripts/get_representatives.py"
 
 
 rule write_representatives:
     input:
-        "../data/fasta/family/{family}.fasta",
-        "../data/fasta/representatives/rep.txt"
+        "../results/fasta/family/{family}.fasta",
+        "../results/fasta/representatives/rep.txt"
     output:
-        "../data/fasta/representatives/representatives.fasta"
+        "../results/fasta/representatives/representatives.fasta"
     threads:
         config["cpu_cores"]
     script:
-        "representatives_to_file.py"
+        "scripts/representatives_to_file.py"
 
 
 rule insert_backbone:
     input:
-        "../data/raxml/{family}/{family}.raxml.bestTree",
-        "../data/raxml/representatives/representatives.fasta.raxml.bestTree"
+        "../results/raxml/{family}/{family}.raxml.bestTree",
+        "../results/raxml/representatives/representatives.fasta.raxml.bestTree"
     output:
-        "../data/representatives/altered_backbone.nwk"
+        "../results/representatives/altered_backbone.nwk"
     threads:
         config["cpu_cores"]
     script:
-        "insert_backbone.py"
+        "scripts/insert_backbone.py"
 
 
 rule all:
-    input: dynamic("../data/fasta/distance_matrix/{family}.txt")
+    input: dynamic("../results/fasta/distance_matrix/{family}.txt")
     threads: config["cpu_cores"]
     shell: "touch {input}"
 
