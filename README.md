@@ -95,14 +95,6 @@ Here is an overview of all the rules in the snakefile_phylogeny:
 
 ![graphviz (1)](doc/dag.svg)
 
-## To do
-
-The project is based a snakemake pipeline, however not everything runs on the snakemake smoothly yet:
-
-- Pipeline works smoothly up until raxml
-- For the next steps, manually is advised. Because after write representatives steps (for example): HMM align up until 
-  raxml needs to be redone again.
-
 ## Repository layout
 
 Below is the top-level layout of the repository. This layout is in line with 
