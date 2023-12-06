@@ -4,10 +4,10 @@
 # ignore OSX files
 .DS_Store
 
-# ignore local data
+# ignore local results
 resources/BOLD_Public.30-Dec-2022.tar.gz
-data/databases/
-data/fasta/
+results/databases/
+results/fasta/
 resources/mnt/
 resources/opentree/
 *.sto
