@@ -103,14 +103,6 @@ The project is based a snakemake pipeline, however not everything runs on the sn
 - For the next steps, manually is advised. Because after write representatives steps (for example): HMM align up until 
   raxml needs to be redone again.
 
-##  Bugs
-- if file is empty in the results/fasta/family/ directory it will still be used and iterated over in the family fasta steps.
-  Current fix: delete the file.
-- Sometimes snakemake claims pandas is not installed.
-  Current fix: sudo apt-get install python3 pandas (in the terminal).
-- If multiple modules are not installed according to snakemake:
-  Fix: sudo apt-get install python3 {module name} ( in the terminal).
-
 ## Repository layout
 
 Below is the top-level layout of the repository. All of these subfolders
