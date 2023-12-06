@@ -42,11 +42,11 @@ file and a `requirements.txt` file:
    Create the bactria Conda environment using the environment.yml file with the following 
    command:
    ```bash
-   conda env create -f environment.yml
+   conda env create -f workflow/envs/environment.yml
    ```
    This command will create a new Conda environment named bactria with the packages 
    specified in the environment.yml file. This file also includes pip packages specified in 
-   the requirements.txt file, which will be installed after the Conda packages.
+   the workflow/envs/requirements.txt file, which will be installed after the Conda packages.
 3. **Activate the Environment:**
    After creating the environment, activate it using the conda activate command:
    ```bash
@@ -59,28 +59,28 @@ file and a `requirements.txt` file:
    conda list
    ```
    This command will list all packages installed in the active conda environment. You should 
-   see all of the packages specified in the environment.yml file and the requirements.txt file.
+   see all the packages specified in the environment.yml file and the requirements.txt file.
 
 ## How to run
 
 The pipeline is being implemented using snakemake, which is available within the conda 
-environment that results from the installation. Important before runnning the snakemake pipeline 
-is to change in [src/config.yaml](src/config.yaml) the number of threads available on your 
+environment that results from the installation. Important before running the snakemake pipeline 
+is to change in [config/config.yaml](config/config.yaml) the number of threads available on your 
 computer. Which marker gene is used in the pipeline is also specified in the config.yaml (default 
 COI-5P). Prior to execution, the BOLD data package to use (we used the 
 [release of 30 December 2022](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022)) 
-must be downloaded manually and stored in the [data/](data/) directory. If a BOLD release from 
-another date is used the file names in config.yaml have to be updated. 
+must be downloaded manually and stored in the [resources/](resources/) directory. If a BOLD release 
+from another date is used the file names in config.yaml need to be updated. 
 
-From the barcode-constrained-phylogny directory move into directory where the snakefile is 
+From the barcode-constrained-phylogeny directory move into directory where the snakefile is 
 located:
 ```bash 
-cd src/
+cd workflow/
 ```
 
 How to run the pipeline for all family alignments:
 ```bash 
-snakemake -R all --snakefile Snakeile -j {number of threads}
+snakemake -R all --snakefile Snakefile -j {number of threads}
 ```
 
 Snakemake rules can be performed separately:
@@ -97,18 +97,19 @@ Here is an overview of all the rules in the snakefile_phylogeny:
 
 ## To do
 
-The project is has a snakemake pipeline, however not everything runs on the snakemake smoothly yet:
+The project is based a snakemake pipeline, however not everything runs on the snakemake smoothly yet:
 
 - Pipeline works smoothly up until raxml
-- For the further  steps, manually is advised.  Because after write representatives steps (for example): HMM align up until raxml needs to be redone again.
+- For the next steps, manually is advised. Because after write representatives steps (for example): HMM align up until 
+  raxml needs to be redone again.
 
 ##  Bugs
-- if file is empty in the ../data/fasta/family/ directory it will still be used and iterated over in the family fasta steps.
+- if file is empty in the results/fasta/family/ directory it will still be used and iterated over in the family fasta steps.
   Current fix: delete the file.
 - Sometimes snakemake claims pandas is not installed.
   Current fix: sudo apt-get install python3 pandas (in the terminal).
 - If multiple modules are not installed according to snakemake:
-  Fix: sudo apt-gete install python3 {module name} ( in the terminal).
+  Fix: sudo apt-get install python3 {module name} ( in the terminal).
 
 ## Repository layout
 
@@ -116,9 +117,11 @@ Below is the top-level layout of the repository. All of these subfolders
 contains further explanatory READMEs to explain their contents in more
 detail.
 
-- [data](data/) - input data and intermediate and final results
+- [config](config/) - configuration files
 - [doc](doc/) - documentation and background literature
-- [src](src/) - script source code, configuration files and driver snakefile 
+- [resources](resources/) - external data resources (from BOLD and OpenTree) are downloaded here
+- [results](results/) - intermediate and final results are generated here
+- [workflow](workflow/) - script source code and driver snakefile 
 
 ## License
 
