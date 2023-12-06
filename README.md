@@ -105,9 +105,9 @@ The project is based a snakemake pipeline, however not everything runs on the sn
 
 ## Repository layout
 
-Below is the top-level layout of the repository. All of these subfolders
-contains further explanatory READMEs to explain their contents in more
-detail.
+Below is the top-level layout of the repository. This layout is in line with 
+[community standards](https://snakemake.readthedocs.io/en/stable/snakefiles/deployment.html) and must be adhered to.
+All of these subfolders contains further explanatory READMEs to explain their contents in more detail.
 
 - [config](config/) - configuration files
 - [doc](doc/) - documentation and background literature
