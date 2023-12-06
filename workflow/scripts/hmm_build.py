@@ -58,7 +58,7 @@ def perform_hmmbuild(hmmfile, alignment_file):
 
 
 if __name__ == '__main__':
-    dir = '../data/fasta/family/'
+    dir = '../results/fasta/family/'
     sequence_file = snakemake.output[0]  # noqa:  F821
     alignment_file = snakemake.output[1]  # noqa: F821
     hmmfile = snakemake.params.hmm  # noqa: F821
