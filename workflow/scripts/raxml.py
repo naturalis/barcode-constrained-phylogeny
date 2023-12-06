@@ -18,9 +18,9 @@ def check_constraint_length(tree_file):
 
 def raxml(wildcard, alignment_file, constraint_tree):
     if check_constraint_length(constraint_tree) > 3:
-        subprocess.run("mkdir -p ../data/raxml/{} | raxml-ng --msa {} --model GTR+G --tree-constraint {} --prefix ../data/raxml/{}/{}".format(wildcard, alignment_file, constraint_tree, wildcard, wildcard), shell=True)
+        subprocess.run("mkdir -p ../results/raxml/{} | raxml-ng --msa {} --model GTR+G --tree-constraint {} --prefix ../results/raxml/{}/{}".format(wildcard, alignment_file, constraint_tree, wildcard, wildcard), shell=True)
     else:
-        subprocess.run("mkdir -p ../data/raxml/{} | raxml-ng --msa {} --model GTR+G  --prefix ../data/raxml/{}/{}".format(wildcard, alignment_file, wildcard, wildcard), shell=True)
+        subprocess.run("mkdir -p ../results/raxml/{} | raxml-ng --msa {} --model GTR+G  --prefix ../results/raxml/{}/{}".format(wildcard, alignment_file, wildcard, wildcard), shell=True)
 
 
 if __name__ == '__main__':
