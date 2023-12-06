@@ -5,11 +5,11 @@
 .DS_Store
 
 # ignore local data
-data/BOLD_Public.30-Dec-2022.tar.gz
+resources/BOLD_Public.30-Dec-2022.tar.gz
 data/databases/
 data/fasta/
-data/mnt/
-data/opentree/
+resources/mnt/
+resources/opentree/
 *.sto
 
 # ignore snakemake hidden files
