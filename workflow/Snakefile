@@ -1,185 +1,93 @@
-from snakemake.io import dynamic
-from snakemake.utils import min_version
-min_version("6.0")
-
 configfile: "config/config.yaml"
 
-database_file = "../results/databases/BOLD_{}_barcodes.db".format(config["marker"])
-datatype = config['datatype']
-ott_database_file = "../results/databases/outfile.db"
+# Function to get all families for alignment
+#def get_all_aligned_families(wildcards):
+#    checkpoint_output = checkpoints.family_fasta.get(**wildcards).output[0]
+#    families = [f.split('.')[0] for f in os.listdir(checkpoint_output)]
+#    return expand("results/fasta/family/{family}_aligned.fasta", family=families)
 
+# Rule all to trigger the alignment of all families
+#rule all:
+#    input:
+#        get_all_aligned_families
 
-rule unzip:
-    input: config["file_names"]["bold_zip"]
-    output: config["file_names"]["bold_tsv"]
-    threads: config["cpu_cores"]
-    script:
-        "scripts/unzip_targz.py"
+# Aligns sequences with HMM.
+#rule hmm_align:
+#    input:
+#        "results/fasta/family/{family}.fasta"
+#    output:
+#        "results/fasta/family/{family}_aligned.fasta"
+#    params:
+#        log_level=config['log_level']
+#    conda:
+#        "envs/environment.yml"
+#    script:
+#        "scripts/msa_hmm.py"
 
-
+# Creates and populates the SQLite database with filtered sequence records.
+# Uses BOLD dump TSV as defined in config file
 rule create_database:
   input: config["file_names"]["bold_tsv"]
-  output: 'temporary_database.db'
+  output: "results/databases/BOLD_{}_barcodes.db".format(config["marker"])
   params:
     marker=config["marker"],
     minlength=config["minlength"],
     log_level=config['log_level']
-  threads: config["cpu_cores"]
+  conda: "envs/environment.yml"
   script:
       "scripts/bold_data_dump.py"
 
-
+# Enriches the database with mappings to OpenToL. Because this operates on
+# the same database file, the output is a 0-byte file `map_opentol.ok` to
+# indicate that the task was run.
 rule map_opentol:
-  input: 'temporary_database.db'
-  output: database_file
+  input: rules.create_database.output
+  output: 'results/databases/map_opentol.ok'
   params:
     marker=config['marker'],
     log_level=config['log_level']
-  threads: config["cpu_cores"]
+  conda: "envs/environment.yml"
   script:
       "scripts/map_opentol.py"
 
-
-rule family_fasta:
-    input:
-        database_file
-    output:
-        dynamic("../results/fasta/family/{family}.fasta")
+# Exports unaligned sequences aggregated at family level.
+checkpoint family_fasta:
+    input: rules.map_opentol.output
+    output: directory(config["file_names"]["fasta_dir"])
     params:
-        log_level=config['log_level'],
-        fasta_dir=config['file_names']['fasta_dir'],
-        filter_level=config['fasta_filter']['filter_level'],
-        filter_name=config['fasta_filter']['filter_name'],
-        maxseq=config['maxseq'],
-        minseq=config['minseq']
-    threads:
-        config["cpu_cores"]
+      log_level=config['log_level'],
+      fasta_dir=config["file_names"]["fasta_dir"],
+      filter_level=config["fasta_filter"]["filter_level"],
+      filter_name=config["fasta_filter"]["filter_name"],
+      database=rules.create_database.output,
+      maxseq=config["maxseq"],
+      minseq=config["minseq"]
+    conda: "envs/environment.yml"
     script:
         "scripts/family_fasta.py"
 
-rule hmm_build:
-    output:
-        sequence_file = "../results/fasta/family/hmm/seq_all_{}.fasta".format(config["marker"]),
-        alignment_file = "../results/fasta/family/hmm/seq_aln_{}.fasta".format(config["marker"])
-    params:
-        log_level=config['log_level'],
-        hmm=config['file_names']['hmm']
-    threads:
-        config["cpu_cores"]
-    script:
-        "scripts/hmm_build.py"
-
-
-rule hmm_align:
-    input:  "../results/fasta/family/{family}.fasta"
-    output: "../results/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype)
-    params:
-        log_level=config['log_level'],
-        hmm=config['file_names']['hmm']
-    threads:
-        config["cpu_cores"]
-    script:
-        "scripts/msa_hmm.py"
-
-
-rule get_opentree_zip:
-    output: "../results/opentree/opentree13.4_tree/labelled_supertree/labelled_supertree.tre"
-    threads: config["cpu_cores"]
-    shell:  "wget -P ../results/opentree/ https://files.opentreeoflife.org/synthesis/opentree13.4/opentree13.4tree.tgz && tar -xvzf ../results/opentree/opentree13.4tree.tgz --directory ../results/opentree"
-
-
-rule unique_otts:
-    input: "../results/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype)
-    output: "../results/ott_lists/{family}_otts.txt"
-    threads: config["cpu_cores"]/2
-    shell: "cat {input} | egrep '>' | cut -f1 -d  '|' | cut -c 2- | sort -u > {output}"
-
-
+# Creates and populates the OpenToL SQLite database. Uses the location of
+# the OpenToL tree as per the config file. Merges the resulting database
+# with the BOLD database (which gains a table `node`). SQLite can, at time
+# of writing, not apply foreign key constraints retroactively. This is a
+# shame because taxon.opentol_id implicitly references node.id.
 rule megatree_loader:
-    input: "../results/opentree/opentree13.4_tree/labelled_supertree/labelled_supertree.tre"
-    output: "../results/databases/opentree_nodes.db"
-    threads: config["cpu_cores"]
-    shell: "megatree-loader -i {input} -d {output}"
-
-
-rule megatree_pruner:
-    input: "../results/databases/opentree_nodes.db", "../results/ott_lists/{family}_otts.txt"
-    output: "../results/newick/{family}_constraint_temp.nwk"
-    threads: config["cpu_cores"]/2
-    shell: "megatree-pruner -d {input[0]} -i {input[1]} > {output}"
-
-
-rule edit_newick:
-    input: "../results/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype), "../results/newick/{family}_constraint_temp.nwk"
-    output:  "../results/newick/{family}_constraint.nwk"
-    threads: config["cpu_cores"]/2
-    script: "scripts/edit_constraint.py"
-
-
-rule raxml:
-    input:  "../results/fasta/alignment/{{family}}_{}_hmm.fasta".format(datatype), "../results/newick/{family}_constraint.nwk"
-    output: "../results/raxml/{family}/{family}.raxml.bestTree"
-    threads: config["cpu_cores"]
-    script:
-        "scripts/raxml.py"
-
-rule create_matrix:
-    input: "../results/raxml/{family}/{family}.raxml.bestTree"
-    output: "../results/fasta/distance_matrix/{family}.txt"
-    threads: 4
-    script:
-        "scripts/distance_matrix.py"
-
-
-rule create_submatrices:
     input:
-        "../results/fasta/distance_matrix/{family}.txt",
-        ott_database_file
-    output:
-        "../results/fasta/submatrix/{family}.txt"
-    threads:
-        config["cpu_cores"]
-    script:
-        "scripts/create_submatrices.py"
+        tree = config["file_names"]["open_tre"],
+        db = rules.create_database.output,
+        mapping = rules.map_opentol.output
+    output: 'results/databases/merge_opentol.ok'
+    conda: "envs/environment.yml"
+    params:
+        tempdb = temp("results/databases/opentree_nodes.db"),
+        tempsql = temp("results/databases/node.sql")
+    shell:
+        """
+        megatree-loader -i {input.tree} -d {params.tempdb} -v
+        sqlite3 {params.tempdb} ".dump node" > {params.tempsql}
+        sqlite3 {input.db} < {params.tempsql}
+        touch {output}
+        """
 
-
-rule get_representatives:
-    input:
-        "../results/fasta/distance_matrix/{family}.txt",
-    output:
-        "../results/fasta/representatives/rep.txt"
-    threads:
-        config["cpu_cores"]
-    script:
-        "scripts/get_representatives.py"
-
-
-rule write_representatives:
-    input:
-        "../results/fasta/family/{family}.fasta",
-        "../results/fasta/representatives/rep.txt"
-    output:
-        "../results/fasta/representatives/representatives.fasta"
-    threads:
-        config["cpu_cores"]
-    script:
-        "scripts/representatives_to_file.py"
-
-
-rule insert_backbone:
-    input:
-        "../results/raxml/{family}/{family}.raxml.bestTree",
-        "../results/raxml/representatives/representatives.fasta.raxml.bestTree"
-    output:
-        "../results/representatives/altered_backbone.nwk"
-    threads:
-        config["cpu_cores"]
-    script:
-        "scripts/insert_backbone.py"
-
-
-rule all:
-    input: dynamic("../results/fasta/distance_matrix/{family}.txt")
-    threads: config["cpu_cores"]
-    shell: "touch {input}"
-
+# This extracts all OTT IDs from a FASTA file and returns them as CSV for input into megatree-pruner
+# grep '>' Aotidae.fasta | cut -f1 -d'|' | sort | uniq | sed -e 's/>//g' | tr '\n' ',
