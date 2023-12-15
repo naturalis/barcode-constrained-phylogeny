@@ -3,6 +3,7 @@ import requests
 import json
 import logging
 import os
+import time
 import pandas as pd
 import numpy as np
 
@@ -155,9 +156,9 @@ def postprocess_db(database):
 
 
 if __name__ == '__main__':
-    temp_database_name = snakemake.input[0]  # noqa: F821
+#    temp_database_name = snakemake.input[0]  # noqa: F821
     marker = snakemake.params.marker  # noqa: F821
-    database_file = snakemake.output[0]  # noqa: F821
+    database_file = snakemake.input[0]  # noqa: F821
 
     # Infer taxonomic context from marker name
     if marker == "COI-5P":
@@ -167,12 +168,17 @@ if __name__ == '__main__':
 
     # Literal matching in big steps
     logger.info("Going to match literally in chunks of 10,000 names")
-    match_opentol(temp_database_name, kingdom, chunksize=10000, fuzzy=False)
+    match_opentol(database_file, kingdom, chunksize=10000, fuzzy=False)
 
     # Fuzzy matching in small steps
     logger.info("Going to match fuzzily in chunks of 250 names")
-    match_opentol(temp_database_name, kingdom, chunksize=250, fuzzy=True)
+    match_opentol(database_file, kingdom, chunksize=250, fuzzy=True)
 
     # Compute indexes and write to final file
-    postprocess_db(temp_database_name)
-    os.rename(temp_database_name, database_file)
+    postprocess_db(database_file)
+#    os.rename(temp_database_name, database_file)
+
+    # Touch the file
+    filename = snakemake.output[0]
+    with open(filename, 'a'):
+        os.utime(filename, None)
