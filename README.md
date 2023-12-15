@@ -74,20 +74,15 @@ COI-5P). Prior to execution, the BOLD data package to use (we used the
 must be downloaded manually and stored in the [resources/](resources/) directory. If a BOLD release 
 from another date is used the file names in config.yaml need to be updated. 
 
-From the barcode-constrained-phylogeny directory move into directory where the snakefile is 
-located:
-```bash 
-cd workflow/
-```
-
 How to run the pipeline for all family alignments:
+
 ```bash 
-snakemake -R all --snakefile Snakefile -j {number of threads}
+snakemake -j {number of threads}
 ```
 
 Snakemake rules can be performed separately:
 ```bash 
-snakemake -R {Rule} --snakefile Snakefile -j {number of threads}
+snakemake -R {Rule} -j {number of threads}
 ```
 
 Enter the same number at {number of threads} as you filled in previously in src/config.yaml.
