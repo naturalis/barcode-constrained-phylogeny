@@ -102,7 +102,17 @@ def align_score(record, hmmfile):
 
 
 if __name__ == '__main__':
+
+    # Check the HMM file
     hmmfile = snakemake.params.hmm  # noqa: F821
+    logger.info(f"Going to use Hidden Markov Model from {hmmfile}")
+
+    # Check the input file
     in_file = snakemake.input[0]  # noqa: F821
+    logger.info(f"Going to align sequences from input file {in_file}")
+
+    # Announce the output file
     out_file = snakemake.output[0]  # noqa: F821
+    logger.info(f"Will write alignment to output file {out_file}")
+
     write_alignments(hmmfile, in_file, out_file)
