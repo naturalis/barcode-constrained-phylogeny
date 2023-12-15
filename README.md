@@ -1,6 +1,8 @@
 ![workflow](https://github.com/naturalis/barcode-constrained-phylogeny/actions/workflows/python-package-conda.yml/badge.svg)
 
-# Barcode tree inference and analysis
+![](doc/logo-small.png)
+
+# Bactria: BarCode TRee Inference and Analysis
 This repository contains code and data for building very large, topologically-constrained 
 barcode phylogenies through a divide-and-conquer strategy. Such trees are useful as 
 reference materials in the comparable calculation of alpha and beta biodiversity metrics 
