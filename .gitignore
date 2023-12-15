@@ -13,7 +13,7 @@ resources/opentree/
 *.sto
 
 # ignore snakemake hidden files
-src/.snakemake/
+.snakemake/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
