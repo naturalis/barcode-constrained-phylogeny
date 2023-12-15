@@ -111,9 +111,10 @@ def write_families(conn, filter_level):
 
 
 if __name__ == '__main__':
-    database_file = snakemake.input[0]  # noqa: F821
+    database_file = snakemake.params.database[0]  # noqa: F821
 
     # Connect to the database (creates a new file if it doesn't exist)
+    logger.info(f"Going to connect to database {database_file}")
     conn = sqlite3.connect(database_file)
 
     # Create a cursor
