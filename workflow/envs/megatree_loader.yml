@@ -1,0 +1,8 @@
+name: megatree_loader
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - perl-bio-phylo-forest-dbtree
+  - sqlite3

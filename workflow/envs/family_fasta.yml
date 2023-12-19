@@ -1,0 +1,9 @@
+name: family_fasta
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pip
+  - pip:
+    - -r family_fasta.txt

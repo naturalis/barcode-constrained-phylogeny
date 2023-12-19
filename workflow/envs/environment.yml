@@ -8,6 +8,7 @@ dependencies:
   - hmmer
   - perl-bio-phylo-forest-dbtree
   - graphviz
+  - sqlite3
   - pip
   - pip:
     - -r requirements.txt  

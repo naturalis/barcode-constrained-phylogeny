@@ -1,0 +1,9 @@
+name: create_database
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pip
+  - pip:
+    - -r create_database.txt

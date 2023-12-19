@@ -1,0 +1,9 @@
+name: map_opentol
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pip
+  - pip:
+    - -r map_opentol.txt
