@@ -1,3 +1,6 @@
+# ignore log files
+*.log
+
 # ignore pycharm files
 .idea
 
