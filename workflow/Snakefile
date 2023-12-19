@@ -1,4 +1,5 @@
 configfile: "config/config.yaml"
+import subprocess
 
 # Function to get all families for alignment
 #def get_all_aligned_families(wildcards):
@@ -24,18 +25,28 @@ configfile: "config/config.yaml"
 #    script:
 #        "scripts/msa_hmm.py"
 
-# Creates and populates the SQLite database with filtered sequence records.
+# Creates and populates a SQLite database with filtered sequence records.
 # Uses BOLD dump TSV as defined in config file
 rule create_database:
   input: config["file_names"]["bold_tsv"]
-  output: "results/databases/BOLD_{}_barcodes.db".format(config["marker"])
+  output: 'results/databases/create_database.ok'
   params:
+    db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
     marker=config["marker"],
     minlength=config["minlength"],
     log_level=config['log_level']
-  conda: "envs/environment.yml"
-  script:
-      "scripts/bold_data_dump.py"
+  conda: "envs/create_database.yml"
+  log: "logs/create_database.log"
+  shell:
+    """
+    python workflow/scripts/bold_data_dump.py \
+      -v {params.log_level} \
+      -l {params.minlength} \
+      -d {params.db} \
+      -t {input} \
+      -m {params.marker} 2> {log}
+    touch {output}
+    """
 
 # Enriches the database with mappings to OpenToL. Because this operates on
 # the same database file, the output is a 0-byte file `map_opentol.ok` to
@@ -44,27 +55,19 @@ rule map_opentol:
   input: rules.create_database.output
   output: 'results/databases/map_opentol.ok'
   params:
+    db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
     marker=config['marker'],
     log_level=config['log_level']
-  conda: "envs/environment.yml"
-  script:
-      "scripts/map_opentol.py"
-
-# Exports unaligned sequences aggregated at family level.
-checkpoint family_fasta:
-    input: rules.map_opentol.output
-    output: directory(config["file_names"]["fasta_dir"])
-    params:
-      log_level=config['log_level'],
-      fasta_dir=config["file_names"]["fasta_dir"],
-      filter_level=config["fasta_filter"]["filter_level"],
-      filter_name=config["fasta_filter"]["filter_name"],
-      database=rules.create_database.output,
-      maxseq=config["maxseq"],
-      minseq=config["minseq"]
-    conda: "envs/environment.yml"
-    script:
-        "scripts/family_fasta.py"
+  conda: "envs/map_opentol.yml"
+  log: "logs/map_opentol.log"
+  shell:
+      """
+      python workflow/scripts/map_opentol.py \
+        -d {params.db} \
+        -m {params.marker} \
+        -v {params.log_level} \
+        -o {output} 2> {log}
+      """
 
 # Creates and populates the OpenToL SQLite database. Uses the location of
 # the OpenToL tree as per the config file. Merges the resulting database
@@ -74,20 +77,52 @@ checkpoint family_fasta:
 rule megatree_loader:
     input:
         tree = config["file_names"]["open_tre"],
-        db = rules.create_database.output,
-        mapping = rules.map_opentol.output
-    output: 'results/databases/merge_opentol.ok'
-    conda: "envs/environment.yml"
+        mapping_ok = rules.map_opentol.output
+    output: 'results/databases/megatree_loader.ok'
+    conda: "envs/megatree_loader.yml"
+    log: "logs/megatree_loader.log"
     params:
+        db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
         tempdb = temp("results/databases/opentree_nodes.db"),
         tempsql = temp("results/databases/node.sql")
     shell:
         """
-        megatree-loader -i {input.tree} -d {params.tempdb} -v
-        sqlite3 {params.tempdb} ".dump node" > {params.tempsql}
-        sqlite3 {input.db} < {params.tempsql}
-        touch {output}
+        megatree-loader -i {input.tree} -d {params.tempdb} -v 2> {log}
+        sqlite3 {params.tempdb} ".dump node" > {params.tempsql} 2>> {log}
+        sqlite3 {params.db} < {params.tempsql} 2>> {log}
+        touch {output} 2>> {log}
+        rm {params.tempsql} {params.tempdb}
         """
+
+
+scattergather:
+  split = config["nfamilies"]
+
+# Exports unaligned sequences aggregated at family level.
+rule family_fasta:
+    input: rules.map_opentol.output
+    output: scatter.split(config["file_names"]["fasta_dir"] + "/{scatteritem}/unaligned.fa")
+    params:
+      log_level=config['log_level'],
+      fasta_dir=config["file_names"]["fasta_dir"],
+      filter_level=config["fasta_filter"]["filter_level"],
+      filter_name=config["fasta_filter"]["filter_name"],
+      db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
+      chunks=config["nfamilies"],
+    conda: "envs/family_fasta.yml"
+    log: "logs/family_fasta.log"
+    shell:
+        """
+        python workflow/scripts/family_fasta.py \
+            -d {params.db} \
+            -f {params.fasta_dir} \
+            -l {params.filter_level} \
+            -n {params.filter_name} \
+            -c {params.chunks} \
+            -v {params.log_level} 2> {log}
+        """
+
+
 
 # This extracts all OTT IDs from a FASTA file and returns them as CSV for input into megatree-pruner
 # grep '>' Aotidae.fasta | cut -f1 -d'|' | sort | uniq | sed -e 's/>//g' | tr '\n' ',

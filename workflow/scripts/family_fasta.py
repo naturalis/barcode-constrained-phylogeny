@@ -3,125 +3,134 @@ import sqlite3
 import os
 import pandas as pd
 import logging
+import argparse
 
-logging.basicConfig(level=snakemake.params.log_level)  # noqa: F821
+# Instantiate logger
+logging.basicConfig()
 logger = logging.getLogger(__name__)
-fasta_dir = snakemake.params.fasta_dir  # noqa: F821
-filter_level = snakemake.params.filter_level  # noqa: F821
-filter_name = snakemake.params.filter_name  # noqa: F821
-maxseq = snakemake.params.maxseq  # noqa: F821
-minseq = snakemake.params.minseq  # noqa: F821
 
 
-def write_genera(family, fasta_dir, conn):
+def get_family_bins(q, conn):
     """
-    See write_families. Here the same is done for distinct genera within the provided family.
-    :param family:
-    :param conn:
-    """
-
-    # Iterate over distinct genera within family
-    famname = (family,)
-    gen = pd.read_sql_query("SELECT DISTINCT(genus) FROM taxon WHERE family = ?", conn, params=famname)
-    for genus in set(gen['genus']):
-
-        # Fetch processid, not null opentol_id, distinct nucraw within genus
-        names = (family, genus,)
-        genseq = pd.read_sql_query("""
-            SELECT b.nucraw AS sequence, MIN(b.processid) AS processid, t.opentol_id
-            FROM barcode b
-            JOIN taxon t ON b.taxon_id = t.taxon_id
-            WHERE t.family = ? AND t.genus = ? AND t.opentol_id IS NOT NULL
-            GROUP BY sequence, t.opentol_id;""",
-                                   conn, params=names)
-
-        # Write data
-        logger.info("Write to FASTA genus: %s", genus)
-        file_name = f"{fasta_dir}/{family}-{genus}.fasta"
-        with open(file_name, 'w') as f:
-            for _, row in genseq.iterrows():
-                line = f'>ott{row["opentol_id"]}|{row["processid"]}\n{row["sequence"]}\n'
-                f.write(line)
-
-
-def write_families(conn, filter_level):
-    """
-    Takes the barcodes from the SQLite database and divides them into their
-    taxonomic family names. For every family a fasta file is made named
-    'fasta/family/{family name}.fasta'. All distinct barcodes in that family are
-    put in the fasta file with the processid and opentol_id from the SQLite db and their
-    nucleotide sequence in FASTA format. The barcodes are filtered on taxonomic level using given arguments
-    in config.yaml.
+    Gets distinct families and bins for the higher taxon defined in the query restrictions
+    :param q: Dictionary with query restrictions
     :param conn: Connection to SQLite database
+    :return Pandas data frame
     """
-    # Make directory to put FASTA files in
-    os.makedirs(fasta_dir, exist_ok=True)
+
     # Check if filter_level in config.yaml is usable
-    if filter_level.lower() in ['kingdom', 'class', 'order', 'ord', 'family', 'genus', 'all']:
-        if filter_level.lower() == 'order':
+    if q['level'].lower() in ['kingdom', 'class', 'order', 'ord', 'family', 'genus', 'all']:
+        if q['level'].lower() == 'order':
+
             # Change order to ord so it matches database column
-            filter_level = 'ord'
-        # Select all distinc family names which match config.yaml filters
-        fam = pd.read_sql_query("SELECT DISTINCT(family) from taxon WHERE taxon.%s == ?" % filter_level, conn, params=(filter_name,))
-        logger.info("Making FASTA files for records with %s %s..." % (filter_level, filter_name))
+            q['level'] = 'ord'
+
+        # Select all distinct family names which match config.yaml filters
+        fam = pd.read_sql_query(f"""
+            SELECT 
+                family, 
+                bin_uri,
+                taxon
+            FROM 
+                taxon
+            WHERE 
+                {q['level']} = '{q['name']}'
+            GROUP BY 
+                family, bin_uri;
+        """, conn)
+
         # Check if filter is all or if used filter did not resulted in any records
-        if filter_level.lower == 'all' or len(fam) == 0:
-            if len(fam) == 0:
-                logger.info("No records found with %s %s." % (filter_level, filter_name))
-            # Get all records
-            fam = pd.read_sql_query("SELECT DISTINCT(family) from taxon", conn)
-            logger.info("Making FASTA files for all records...")
+        if len(fam) == 0:
+            raise Exception(f"No records found with {q}.")
+
     else:
-        logger.info("The filter level %s stated in the config file does not exists as a column in the database..."
-                    % filter_level)
-        # Get all records if filter_level was not usable
-        fam = pd.read_sql_query("SELECT DISTINCT(family) from taxon", conn)
-        logger.info("Making FASTA files for all records...")
+        raise Exception(f"Filter level {q['level']} from config file does not exists as a column in the database")
+    return fam
 
-    # Iterate over distinct families
-    for family in set(fam['family']):
 
-        # Fetch processid, not null opentol_id, distinct nucraw within family
-        logger.info("Writing to FASTA family: %s", family)
-        famname = (family,)
-        famseq = pd.read_sql_query("""
-            SELECT b.nucraw AS sequence, MIN(b.processid) AS processid, t.opentol_id
-            FROM barcode b
-            JOIN taxon t ON b.taxon_id = t.taxon_id
-            WHERE t.family = ? AND t.opentol_id IS NOT NULL
-            GROUP BY sequence, t.opentol_id;""",
-                                   conn, params=famname)
+def write_bin(q, conn, fh):
+    """
+    Writes the longest sequence for a BIN to file
+    :param q: query object
+    :param conn: DB connection
+    :param fh: file handle
+    :return:
+    """
 
-        # Only write whole family if smaller than maxseq and higher than minseq
-        if maxseq >= len(famseq) > minseq:
-            file_name = f"{fasta_dir}/{family}.fasta"
-            with open(file_name, 'w') as f:
-                for _, row in famseq.iterrows():
-                    line = f'>ott{row["opentol_id"]}|{row["processid"]}\n{row["sequence"]}\n'
-                    f.write(line)
-        elif len(famseq) <= minseq:
-            file_name = f"{fasta_dir}/combined_families.fasta"
-            with open(file_name, 'a+') as f:
-                for _, row in famseq.iterrows():
-                    line = f'>ott{row["opentol_id"]}|{row["processid"]}\n{row["sequence"]}\n'
-                    f.write(line)
-        elif len(famseq) > maxseq:
-            logger.debug("Family %s has more than %s sequences", family, maxseq)
-            write_genera(family, fasta_dir, conn)
+    # Fetch the longest sequence in the BIN
+    logger.info(f"Writing longest sequence for BIN {q['bin_uri']} to FASTA")
+    famseq = pd.read_sql_query(f"""
+        SELECT b.processid, t.bin_uri, t.opentol_id, t.taxon, b.nucraw
+        FROM barcode b
+        JOIN taxon t ON b.taxon_id = t.taxon_id
+        WHERE
+            t.{q['level']} = '{q['name']}' AND
+            t.family = '{q['family']}' AND
+            bin_uri = '{q['bin_uri']}'
+        ORDER BY
+        length(b.nucraw) DESC LIMIT 1
+        """, conn)
+
+    # Append to file handle fh
+    for _, row in famseq.iterrows():
+        defline = f'>ott{row["opentol_id"]}|{row["processid"]}|{row["bin_uri"]}|{row["taxon"]}\n'
+        fh.write(defline)
+        seq = f'{row["nucraw"]}\n'
+        fh.write(seq)
 
 
 if __name__ == '__main__':
-    database_file = snakemake.params.database[0]  # noqa: F821
+    # Define and process command line arguments
+    parser = argparse.ArgumentParser(description='Required command line arguments.')
+    parser.add_argument('-d', '--database', required=True, help='Database file to query')
+    parser.add_argument('-f', '--fasta_dir', required=True, help='Directory to write FASTA files to')
+    parser.add_argument('-l', '--level', required=True, help='Taxonomic level to filter (e.g. order)')
+    parser.add_argument('-n', '--name', required=True, help='Taxon name to filter (e.g. Primates)')
+    parser.add_argument('-c', '--chunks', required=True, help="Number of chunks (families) to write to file")
+    parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
+    args = parser.parse_args()
+    database_file = args.database
+
+    # Configure logger
+    logger.setLevel(args.verbosity)
 
     # Connect to the database (creates a new file if it doesn't exist)
-    logger.info(f"Going to connect to database {database_file}")
-    conn = sqlite3.connect(database_file)
+    logger.info(f"Going to connect to database {args.database}")
+    connection = sqlite3.connect(args.database)
 
     # Create a cursor
-    cursor = conn.cursor()
+    cursor = connection.cursor()
 
-    # Write barcodes to FASTA in family groups
-    write_families(conn, filter_level)
+    # Get families and bins for configured level and name
+    query = {
+        'level': args.level,
+        'name': args.name
+    }
+    df = get_family_bins(query, connection)
+
+    # Iterate over distinct families
+    index = 1
+    for family in df['family'].unique():
+        logger.info(f"Writing {family}")
+
+        # Make directory and open file handle
+        subdir = os.path.join(args.fasta_dir, f"{index}-of-{args.chunks}")
+        try:
+            os.mkdir(subdir)
+        except OSError as error:
+            logger.warning(error)
+
+        with open(os.path.join(subdir, 'unaligned.fa'), 'w') as handle:
+
+            # Iterate over bins in family
+            family_bin_uris = df[df['family'] == family]['bin_uri'].unique()
+            for bin_uri in family_bin_uris:
+                logger.debug(f"Writing {bin_uri}")
+                query['bin_uri'] = bin_uri
+                query['family'] = family
+                write_bin(query, connection, handle)
+
+        index += 1
 
     # Close the connection
-    conn.close()
+    connection.close()
