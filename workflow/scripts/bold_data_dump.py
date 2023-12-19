@@ -2,9 +2,10 @@ import csv
 import sqlite3
 import pandas as pd
 import logging
+import argparse
 
-logging.basicConfig(level=snakemake.params.log_level)  # noqa: F821
-logger = logging.getLogger(__name__)
+logging.basicConfig()
+logger = logging.getLogger('create_database')
 
 
 def extract_bold(conn, bold_tsv, marker, minlength):
@@ -37,28 +38,30 @@ def extract_bold(conn, bold_tsv, marker, minlength):
             marker_1 = marker.split('_')[0]
             marker_2 = marker.split('_')[1]
             df = chunk.loc[
-                    (
-                        (chunk['marker_code'] == marker_1) &
-                        (chunk["kingdom"] == "Plantae") &
-                        (chunk["nucraw"].str.len() >= minlength) &
-                        (chunk["species"] is not None)
+                (
+                    (chunk['marker_code'] == marker_1) &
+                    (chunk["kingdom"] == "Plantae") &
+                    (chunk["nucraw"].str.len() >= minlength) &
+                    (chunk["species"] is not None)
                 ) |
                 (
-                            (chunk['marker_code'] == marker_2) &
-                            (chunk["kingdom"] == "Plantae") &
-                            (chunk["nucraw"].str.len() >= minlength) &
-                            (chunk["species"] is not None)
+                    (chunk['marker_code'] == marker_2) &
+                    (chunk["kingdom"] == "Plantae") &
+                    (chunk["nucraw"].str.len() >= minlength) &
+                    (chunk["species"] is not None)
                 )
                 ]
+
         # Keep stated columns, do not keep rows where NAs are present
-        df_temp = df[['taxon', 'kingdom', 'class', 'order', 'family', 'genus']].dropna()
+        df_temp = df[['taxon', 'kingdom', 'class', 'order', 'family', 'genus', 'bin_uri']].dropna()
         df_temp.rename(columns={'order': 'ord'})
+
         # Add rows to SQLite table (makes table if not exist yet)
-        df_temp.to_sql('taxon_temp', conn, if_exists='append',
-                               index=False)
+        df_temp.to_sql('taxon_temp', conn, if_exists='append', index=False)
 
         # Keep stated columns
-        df_temp = df[['processid', 'marker_code', 'nucraw', 'country', 'taxon']]
+        df_temp = df[['processid', 'marker_code', 'nucraw', 'country', 'taxon', 'bin_uri']]
+
         # Add rows to SQLite table (makes table if not exist yet)
         df_temp.to_sql('barcode_temp', conn, if_exists='append', index=False)
         conn.commit()
@@ -70,7 +73,8 @@ def make_tables(conn, cursor):
     :param cursor: Cursor object to execute SQL commands.
     """
     logger.info("Initializing database")
-    # Create taxon table - XXX: added genus to split large families
+
+    # Create taxon table
     cursor.execute("""CREATE TABLE IF NOT EXISTS taxon (
             taxon_id INTEGER PRIMARY KEY,
             taxon TEXT NOT NULL,
@@ -79,9 +83,11 @@ def make_tables(conn, cursor):
             class TEXT NOT NULL,
             family TEXT NOT NULL,
             genus TEXT NOT NULL,
+            bin_uri TEST NOT NULL,
             opentol_id INTEGER
             )
         """)
+
     # Create barcode table
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS barcode (
@@ -93,6 +99,7 @@ def make_tables(conn, cursor):
         taxon_id INTEGER NOT NULL,
         FOREIGN KEY (taxon_id) REFERENCES taxon(taxon_id)
     )""")
+
     # Commit the changes
     conn.commit()
 
@@ -105,7 +112,7 @@ def make_distinct(conn, cursor):
     """
     logger.info("Post-processing database")
     # Select only the distinct taxon entries from taxon_temp, insert into taxon
-    cursor.execute("""INSERT INTO taxon (taxon, kingdom, class, ord, family, genus)
+    cursor.execute("""INSERT INTO taxon (taxon, kingdom, class, ord, family, genus, bin_uri)
      SELECT DISTINCT * FROM taxon_temp""")
 
     # Get taxon_id from taxon table as foreign key insert
@@ -113,7 +120,7 @@ def make_distinct(conn, cursor):
      INSERT INTO barcode (processid, marker_code, nucraw, country, taxon_id) 
      SELECT DISTINCT barcode_temp.processid, barcode_temp.marker_code,
      barcode_temp.nucraw, barcode_temp.country, taxon.taxon_id
-     FROM barcode_temp INNER JOIN taxon ON barcode_temp.taxon = taxon.taxon""")
+     FROM barcode_temp INNER JOIN taxon ON barcode_temp.bin_uri = taxon.bin_uri""")
 
     # Drop old tables
     cursor.execute("""DROP TABLE taxon_temp""")
@@ -124,19 +131,27 @@ def make_distinct(conn, cursor):
 
 
 if __name__ == '__main__':
-    database = snakemake.output[0]  # noqa: F821
-    bold_tsv_file = snakemake.input[0]  # noqa: F821
-    marker_name = snakemake.params.marker  # noqa: F821
-    minimum_length = snakemake.params.minlength  # noqa: F821
+
+    # Define command line arguments
+    parser = argparse.ArgumentParser(description='Required command line arguments.')
+    parser.add_argument('-d', '--database', required=True, help='Database file to create')
+    parser.add_argument('-t', '--tsv', required=True, help='BOLD data dump TSV')
+    parser.add_argument('-m', '--marker', required=True, help='Marker name (e.g. COI-5P)')
+    parser.add_argument('-l', '--length', required=True, type=int, help='Minimum sequence length (e.g. 600)')
+    parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
+    args = parser.parse_args()
+
+    # Configure logger
+    logger.setLevel(args.verbosity)
 
     # Make connection to the database
-    connection = sqlite3.connect(database)
+    connection = sqlite3.connect(args.database)
 
     # Create a cursor
     database_cursor = connection.cursor()
 
     # Dump BOLD data into DB in temporary tables
-    extract_bold(connection, bold_tsv_file, marker_name, minimum_length)
+    extract_bold(connection, args.tsv, args.marker, args.length)
 
     # Make new tables with different names
     make_tables(connection, database_cursor)
