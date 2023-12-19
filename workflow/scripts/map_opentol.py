@@ -3,7 +3,7 @@ import requests
 import json
 import logging
 import os
-import time
+import argparse
 import pandas as pd
 import numpy as np
 
@@ -12,7 +12,7 @@ import numpy as np
 endpoint = "https://api.opentreeoflife.org/v3/tnrs/match_names"
 
 # Instantiate logger
-logging.basicConfig(level=snakemake.params.log_level)  # noqa: F821
+logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
@@ -85,6 +85,7 @@ def match_opentol(database, kingdom, chunksize, fuzzy):
         ord TEXT NOT NULL,
         family TEXT NOT NULL,
         genus TEXT NOT NULL,
+        bin_uri TEXT NOT NULL,
         opentol_id INTEGER)""")
 
     # Load all unmatched records into df, iterate over it in chunks
@@ -105,27 +106,28 @@ def match_opentol(database, kingdom, chunksize, fuzzy):
             order = str(chunk_df['ord'].iloc[i])
             family = str(chunk_df['family'].iloc[i])
             genus = str(chunk_df['genus'].iloc[i])
+            bin_uri = str(chunk_df['bin_uri'].iloc[i])
 
             # Attempt to get OTT ID
             ott_id = tnrs_response(tnrs_data['results'][i]['matches'])
             if ott_id is not None:
                 opentol_id = int(ott_id)
-                data_to_insert = (taxon_id, taxon, kingdom, classe, order, family, genus, opentol_id)
+                data_to_insert = (taxon_id, taxon, kingdom, classe, order, family, genus, bin_uri, opentol_id)
                 sql_command = """
-                    INSERT INTO taxon_temp (taxon_id, taxon, kingdom, class, ord, family, genus, opentol_id)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO taxon_temp (taxon_id, taxon, kingdom, class, ord, family, genus, bin_uri, opentol_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """
                 cursor.execute(sql_command, data_to_insert)
 
             else:
-                data_to_insert = (taxon_id, taxon, kingdom, classe, order, family, genus)
+                data_to_insert = (taxon_id, taxon, kingdom, classe, order, family, genus, bin_uri)
                 sql_command = """
-                    INSERT INTO taxon_temp (taxon_id, taxon, kingdom, class, ord, family, genus)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO taxon_temp (taxon_id, taxon, kingdom, class, ord, family, genus, bin_uri)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """
                 cursor.execute(sql_command, data_to_insert)
             conn.commit()
-            logger.info(data_to_insert)
+            logger.debug(data_to_insert)
 
     # Copy over the already matched records
     cursor.execute("""INSERT INTO taxon_temp SELECT * FROM taxon WHERE opentol_id IS NOT NULL""")
@@ -147,6 +149,7 @@ def postprocess_db(database):
     cursor.execute("""CREATE INDEX IF NOT EXISTS ord_idx ON taxon (ord)""")
     cursor.execute("""CREATE INDEX IF NOT EXISTS family_idx ON taxon (family)""")
     cursor.execute("""CREATE INDEX IF NOT EXISTS genus_idx ON taxon (genus)""")
+    cursor.execute("""CREATE INDEX IF NOT EXISTS bin_uri_idx ON taxon (bin_uri)""")
     cursor.execute("""CREATE INDEX IF NOT EXISTS opentol_id_idx ON taxon (opentol_id)""")
     cursor.execute("""CREATE INDEX IF NOT EXISTS taxon_id_idx ON barcode (taxon_id)""")
     cursor.execute("""CREATE INDEX IF NOT EXISTS country_idx ON barcode (country)""")
@@ -156,9 +159,19 @@ def postprocess_db(database):
 
 
 if __name__ == '__main__':
-#    temp_database_name = snakemake.input[0]  # noqa: F821
-    marker = snakemake.params.marker  # noqa: F821
-    database_file = snakemake.input[0]  # noqa: F821
+
+    # Define and process command line arguments
+    parser = argparse.ArgumentParser(description='Required command line arguments.')
+    parser.add_argument('-d', '--database', required=True, help='Database file to enrich')
+    parser.add_argument('-m', '--marker', required=True, help='Marker name (e.g. COI-5P)')
+    parser.add_argument('-o', '--output', required=True, help='0-byte status file')
+    parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
+    args = parser.parse_args()
+    marker = args.marker
+    database_file = args.database
+
+    # Configure logger
+    logger.setLevel(args.verbosity)
 
     # Infer taxonomic context from marker name
     if marker == "COI-5P":
@@ -179,6 +192,6 @@ if __name__ == '__main__':
 #    os.rename(temp_database_name, database_file)
 
     # Touch the file
-    filename = snakemake.output[0]
+    filename = args.output
     with open(filename, 'a'):
         os.utime(filename, None)
