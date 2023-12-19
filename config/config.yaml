@@ -2,8 +2,11 @@
 # Used for parallelization by snakemake
 cpu_cores: 8
 
+# Used for scatter/gather processing, corresponds with the number of families within the taxon defined in fasta_filter
+nfamilies: 17
+
 # Used for verbosity, see `logging` from stdlib
-log_level: 'DEBUG'
+log_level: 'INFO'
 
 # Either use COI-5P or matK_rbcL
 marker: COI-5P
@@ -33,7 +36,6 @@ dependencies:
       - -r requirements.txt
 
 file_names:
-  bold_zip: resources/BOLD_Public.30-Dec-2022.tar.gz
   bold_tsv: resources/mnt/bold_public/datapackages/recent-data/BOLD_Public.30-Dec-2022.tsv
   open_tre: resources/opentree/opentree13.4_tree/labelled_supertree/labelled_supertree.tre
   hmm: resources/hmm/COI-5P.hmm
