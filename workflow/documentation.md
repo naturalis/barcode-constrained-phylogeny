@@ -1,12 +1,15 @@
-## Scripts
-### [unzip_targz.py](scripts/unzip_targz.py)
-- Unzips a targz file, more specifically a [datarelease](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022) from BOLD Systems containing a snapshot of the barcode database (more than 8 million barcodes as of 30-DEC-2022).
+## Rules
 
-### [bold_data_dump.py](scripts/bold_data_dump.py) 
-- Puts relevant BOLD data columns into a custom SQLite database.
+- `create_database` - Puts relevant BOLD data columns into a custom SQLite database.
+  Uses BOLD dump TSV as defined in config file. Implemented by the 
+  [bold_data_dump.py](scripts/bold_data_dump.py) script.
 
-### [map_opentol.py](scripts/map_opentol.py)
-- Uses the [Open Tree of Life API](https://github.com/OpenTreeOfLife/germinator/wiki/TNRS-API-v3#match_names) to map BOLD taxon names to Open Tree of Life taxonomy IDs. 
+- `map_opentol` - Enriches the SQLite database with mappings to OpenToL. Because this 
+  operates on the same database file as the previous rule, the output is a 0-byte file
+  `map_opentol.ok` to indicate that the task was run. Uses the 
+  [Open Tree of Life API](https://github.com/OpenTreeOfLife/germinator/wiki/TNRS-API-v3#match_names) 
+  to map BOLD taxon names to Open Tree of Life taxonomy IDs. Implemented by the
+  [map_opentol.py](scripts/map_opentol.py) script.
 
 ### [family_fasta.py](scripts/family_fasta.py)
 - Barcodes from the custom database are divided into their taxonomic family groups and written to FASTA files: 'fasta/family/{family}.fasta'
