@@ -4,4 +4,6 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - perl-bio-phylo-forest-dbtree
+  - pip
+  - pip:
+    - -r family_fasta.txt

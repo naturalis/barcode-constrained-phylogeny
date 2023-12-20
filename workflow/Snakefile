@@ -1,16 +1,8 @@
 configfile: "config/config.yaml"
-import subprocess
 
-# Function to get all families for alignment
-#def get_all_aligned_families(wildcards):
-#    checkpoint_output = checkpoints.family_fasta.get(**wildcards).output[0]
-#    families = [f.split('.')[0] for f in os.listdir(checkpoint_output)]
-#    return expand("results/fasta/family/{family}_aligned.fasta", family=families)
-
-# Rule all to trigger the alignment of all families
-#rule all:
-#    input:
-#        get_all_aligned_families
+rule all:
+    input:
+        "results/concat.trees"
 
 # Aligns sequences with HMM.
 #rule hmm_align:
@@ -98,10 +90,10 @@ rule megatree_loader:
 scattergather:
   split = config["nfamilies"]
 
-# Exports unaligned sequences aggregated at family level.
+# Exports unaligned BIN sequences aggregated at family level.
 rule family_fasta:
     input: rules.map_opentol.output
-    output: scatter.split(config["file_names"]["fasta_dir"] + "/{scatteritem}/unaligned.fa")
+    output: scatter.split("results/fasta/family/{scatteritem}/unaligned.fa")
     params:
       log_level=config['log_level'],
       fasta_dir=config["file_names"]["fasta_dir"],
@@ -122,7 +114,27 @@ rule family_fasta:
             -v {params.log_level} 2> {log}
         """
 
+# Exports OpenToL newick file for each unaligned BIN sequence file
+rule family_constraint:
+    input: "results/fasta/family/{scatteritem}/unaligned.fa"
+    output: "results/fasta/family/{scatteritem}/unaligned.tre"
+    params:
+        temp=config["file_names"]["fasta_dir"] + "/{scatteritem}/unaligned.txt",
+        db="results/databases/BOLD_{}_barcodes.db".format(config["marker"])
+    conda: "envs/family_constraint.yml"
+    log: "logs/family_constraint-{scatteritem}.log"
+    shell:
+        """
+        grep '>ott' {input} | cut -f1 -d'|' | sort | uniq | sed -e 's/>//g' \
+            > {params.temp} 2> {log}
+        megatree-pruner -i {params.temp} -d {params.db} -v > {output} 2>> {log}
+        """
 
-
-# This extracts all OTT IDs from a FASTA file and returns them as CSV for input into megatree-pruner
-# grep '>' Aotidae.fasta | cut -f1 -d'|' | sort | uniq | sed -e 's/>//g' | tr '\n' ',
+# gathers the results
+rule final_rule:
+    input:
+        gather.split("results/fasta/family/{scatteritem}/unaligned.tre")
+    output:
+        "results/concat.trees"
+    shell:
+        "cat {input} > {output}"
