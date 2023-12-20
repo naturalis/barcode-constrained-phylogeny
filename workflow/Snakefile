@@ -125,8 +125,7 @@ rule family_constraint:
     log: "logs/family_constraint-{scatteritem}.log"
     shell:
         """
-        grep '>ott' {input} | cut -f1 -d'|' | sort | uniq | sed -e 's/>//g' \
-            > {params.temp} 2> {log}
+        grep '>ott' {input} | cut -f1 -d'|' | sort | uniq | sed -e 's/>//g' > {params.temp} 2> {log}
         megatree-pruner -i {params.temp} -d {params.db} -v > {output} 2>> {log}
         """
 
