@@ -36,8 +36,8 @@ dependencies:
       - -r requirements.txt
 
 file_names:
-  bold_tsv: resources/mnt/bold_public/datapackages/recent-data/BOLD_Public.30-Dec-2022.tsv
-  open_tre: resources/opentree/opentree13.4_tree/labelled_supertree/labelled_supertree.tre
+  bold_tsv: resources/BOLD_Public.18-Dec-2023/BOLD_Public.18-Dec-2023.tsv
+  open_tre: resources/opentree/opentree14.9_tree/labelled_supertree/labelled_supertree.tre
   hmm: resources/hmm/COI-5P.hmm
   fasta_dir: results/fasta/family
 
