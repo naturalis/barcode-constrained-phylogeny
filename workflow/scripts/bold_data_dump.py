@@ -53,14 +53,14 @@ def extract_bold(conn, bold_tsv, marker, minlength):
                 ]
 
         # Keep stated columns, do not keep rows where NAs are present
-        df_temp = df[['taxon', 'kingdom', 'class', 'order', 'family', 'genus', 'bin_uri']].dropna()
+        df_temp = df[['species', 'kingdom', 'class', 'order', 'family', 'genus', 'bin_uri']].dropna()
         df_temp.rename(columns={'order': 'ord'})
 
         # Add rows to SQLite table (makes table if not exist yet)
         df_temp.to_sql('taxon_temp', conn, if_exists='append', index=False)
 
         # Keep stated columns
-        df_temp = df[['processid', 'marker_code', 'nucraw', 'country', 'taxon', 'bin_uri']]
+        df_temp = df[['processid', 'marker_code', 'nucraw', 'country', 'species', 'bin_uri']]
 
         # Add rows to SQLite table (makes table if not exist yet)
         df_temp.to_sql('barcode_temp', conn, if_exists='append', index=False)
