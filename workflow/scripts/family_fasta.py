@@ -60,7 +60,7 @@ def write_bin(q, conn, fh):
     # Fetch the longest sequence in the BIN
     logger.info(f"Writing longest sequence for BIN {q['bin_uri']} to FASTA")
     famseq = pd.read_sql_query(f"""
-        SELECT b.processid, t.bin_uri, t.opentol_id, t.taxon, b.nucraw
+        SELECT b.processid, t.bin_uri, t.opentol_id, t.taxon, b.nucraw, b.barcode_id
         FROM barcode b
         JOIN taxon t ON b.taxon_id = t.taxon_id
         WHERE
@@ -73,7 +73,7 @@ def write_bin(q, conn, fh):
 
     # Append to file handle fh
     for _, row in famseq.iterrows():
-        defline = f'>ott{row["opentol_id"]}|{row["processid"]}|{row["bin_uri"]}|{row["taxon"]}\n'
+        defline = f'>{row["barcode_id"]}|ott{row["opentol_id"]}|{row["processid"]}|{row["bin_uri"]}|{row["taxon"]}\n'
         fh.write(defline)
         seq = f'{row["nucraw"]}\n'
         fh.write(seq)
