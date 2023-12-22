@@ -2,20 +2,7 @@ configfile: "config/config.yaml"
 
 rule all:
     input:
-        "results/concat.trees"
-
-# Aligns sequences with HMM.
-#rule hmm_align:
-#    input:
-#        "results/fasta/family/{family}.fasta"
-#    output:
-#        "results/fasta/family/{family}_aligned.fasta"
-#    params:
-#        log_level=config['log_level']
-#    conda:
-#        "envs/environment.yml"
-#    script:
-#        "scripts/msa_hmm.py"
+        "results/trees_all.tre"
 
 # Creates and populates a SQLite database with filtered sequence records.
 # Uses BOLD dump TSV as defined in config file
@@ -125,15 +112,62 @@ rule family_constraint:
     log: "logs/family_constraint-{scatteritem}.log"
     shell:
         """
-        grep '>ott' {input} | cut -f1 -d'|' | sort | uniq | sed -e 's/>//g' > {params.temp} 2> {log}
+        grep '>' {input} | cut -f2 -d'|' | sort | uniq > {params.temp} 2> {log}
         megatree-pruner -i {params.temp} -d {params.db} -v > {output} 2>> {log}
         """
+
+# Aligns sequences with HMM.
+rule msa_hmm:
+    input: "results/fasta/family/{scatteritem}/unaligned.fa"
+    output: "results/fasta/family/{scatteritem}/aligned.phy"
+    params:
+        log_level=config['log_level'],
+        hmm_file=config['file_names']['hmm']
+    conda: "envs/msa_hmm.yml"
+    log: "logs/msa_hmm-{scatteritem}.log"
+    shell:
+        """
+        python workflow/scripts/msa_hmm.py \
+            -i {input} \
+            -o {output} \
+            -m {params.hmm_file} \
+            -v {params.log_level} 2> {log}             
+        """
+
+rule prep_raxml:
+    input:
+        alignment="results/fasta/family/{scatteritem}/aligned.phy",
+        tree="results/fasta/family/{scatteritem}/unaligned.tre"
+    output:
+        alignment="results/fasta/family/{scatteritem}/raxml-ready.fa",
+        tree="results/fasta/family/{scatteritem}/raxml-ready.tre"
+    params:
+        db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
+        log_level=config['log_level'],
+    conda: "envs/prep_raxml.yml"
+    log: "logs/prep_raxml-{scatteritem}.log"
+    shell:
+        """
+        python workflow/scripts/prep_raxml.py \
+            -t {input.tree} \
+            -o {output.tree} \
+            -a {input.alignment} \
+            -f {output.alignment} \
+            -v {params.log_level} \
+            -d {params.db} 2> {log}            
+        """
+
 
 # gathers the results
 rule final_rule:
     input:
-        gather.split("results/fasta/family/{scatteritem}/unaligned.tre")
+        fastas=gather.split("results/fasta/family/{scatteritem}/raxml-ready.fa"),
+        trees=gather.split("results/fasta/family/{scatteritem}/raxml-ready.tre")
     output:
-        "results/concat.trees"
+        fasta="results/aligned_all.fa",
+        trees="results/trees_all.tre"
     shell:
-        "cat {input} > {output}"
+        """
+        cat {input.fastas} > {output.fasta}
+        cat {input.trees} > {output.trees}
+        """
