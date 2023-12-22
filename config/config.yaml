@@ -5,6 +5,9 @@ cpu_cores: 8
 # Used for scatter/gather processing, corresponds with the number of families within the taxon defined in fasta_filter
 nfamilies: 17
 
+# Number of outgroups to include in each family-level analysis
+outgroups: 3
+
 # Used for verbosity, see `logging` from stdlib
 log_level: 'INFO'
 
@@ -18,7 +21,7 @@ minlength: 600
 minseq: 3
 
 # Maximum number of sequences per alignment
-maxseq: 5000
+maxseq: 12000
 
 # Nucleotide alignments (NT) or aminoacid (AA) for MACSE alignment
 datatype: NT
