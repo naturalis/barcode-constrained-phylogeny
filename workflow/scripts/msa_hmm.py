@@ -1,16 +1,13 @@
 import logging
 import tempfile
+import argparse
 
-from Bio import SeqIO, AlignIO
-from Bio.Align import MultipleSeqAlignment
+from Bio import SeqIO
 from Bio.AlignIO import read as read_alignment
 from subprocess import run
 
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-
-logging.basicConfig(level=snakemake.params.log_level)  # noqa: F821
-logger = logging.getLogger(__name__)
+logging.basicConfig()
+logger = logging.getLogger('msa_hmm')
 
 
 def write_alignments(hmmfile, seqfile, outfile):
@@ -23,44 +20,47 @@ def write_alignments(hmmfile, seqfile, outfile):
     :param outfile: name of alignment fasta file output
     :return:
     """
-    logger.info("Aligning sequences in FASTA file %s" % in_file)
+    logger.info(f'Aligning sequences in FASTA file {seqfile}')
+
+    # Read each sequence record from fasta file
     alignments = []
     log_reverse = 0
-    # Read each sequence record from fasta file
     for record in SeqIO.parse(seqfile, "fasta"):
-        # record_header_split = record.id.split("|")
-        # record.id = record_header_split[1] + "|" + record_header_split[0]
-        # record.description = record_header_split[1] + "|" + record_header_split[0]
+
         # Run align_score with original sequence
         count_1, alignment_original = align_score(record, hmmfile)
-        # Reverse complement the sequence
+        logger.debug(f'Forward alignment score {count_1} for {record.id}')
+
+        # Reverse complement the sequence and align
         record.seq = record.seq.reverse_complement()
-        # run align_score with reverse complemented sequence
         count_2, alignment_reverse = align_score(record, hmmfile)
-        logger.debug('Record %s original alignment score:%.2f\nRecord %s reverse complement alignment score:%.2f'
-                     % (record.id, count_1, record.id, count_2))
+        logger.debug(f'Reverse complemented alignment score {count_2} for {record.id}')
+
         # Check if the first count is higher
         if count_1 >= count_2:
-            # Add alignment to list
+
+            # Reverse the reverse complement
             record.seq = record.seq.reverse_complement()
             alignments.append(record)
         else:
-            logger.debug('Record %s is in reverse complement.' % record.id)
+
             # Add alignment to list
             alignments.append(record)
+
             # Log counter
             log_reverse += 1
-    logger.info("There were %i sequences that were reverse complemented before alignment." % log_reverse)
-    # Rewrite stockholm file to a fasta alignment file
-    # msa = MultipleSeqAlignment(alignments)
-    # AlignIO.write(alignments, output, "fasta")
-    with tempfile.NamedTemporaryFile(mode='w+') as temp_fasta:
-        # Save the sequence to the temporary file
-        SeqIO.write(alignments, temp_fasta.name, 'fasta')
-        logger.info("Alignn all family barcodes in one file.")
-        # Run hmm align (arguments: output file, model file, input file)
-        run(['hmmalign','-o', 'stockholmfile.fasta', hmmfile, temp_fasta.name])
-        SeqIO.convert('stockholmfile.fasta', "stockholm", outfile, "fasta")
+
+    logger.info(f'Corrected {log_reverse} reverse complemented sequences out of {len(alignments)}')
+
+    # Save the sequence to the temporary file
+    with open(f'{outfile}-revcomfix.fa', mode='a+') as temp_fasta:
+        for seq in alignments:
+            temp_fasta.write(f'>{seq.description}\n')
+            temp_fasta.write(f'{seq.seq}\n')
+    run(['hmmalign', '--trim', '--outformat', 'phylip', '-o', outfile, hmmfile, f'{outfile}-revcomfix.fa'])
+
+    logger.info(f'Wrote all aligned sequences to {outfile}')
+
 
 def align_score(record, hmmfile):
     """
@@ -73,46 +73,62 @@ def align_score(record, hmmfile):
     """
     # Open two temporary files to store a fasta sequence and a stockholm sequence
     with tempfile.NamedTemporaryFile(mode='w+') as temp_fasta, tempfile.NamedTemporaryFile(mode='w+') as temp_stockholm:
+
         # Save the sequence to the temporary file
         SeqIO.write(record, temp_fasta.name, 'fasta')
-        # Run hmm align (arguments: output file, model file, input file)
-        run(['hmmalign', '-o',temp_stockholm.name, hmmfile, temp_fasta.name])
-        # Read the stockholm alignment
+
+        # Run hmm align, read the aligned sequence
+        run(['hmmalign', '--trim', '-o', temp_stockholm.name, hmmfile, temp_fasta.name])
         alignment = read_alignment(temp_stockholm.name, "stockholm")
-        test = SeqIO.read(temp_stockholm.name, "stockholm")
+        seq = alignment[0]
+
     # Return probability colum of the stockholm file
     quality_string = alignment.column_annotations['posterior_probability']
 
     count = 0
+
     # Count . and * characters
     dot_count = quality_string.count('.')
     star_count = quality_string.count('*')
+
     # Give value 0 to . and value 10 to *
     count += dot_count * 0
     count += star_count * 10
+
     # Add all numbers
     digit_sum = sum(int(char) for char in quality_string if char.isdigit())
+
     # Add numbers to the values calculated from . and *
     count += digit_sum
+
     # Calculate average count to account for gaps (0's)
-    average_count = count/len(quality_string)
-    return average_count, test
-
-
+    average_count = count / len(quality_string)
+    return average_count, seq
 
 
 if __name__ == '__main__':
 
+    # Define command line arguments
+    parser = argparse.ArgumentParser(description='Required command line arguments.')
+    parser.add_argument('-m', '--model', required=True, help='Location of HMM file, should match the marker')
+    parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
+    parser.add_argument('-i', '--input', required=True, help='Input unaligned FASTA file')
+    parser.add_argument('-o', '--output', required=True, help='Output aligned FASTA file')
+    args = parser.parse_args()
+
+    # Configure logger
+    logger.setLevel(args.verbosity)
+
     # Check the HMM file
-    hmmfile = snakemake.params.hmm  # noqa: F821
+    hmmfile = args.model
     logger.info(f"Going to use Hidden Markov Model from {hmmfile}")
 
     # Check the input file
-    in_file = snakemake.input[0]  # noqa: F821
+    in_file = args.input
     logger.info(f"Going to align sequences from input file {in_file}")
 
     # Announce the output file
-    out_file = snakemake.output[0]  # noqa: F821
+    out_file = args.output
     logger.info(f"Will write alignment to output file {out_file}")
 
     write_alignments(hmmfile, in_file, out_file)
