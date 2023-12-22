@@ -1,0 +1,9 @@
+name: prep_raxml
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pip
+  - pip:
+    - -r prep_raxml.txt

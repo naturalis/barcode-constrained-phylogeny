@@ -1,0 +1,9 @@
+name: msa_hmm
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - hmmer
+  - pip:
+    - -r msa_hmm.txt
