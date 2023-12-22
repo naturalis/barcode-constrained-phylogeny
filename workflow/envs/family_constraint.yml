@@ -1,4 +1,4 @@
-name: family_fasta
+name: family_constraint
 channels:
   - conda-forge
   - bioconda
