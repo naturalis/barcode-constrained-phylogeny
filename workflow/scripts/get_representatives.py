@@ -1,58 +1,106 @@
-import numpy as np
-import pandas as pd
-import os
 import logging
+import argparse
+import sqlite3
+
+from Bio import SeqIO
+from Bio.Phylo import read as read_newick
+
+logging.basicConfig()
+logger = logging.getLogger('choose_exemplars')
 
 
-logger = logging.getLogger(__name__)
-
-
-def call_functions(csv_file, representatives_file):
-        logger.info("Getting the highest otts from distance matrix.")
-        df = pd.read_csv(csv_file, delimiter="\t")
-        get_highest(df, representatives_file)
-
-def get_highest(df, representatives_file):
-    """Declare the highest value in the dataframe.
-    Search for the position of the highest value in the dataframe.
-    Use that position to find the corresponding highest value.
+def get_ingroup_labels(input_file):
     """
-    highest = df.max()  # The highest value in the dataframe
-    row_index = search_pos(df, highest[0], df[highest[0]].max())    # Search for position of the highest value
-    logger.info(f"{highest} found at position {row_index}")
-    # Get row and column name
-    representatives = get_corresponding_ott(highest, highest[0], row_index, representatives_file)
-    logger.info(f"Writing the highest otts {representatives} to representatives file")
-
-
-def search_pos(df_data: pd.DataFrame, col_name, value):
-    """Search in dataframe for the highest value and return the corresponding otts.
-    return the values and correspongding otts if found, else return an empty list.
+    Reads input FASTA, returns list of IDs (first words in defline)
+    :param input_file: FASTA file
+    :return:
     """
-    try:
-        row_index = df_data[df_data[col_name] == value].index[0]
-        return row_index
-    except:
-        print("Unknown errror occurred.")
-        logger.debug("Something went wrong.")
-        return []
+    labels = []
+    for record in SeqIO.parse(input_file, "fasta"):
+        labels.append(record.id)
+    return labels
 
 
-
-def get_corresponding_ott(df, colname, row_pos, representatives_file):
-    """Get the corresponding ott from certain value.
-    This is done using the position of the value.
-    A file i
+def pick_shallowest_tips(tree_file, ingroup):
     """
-    representatives = ""
-    rowname = df.index[row_pos]
-    representatives += colname + "\n"
-    representatives += rowname + "\n"
-    with open(representatives_file, "a+") as output:
-        output.write(str(representatives))
+    Picks two tips nearest to the ingroup root on either side
+    :param tree_file: Newick tree file
+    :param ingroup: List of labels to consider
+    :return:
+    """
+    logger.info(f'Going to pick exemplars from {tree_file}')
+    tree = read_newick(tree_file, 'newick')
+    leaves = [tree.find_any(name=label) for label in ingroup]
+    mrca = tree.common_ancestor(leaves)
+    children = mrca.clades
+    representatives = []
+    if len(children) == 2:
+        for child in children:
+            tips = child.get_terminals()
+            dists = []
+            for tip in tips:
+
+                # Skip if focal tip is aberrant outgroup
+                if tip.id not in ingroup:
+                    logger.warning(f'Have aberrant outgroup {tip.id} in ingroup of tree {tree_file}')
+                    continue
+
+                # Calculate distance to mrca
+                dist = tree.distance(tip, mrca)
+                dists.append({'dist': dist, 'id': tip.id})
+
+            # Get shallowest tip
+            dists = sorted(dists, key=lambda x: x['dist'])
+            representatives.append(dists[0]['id'])
+    else:
+        logger.error(f'Ingroup root in {tree_file} is not bifurcating')
     return representatives
 
+
+def write_sequences(inaln, outaln, subset):
+    """
+    Appends the specified subset of sequences from the input alignment to the output
+    :param inaln:
+    :param outaln:
+    :param subset:
+    :return:
+    """
+    logger.info(f'Going to write {len(subset)} sequences to {outaln}')
+    with open(outaln, 'a') as outfh:
+        for record in SeqIO.parse(inaln, "fasta"):
+            if record.id in subset:
+                outfh.write(f'>{record.id}\n')
+                outfh.write(f'{record.seq}\n')
+
+
 if __name__ == "__main__":
-    csv_file = snakemake.input[0]  # noqa: F821
-    representatives_file = snakemake.output[0] # noqa: F821
-    call_functions(csv_file, representatives_file)
+
+    # Define command line arguments
+    parser = argparse.ArgumentParser(description='Required command line arguments.')
+    parser.add_argument('-d', '--database', required=True, help='SQLite database file')
+    parser.add_argument('-t', '--tree', required=True, help='Input Newick tree')
+    parser.add_argument('-i', '--inaln', required=True, help='Input aligned FASTA file')
+    parser.add_argument('-o', '--outaln', required=True, help="Output FASTA alignment")
+    parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
+    args = parser.parse_args()
+
+    # Configure logger
+    logger.setLevel(args.verbosity)
+
+    # Connect to the database (creates a new file if it doesn't exist)
+    logger.info(f"Going to connect to database {args.db}")
+    connection = sqlite3.connect(args.db)
+
+    # Read FASTA, get list of ingroup tips
+    seq_labels = get_ingroup_labels(args.inaln)
+
+    # Maybe just include the whole file
+    if len(seq_labels) < 3:
+        logger.info(f'Infile {args.inaln} has fewer than 3 sequences, will include all')
+        write_sequences(args.inaln, args.outaln, seq_labels)
+    else:
+
+        # ... or just the exemplars
+        exemplars = pick_shallowest_tips(args.tree, seq_labels)
+        write_sequences(args.inaln, args.outaln, exemplars)
+
