@@ -30,7 +30,13 @@ def pick_shallowest_tips(tree_file, ingroup):
     """
     logger.info(f'Going to pick exemplars from {tree_file}')
     tree = read_newick(tree_file, 'newick')
-    leaves = [tree.find_any(name=label) for label in ingroup]
+
+    # First, get all leaves (including None), then filter out None values
+    all_leaves = [tree.find_any(name=label) for label in ingroup]
+    leaves = [leaf for leaf in all_leaves if leaf is not None]
+    logger.debug(f'Leaves: {leaves}')
+
+    # Get MRCA of ingroup leaves, and its immediate children
     mrca = tree.common_ancestor(leaves)
     children = mrca.clades
     representatives = []
@@ -41,13 +47,13 @@ def pick_shallowest_tips(tree_file, ingroup):
             for tip in tips:
 
                 # Skip if focal tip is aberrant outgroup
-                if tip.id not in ingroup:
-                    logger.warning(f'Have aberrant outgroup {tip.id} in ingroup of tree {tree_file}')
+                if tip.name not in ingroup:
+                    logger.warning(f'Have aberrant outgroup {tip.name} in ingroup of tree {tree_file}')
                     continue
 
                 # Calculate distance to mrca
                 dist = tree.distance(tip, mrca)
-                dists.append({'dist': dist, 'id': tip.id})
+                dists.append({'dist': dist, 'id': tip.name})
 
             # Get shallowest tip
             dists = sorted(dists, key=lambda x: x['dist'])
@@ -88,8 +94,8 @@ if __name__ == "__main__":
     logger.setLevel(args.verbosity)
 
     # Connect to the database (creates a new file if it doesn't exist)
-    logger.info(f"Going to connect to database {args.db}")
-    connection = sqlite3.connect(args.db)
+    logger.info(f"Going to connect to database {args.database}")
+    connection = sqlite3.connect(args.database)
 
     # Read FASTA, get list of ingroup tips
     seq_labels = get_ingroup_labels(args.inaln)
