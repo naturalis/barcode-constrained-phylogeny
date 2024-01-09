@@ -119,6 +119,8 @@ def reroot_on_split(tree_file, ingroup):
     if smallest_split:
         new_length = smallest_split.length / 2
         tree.reroot_at_edge(smallest_split, length1=new_length, length2=new_length, update_bipartitions=True)
+
+        # TODO overwrite *.bestTree with this tree for grafting into backbone
         tree.prune_taxa(tip_set)
 
         # Convert the DendroPy tree to a Newick string
