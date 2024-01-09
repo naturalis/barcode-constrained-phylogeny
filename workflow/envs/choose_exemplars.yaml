@@ -1,0 +1,9 @@
+name: choose_exemplars
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pip
+  - pip:
+    - -r choose_exemplars.txt
