@@ -1,0 +1,10 @@
+name: prep_raxml_backbone
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - sqlite3
+  - pip
+  - pip:
+    - -r prep_raxml_backbone.txt

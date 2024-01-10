@@ -173,6 +173,7 @@ rule run_raxml:
         model = config['model'],
         num_outgroups= config['outgroups']
     log: "logs/run_raxml-{scatteritem}.log"
+    conda: "envs/raxml.yml"
     shell:
         """
         OG=$(grep '>' {input.alignment} | tail -{params.num_outgroups} | sed -e 's/>//' | tr '\n' ',')
@@ -205,6 +206,7 @@ rule choose_exemplars:
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
         log_level = config['log_level']
     log: "logs/choose_exemplars-{scatteritem}.log"
+    conda: "envs/choose_exemplars.yaml"
     shell:
         """
         python workflow/scripts/choose_exemplars.py \
@@ -227,6 +229,7 @@ rule prep_raxml_backbone:
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
         log_level = config['log_level']
     log: "logs/prep_raxml_backbone.log"
+    conda: "envs/prep_raxml_backbone.yml"
     shell:
         """
         cat {input.fastas} > {output.fasta}
@@ -247,6 +250,7 @@ rule run_raxml_backbone:
     params:
         model = config['model']
     log: "logs/run_raxml_backbone.log"
+    conda: "envs/raxml.yml"
     shell:
         """
           raxml-ng \
