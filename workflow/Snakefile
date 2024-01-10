@@ -2,7 +2,7 @@ configfile: "config/config.yaml"
 
 rule all:
     input:
-        "results/fasta/raxml-ready.fa.raxml.bestTree"
+        "results/fasta/raxml-ready.fa.raxml.bestTree.rooted"
 
 # Creates and populates a SQLite database with filtered sequence records.
 # Uses BOLD dump TSV as defined in config file
