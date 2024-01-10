@@ -259,3 +259,23 @@ rule run_raxml_backbone:
             --tree-constraint {input.tree} \
             --search > {log} 2>&1
         """
+
+
+rule reroot_backbone:
+    input:
+        backbone = "results/fasta/raxml-ready.fa.raxml.bestTree",
+        constraint = "results/fasta/raxml-ready.tre"
+    output:
+        tree = "results/fasta/raxml-ready.fa.raxml.bestTree.rooted"
+    params:
+        log_level = config['log_level']
+    log: "logs/reroot_backbone.log"
+    conda: "envs/reroot_backbone.yml"
+    shell:
+        """
+        python workflow/scripts/reroot_backbone.py \
+            -i {input.backbone} \
+            -c {input.constraint} \
+            -o {output.tree} \
+            -v {params.log_level} 2> {log}
+        """

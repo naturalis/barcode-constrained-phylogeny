@@ -1,0 +1,9 @@
+name: reroot_backbone
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pip
+  - pip:
+    - -r reroot_backbone.txt
