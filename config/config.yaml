@@ -14,6 +14,9 @@ log_level: 'INFO'
 # Either use COI-5P or matK_rbcL
 marker: COI-5P
 
+# Substitution model in RAxML CLI syntax
+model: GTR+G
+
 # Minimum length to include (this fits COI-5P)
 minlength: 600
 
