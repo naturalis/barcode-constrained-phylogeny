@@ -1,5 +1,6 @@
 ![workflow](https://github.com/naturalis/barcode-constrained-phylogeny/actions/workflows/python-package-conda.yml/badge.svg)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10519081.svg)](https://doi.org/10.5281/zenodo.10519081)
 
 ![](doc/logo-small.png)
 
