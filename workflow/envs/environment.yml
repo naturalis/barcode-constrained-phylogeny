@@ -4,11 +4,4 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - raxml-ng
-  - hmmer
-  - perl-bio-phylo-forest-dbtree
-  - graphviz
-  - sqlite3
   - pip
-  - pip:
-    - -r requirements.txt  
