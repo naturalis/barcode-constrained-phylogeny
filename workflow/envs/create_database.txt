@@ -1,3 +1,2 @@
 pandas
 sqlite3
-pandas
