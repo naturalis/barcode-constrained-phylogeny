@@ -6,11 +6,18 @@
 # Bactria: BarCode TRee Inference and Analysis
 This repository contains code and data for building very large, topologically-constrained 
 barcode phylogenies through a divide-and-conquer strategy. Such trees are useful as 
-reference materials in the comparable calculation of alpha and beta biodiversity metrics 
-across metabarcoding assays. The input data for the approach we develop here comes from 
-BOLD. The international database [BOLD Systems](https://www.boldsystems.org/index.php) 
+reference materials for curating barcode data by detecting rogue terminals (indicating
+incorrect taxonomic annotation) and in the comparable calculation of alpha and beta 
+biodiversity metrics across metabarcoding assays. 
+
+The input data for the approach we develop here currently comes from BOLD data dumps. 
+The international database [BOLD Systems](https://www.boldsystems.org/index.php) 
 contains DNA barcodes for hundreds of thousands of species, with multiple barcodes per 
-species. Theoretically, this data could be filtered and aligned per DNA marker to make 
+species. The data dumps we use here are TSV files whose columns conform to the nascent
+BCDM (barcode data model) vocabulary. As such, other data sources that conform to this
+vocabulary could in the future be used as well, such as [UNITE](https://unite.ut.ee/).
+
+Theoretically, such data could be filtered and aligned per DNA marker to make 
 phylogenetic trees. However, there are two limiting factors: building very large 
 phylogenies is computationally intensive, and barcodes are not considered ideal for 
 building big trees because they are short (providing insufficient signal to resolve large 
@@ -27,7 +34,7 @@ chunks are then combined in a large synthesis by grafting them on a backbone mad
 exemplar taxa from the subtrees. Here too, the OpenTOL is a source of phylogenetic 
 constraint.
 
-In this repository this concept is prototyped for both animal species and plant species.
+In this repository this concept is developed for both animal species and plant species.
 
 ## Installation
 
@@ -48,8 +55,9 @@ file and a `requirements.txt` file:
    conda env create -f workflow/envs/environment.yml
    ```
    This command will create a new Conda environment named bactria with the packages 
-   specified in the environment.yml file. This file also includes pip packages specified in 
-   the workflow/envs/requirements.txt file, which will be installed after the Conda packages.
+   specified in the environment.yml file. This step is largely a placeholder because
+   most of the dependency management is handled at the level of individual pipeline
+   steps, which each have their own environment specification.
 3. **Activate the Environment:**
    After creating the environment, activate it using the conda activate command:
    ```bash
@@ -66,7 +74,7 @@ file and a `requirements.txt` file:
 
 ## How to run
 
-The pipeline is being implemented using snakemake, which is available within the conda 
+The pipeline is implemented using snakemake, which is available within the conda 
 environment that results from the installation. Important before running the snakemake pipeline 
 is to change in [config/config.yaml](config/config.yaml) the number of threads available on your 
 computer. Which marker gene is used in the pipeline is also specified in the config.yaml (default 
@@ -75,15 +83,15 @@ COI-5P). Prior to execution, the BOLD data package to use (we used the
 must be downloaded manually and stored in the [resources/](resources/) directory. If a BOLD release 
 from another date is used the file names in config.yaml need to be updated. 
 
-How to run the pipeline for all family alignments:
+How to run the entire pipeline:
 
 ```bash 
-snakemake -j {number of threads}
+snakemake -j {number of threads} --use-conda
 ```
 
 Snakemake rules can be performed separately:
 ```bash 
-snakemake -R {Rule} -j {number of threads}
+snakemake -R {Rule} -j {number of threads} --use-conda
 ```
 
 Enter the same number at {number of threads} as you filled in previously in src/config.yaml.
@@ -101,6 +109,7 @@ All of these subfolders contains further explanatory READMEs to explain their co
 
 - [config](config/) - configuration files
 - [doc](doc/) - documentation and background literature
+- [logs](logs/) - where log files are written during pipeline runtime
 - [resources](resources/) - external data resources (from BOLD and OpenTree) are downloaded here
 - [results](results/) - intermediate and final results are generated here
 - [workflow](workflow/) - script source code and driver snakefile 
