@@ -1,0 +1,9 @@
+name: graft_clades
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pip
+  - pip:
+    - -r graft_clades.txt
