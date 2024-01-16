@@ -18,4 +18,4 @@ The subfolder structure is organized as follows:
   are organized in families, which are processed in parallel and which are organized
   in folders with m-of-n names. The backbone files across families are in the root
   of the `fasta` folder.
-
+- [`grafted.tre`](grafted.tre) is the final tree.
