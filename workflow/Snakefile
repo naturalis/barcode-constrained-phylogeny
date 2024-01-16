@@ -2,7 +2,7 @@ configfile: "config/config.yaml"
 
 rule all:
     input:
-        "results/fasta/raxml-ready.fa.raxml.bestTree.rooted"
+        "results/grafted.tre"
 
 # Creates and populates a SQLite database with filtered sequence records.
 # Uses BOLD dump TSV as defined in config file
@@ -31,7 +31,7 @@ rule create_database:
 # the same database file, the output is a 0-byte file `map_opentol.ok` to
 # indicate that the task was run.
 rule map_opentol:
-  input: rules.create_database.output
+  input: 'results/databases/create_database.ok'
   output: 'results/databases/map_opentol.ok'
   params:
     db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
@@ -278,4 +278,26 @@ rule reroot_backbone:
             -c {input.constraint} \
             -o {output.tree} \
             -v {params.log_level} 2> {log}
+        """
+
+
+rule graft_clades:
+    input:
+        backbone = "results/fasta/raxml-ready.fa.raxml.bestTree.rooted",
+        clades = config['file_names']['fasta_dir']
+    output:
+        tree = "results/grafted.tre"
+    params:
+        log_level = config['log_level'],
+        nfamilies = config["nfamilies"]
+    log: "logs/graft_clades.log"
+    conda: "envs/graft_clades.yml"
+    shell:
+        """
+        python workflow/scripts/graft_clades.py \
+            -t {input.backbone} \
+            -f {input.clades} \
+            -o {output.tree} \
+            -n {params.nfamilies} \
+            -v {params.log_level} 2> {log}                  
         """
