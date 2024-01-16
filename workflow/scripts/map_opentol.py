@@ -155,6 +155,7 @@ def postprocess_db(database):
     cursor.execute("""CREATE INDEX IF NOT EXISTS country_idx ON barcode (country)""")
     cursor.execute("""CREATE INDEX IF NOT EXISTS nucraw_idx ON barcode (nucraw)""")
     cursor.execute("""CREATE INDEX IF NOT EXISTS processid_idx ON barcode (processid)""")
+    cursor.execute("""CREATE INDEX IF NOT EXISTS country_idx ON barcode (country)""")
     conn.commit()
     conn.close()
 
