@@ -101,6 +101,7 @@ In {Rule} insert the rule to be performed.
 Here is an overview of all the rules in the Snakefile:
 
 ![graphviz (1)](doc/dag.svg)
+(zoomed view is available [here](https://raw.githubusercontent.com/naturalis/barcode-constrained-phylogeny/f1be83db12f45727ef6544e4fa3d9f3fdfe4c9a1/doc/dag.svg))
 
 ## Repository layout
 
