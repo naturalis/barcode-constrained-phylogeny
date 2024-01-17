@@ -98,7 +98,7 @@ snakemake -R {Rule} -j {number of threads} --use-conda
 Enter the same number at {number of threads} as you filled in previously in src/config.yaml.
 In {Rule} insert the rule to be performed.
 
-Here is an overview of all the rules in the snakefile_phylogeny:
+Here is an overview of all the rules in the Snakefile:
 
 ![graphviz (1)](doc/dag.svg)
 
