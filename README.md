@@ -1,5 +1,6 @@
 ![workflow](https://github.com/naturalis/barcode-constrained-phylogeny/actions/workflows/python-package-conda.yml/badge.svg)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10519081.svg)](https://doi.org/10.5281/zenodo.10519081)
 
 ![](doc/logo-small.png)
 
@@ -97,9 +98,10 @@ snakemake -R {Rule} -j {number of threads} --use-conda
 Enter the same number at {number of threads} as you filled in previously in src/config.yaml.
 In {Rule} insert the rule to be performed.
 
-Here is an overview of all the rules in the snakefile_phylogeny:
+Here is an overview of all the rules in the Snakefile:
 
 ![graphviz (1)](doc/dag.svg)
+(zoomed view is available [here](https://raw.githubusercontent.com/naturalis/barcode-constrained-phylogeny/f1be83db12f45727ef6544e4fa3d9f3fdfe4c9a1/doc/dag.svg))
 
 ## Repository layout
 
