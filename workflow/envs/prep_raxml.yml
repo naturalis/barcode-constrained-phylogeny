@@ -6,4 +6,4 @@ channels:
 dependencies:
   - pip
   - pip:
-    - -r prep_raxml.txt
+    - -r ../../workflow/envs/prep_raxml.txt

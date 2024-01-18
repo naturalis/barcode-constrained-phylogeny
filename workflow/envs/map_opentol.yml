@@ -6,4 +6,4 @@ channels:
 dependencies:
   - pip
   - pip:
-    - -r map_opentol.txt
+    - -r ../../workflow/envs/map_opentol.txt

@@ -6,4 +6,4 @@ channels:
 dependencies:
   - pip
   - pip:
-    - -r reroot_backbone.txt
+    - -r ../../workflow/envs/reroot_backbone.txt

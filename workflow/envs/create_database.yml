@@ -6,4 +6,4 @@ channels:
 dependencies:
   - pip
   - pip:
-    - -r create_database.txt
+    - -r ../../workflow/envs/create_database.txt

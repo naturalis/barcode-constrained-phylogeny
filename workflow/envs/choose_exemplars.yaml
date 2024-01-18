@@ -6,4 +6,4 @@ channels:
 dependencies:
   - pip
   - pip:
-    - -r choose_exemplars.txt
+    - -r ../../workflow/envs/choose_exemplars.txt

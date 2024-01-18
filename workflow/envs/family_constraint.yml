@@ -6,4 +6,4 @@ channels:
 dependencies:
   - pip
   - pip:
-    - -r family_fasta.txt
+    - -r ../../workflow/envs/family_fasta.txt

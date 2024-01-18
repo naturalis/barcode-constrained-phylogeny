@@ -4,7 +4,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - sqlite3
+  - sqlite
   - pip
   - pip:
-    - -r prep_raxml_backbone.txt
+    - -r ../../workflow/envs/prep_raxml_backbone.txt

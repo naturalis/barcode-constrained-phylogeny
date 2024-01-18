@@ -6,4 +6,4 @@ channels:
 dependencies:
   - pip
   - pip:
-    - -r graft_clades.txt
+    - -r ../../workflow/envs/graft_clades.txt

@@ -6,3 +6,4 @@ channels:
 dependencies:
   - pip
   - snakemake
+  - mamba
