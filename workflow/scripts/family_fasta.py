@@ -26,18 +26,10 @@ def get_family_bins(q, conn):
             q['level'] = 'ord'
 
         # Select all distinct family names which match config.yaml filters
-        fam = pd.read_sql_query(f"""
-            SELECT 
-                family, 
-                bin_uri,
-                taxon
-            FROM 
-                taxon
-            WHERE 
-                {q['level']} = '{q['name']}'
-            GROUP BY 
-                family, bin_uri;
-        """, conn)
+        level = q['level']
+        name = q['name']
+        sql = f"SELECT family, bin_uri, taxon FROM taxon WHERE {level} = '{name}' GROUP BY family, bin_uri"
+        fam = pd.read_sql_query(sql, conn)
 
         # Check if filter is all or if used filter did not resulted in any records
         if len(fam) == 0:
