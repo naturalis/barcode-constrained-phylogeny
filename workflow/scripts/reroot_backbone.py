@@ -81,18 +81,21 @@ if __name__ == '__main__':
     logger.setLevel(args.verbosity)
 
     # Read trees
-    backbone = read_tree(args.intree, 'force-unrooted')
-    constraint = read_tree(args.constraint)
+    backbone = read_tree(args.intree)
+    try:
+        constraint = read_tree(args.constraint)
 
-    # Get the pseudo-outgroup, i.e. the leaf labels of the smallest clade subtended by the root in the constraint tree
-    outgroup = get_pseudo_outgroup(constraint)
+        # Get the pseudo-outgroup, i.e. the tips of the smallest clade subtended by the root in the constraint tree
+        outgroup = get_pseudo_outgroup(constraint)
 
-    # Find the bipartition that most closely resembles the pseudo-outgroup in the unrooted backbone
-    bipartition = find_set_bipartition(backbone, outgroup)
+        # Find the bipartition that most closely resembles the pseudo-outgroup in the unrooted backbone
+        bipartition = find_set_bipartition(backbone, outgroup)
 
-    # Midpoint root on the bipartition
-    new_length = bipartition.length / 2
-    backbone.reroot_at_edge(bipartition, length1=new_length, length2=new_length, update_bipartitions=True)
+        # Midpoint root on the bipartition
+        new_length = bipartition.length / 2
+        backbone.reroot_at_edge(bipartition, length1=new_length, length2=new_length, update_bipartitions=True)
+    except Exception as e:
+        logger.warning(f'Reading the constraint tree failed: {e}')
 
     # Write to file
     logger.info(f'Going to write rerooted tree to {args.outtree}')
