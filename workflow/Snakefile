@@ -218,7 +218,7 @@ rule reroot_raxml_output:
             -v {params.log_level} 2> {log}
         """
 
-
+# TODO choose tall exemplars, not shallow ones
 rule choose_exemplars:
     input:
         alignment = "results/fasta/family/{scatteritem}/aligned.fa",
