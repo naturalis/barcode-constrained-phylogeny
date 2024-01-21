@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
     # Iterate over folders
     base_folder = os.path.abspath(args.folder)
-    for i in range(1, int(args.nfamilies)):
+    for i in range(1, int(args.nfamilies) + 1):
         logger.info(f'Processing subtree {i}')
 
         # Peprocess the focal family tree
