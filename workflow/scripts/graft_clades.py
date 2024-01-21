@@ -45,6 +45,7 @@ def preprocess_subtree(tree_file, fasta_file):
     outgroup = set()
     for leaf in tree.leaf_nodes():
         if leaf.taxon.label not in ingroup:
+            logger.info(f'Going to prune outgroup sequence {leaf.taxon.label}')
             outgroup.add(leaf.taxon)
 
     # Prune the outgroup
@@ -80,7 +81,7 @@ if __name__ == '__main__':
         # Peprocess the focal family tree
         subfolder = f'{i}-of-{args.nfamilies}'
         alignment_file = os.path.join(base_folder, subfolder, 'aligned.fa')
-        subtree_file = os.path.join(base_folder, subfolder, 'raxml-ready.fa.raxml.bestTree')
+        subtree_file = os.path.join(base_folder, subfolder, 'raxml-ready.fa.raxml.bestTree.rooted')
         subtree = preprocess_subtree(subtree_file, alignment_file)
 
         # Intersect the subtree labels and the backbone set
