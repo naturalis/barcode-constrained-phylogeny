@@ -77,7 +77,9 @@ rule megatree_loader:
 scattergather:
   split = config["nfamilies"]
 
-# Exports unaligned BIN sequences aggregated at family level.
+# Exports unaligned BIN sequences for each family within the total set. This task is parallelized as many times as
+# specified by config["nfamilies"]. During this task, the longest raw sequence within each BIN is selected.
+# TODO this should be modified to look at more criteria for reference sequence selection, as per BGE T10.1
 rule family_fasta:
     input: rules.map_opentol.output
     output: scatter.split("results/fasta/family/{scatteritem}/unaligned.fa")
@@ -101,7 +103,12 @@ rule family_fasta:
             -v {params.log_level} 2> {log}
         """
 
-# Exports OpenToL newick file for each unaligned BIN sequence file
+# Exports OpenToL newick file for each unaligned BIN sequence file. There are numerous issues to resolve here, including
+# achieving greater coverage for the ingroup as per a recent email thread with the OpenToL PIs, which suggested a
+# two-step process where a species is first expanded to its subspecies via the OpenToL taxonomy WS endpoint, which are
+# stored in an intersection table in the database, and then collapsed again here. In addition, this constrains should
+# (probably) also include the outgroup taxa. Alternatively, the branch lengths should be re-estimated after rooting.
+# TODO improve OpenToL coverage and handle outgroups better
 rule family_constraint:
     input:
         alignment = "results/fasta/family/{scatteritem}/unaligned.fa",
@@ -118,7 +125,8 @@ rule family_constraint:
         megatree-pruner -i {params.temp} -d {params.db} -v > {output} 2>> {log}
         """
 
-# Aligns sequences with HMM.
+# Aligns sequences with HMM. Here, the sequences are also corrected for possible revcom issues. It is possible that this
+# is not needed at all because so far 0 revcom sequences were observed in BOLD.
 rule msa_hmm:
     input: "results/fasta/family/{scatteritem}/unaligned.fa"
     output: "results/fasta/family/{scatteritem}/aligned.fa"
@@ -138,7 +146,14 @@ rule msa_hmm:
             -d {params.db} 2> {log}               
         """
 
-
+# Prepares the aligned ingroup sequences and constraint tree for analysis by raxml-ng. This step also includes outgroup
+# selection. A number of changes are needed here. Firstly, there are cases where the selected outgroup sequences yield
+# results where the ingroup is not monophyletic with respect to the outgroups. This means that outgroup selection needs
+# to be refined by considering all pairwise distances within the ingroup, and any outgroup must have a greater distance
+# to the nearest ingroup taxon than the latter has to all other members of the ingroup. Secondly, the constraint tree
+# should be generated here so that it also includes the outgroups, which means that an additional outgroup selection
+# criterion should be that the candidate outgroups are in the OpenToL.
+# TODO make sure outgroups are really outgroups and that they occur in the constraint tree
 rule prep_raxml:
     input:
         alignment="results/fasta/family/{scatteritem}/aligned.fa",
@@ -164,7 +179,10 @@ rule prep_raxml:
             -d {params.db} 2> {log}
         """
 
-
+# Runs raxml as a constrained tree search. Possibly this should instead take a two-step approach, where unplaced
+# sequences are first placed, and then the branch lengths are estimated. This requires that there actually is a
+# constraint tree. Currently, this rule deals with the fact that some of the constraint trees are 0-byte files due
+# to incomplete OpenToL coverage by trapping raxml-ng errors and then re-running without the constraint.
 rule run_raxml:
     input:
         alignment = "results/fasta/family/{scatteritem}/raxml-ready.fa",
