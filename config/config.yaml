@@ -23,6 +23,12 @@ minlength: 600
 # Minimum number of sequences per alignment
 minseq: 3
 
+# Which exemplars to pick: tallest, shortest, or median
+exemplars: tallest
+
+# How to rescale the subtrees: exemplars (i.e. subtree depth ratio) or outgroup (crown-to-crown distance ratio)
+scaling: exemplars
+
 # Maximum number of sequences per alignment
 maxseq: 12000
 
