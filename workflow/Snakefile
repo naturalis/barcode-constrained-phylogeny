@@ -225,7 +225,7 @@ rule reroot_raxml_output:
         outtree = "results/fasta/family/{scatteritem}/raxml-ready.fa.raxml.bestTree.rooted"
     params:
         log_level = config['log_level']
-    log: "logs/reroot_raxml_output-{scatteritem}.log"
+    log: "logs/reroot_raxml_output/reroot_raxml_output-{scatteritem}.log"
     conda: "envs/reroot_backbone.yml"
     shell:
         """
