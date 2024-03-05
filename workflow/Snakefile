@@ -245,7 +245,7 @@ rule choose_exemplars:
     params:
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
         log_level = config['log_level']
-    log: "logs/choose_exemplars-{scatteritem}.log"
+    log: "logs/choose_exemplars/choose_exemplars-{scatteritem}.log"
     conda: "envs/choose_exemplars.yaml"
     shell:
         """

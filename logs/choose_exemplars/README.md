@@ -1,0 +1,1 @@
+Log files for rule `choose_exemplars` are written here.
