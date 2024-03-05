@@ -192,7 +192,7 @@ rule run_raxml:
     params:
         model = config['model'],
         num_outgroups= config['outgroups']
-    log: "logs/run_raxml-{scatteritem}.log"
+    log: "logs/run_raxml/run_raxml-{scatteritem}.log"
     conda: "envs/raxml.yml"
     shell:
         """
