@@ -50,10 +50,10 @@ file and a `requirements.txt` file:
    cd barcode-constrained-phylogeny
    ```
 2. **Create the Conda Environment:**
-   Create the bactria Conda environment using the environment.yml file with the following 
+   Create the bactria Conda/Mamba environment using the environment.yml file with the following 
    command:
    ```bash
-   conda env create -f workflow/envs/environment.yml
+   mamba env create -f workflow/envs/environment.yml
    ```
    This command will create a new Conda environment named bactria with the packages 
    specified in the environment.yml file. This step is largely a placeholder because
@@ -62,7 +62,7 @@ file and a `requirements.txt` file:
 3. **Activate the Environment:**
    After creating the environment, activate it using the conda activate command:
    ```bash
-   conda activate bactria
+   mamba activate bactria
    ```
 4. **Verify the Environment:**
    Verify that the bactria environment was set up correctly and that all packages were 
