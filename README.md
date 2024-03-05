@@ -35,7 +35,9 @@ chunks are then combined in a large synthesis by grafting them on a backbone mad
 exemplar taxa from the subtrees. Here too, the OpenTOL is a source of phylogenetic 
 constraint.
 
-In this repository this concept is developed for both animal species and plant species.
+In this repository this concept is developed for the COI-5P marker, but the aim is to 
+achieve equivalent functionality for plant barcoding markers (matK, rbcL) and for some
+part of the ITS region.
 
 ## Installation
 
