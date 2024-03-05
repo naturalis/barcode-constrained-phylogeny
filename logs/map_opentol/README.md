@@ -1,0 +1,1 @@
+Log files for rule `map_opentol` are written here.
