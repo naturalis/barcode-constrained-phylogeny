@@ -59,7 +59,7 @@ rule megatree_loader:
         mapping_ok = rules.map_opentol.output
     output: 'results/databases/megatree_loader.ok'
     conda: "envs/megatree_loader.yml"
-    log: "logs/megatree_loader.log"
+    log: "logs/megatree_loader/megatree_loader.log"
     params:
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
         tempdb = temp("results/databases/opentree_nodes.db"),
@@ -91,7 +91,7 @@ rule family_fasta:
       db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
       chunks=config["nfamilies"],
     conda: "envs/family_fasta.yml"
-    log: "logs/family_fasta.log"
+    log: "logs/family_fasta/family_fasta.log"
     shell:
         """
         python workflow/scripts/family_fasta.py \
@@ -118,7 +118,7 @@ rule family_constraint:
         temp=config["file_names"]["fasta_dir"] + "/{scatteritem}/unaligned.txt",
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"])
     conda: "envs/family_constraint.yml"
-    log: "logs/family_constraint-{scatteritem}.log"
+    log: "logs/family_constraint/family_constraint-{scatteritem}.log"
     shell:
         """
         grep '>' {input.alignment} | cut -f2 -d'|' | sort | uniq > {params.temp} 2> {log}
@@ -135,7 +135,7 @@ rule msa_hmm:
         hmm_file=config['file_names']['hmm'],
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"])
     conda: "envs/msa_hmm.yml"
-    log: "logs/msa_hmm-{scatteritem}.log"
+    log: "logs/msa_hmm/msa_hmm-{scatteritem}.log"
     shell:
         """
         python workflow/scripts/msa_hmm.py \

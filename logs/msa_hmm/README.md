@@ -1,0 +1,1 @@
+Log files for rule `msa_hmm` are written here.
