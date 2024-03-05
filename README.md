@@ -76,7 +76,7 @@ file and a `requirements.txt` file:
 It is recommended that the mamba environment is configured to use strict channel priorities. 
 This is crucial for having robust and correct environments (for details, see 
 [here](https://conda-forge.org/docs/user/tipsandtricks.html)). Consider configuring strict 
-priorities by executing `mamba config --set channel_priority strict`.
+priorities by executing `conda config --set channel_priority strict`.
 
 ## How to run
 
