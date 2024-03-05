@@ -330,7 +330,7 @@ rule graft_clades:
     params:
         log_level = config['log_level'],
         nfamilies = config["nfamilies"]
-    log: "logs/graft_clades.log"
+    log: "logs/graft_clades/graft_clades.log"
     conda: "envs/graft_clades.yml"
     shell:
         """
