@@ -1,0 +1,1 @@
+Log files for rule `family_fasta` are written here.
