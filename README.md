@@ -103,6 +103,8 @@ Here is an overview of all the rules in the Snakefile:
 ![graphviz (1)](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/doc/dag.svg)
 (zoomed view is available [here](https://raw.githubusercontent.com/naturalis/barcode-constrained-phylogeny/main/doc/dag.svg))
 
+More detailed documentation of the individual rules is provided [here](workflow/documentation.md).
+
 ## Repository layout
 
 Below is the top-level layout of the repository. This layout is in line with 
@@ -118,7 +120,7 @@ All of these subfolders contains further explanatory READMEs to explain their co
 
 ## License
 
-&copy; 2023 Naturalis Biodiversity Center
+&copy; 2023-2024 Naturalis Biodiversity Center
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except 
 in compliance with the License. You may obtain a copy of the License at
