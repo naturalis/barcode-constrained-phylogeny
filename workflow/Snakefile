@@ -166,7 +166,7 @@ rule prep_raxml:
         log_level=config['log_level'],
         num_outgroups = config['outgroups']
     conda: "envs/prep_raxml.yml"
-    log: "logs/prep_raxml-{scatteritem}.log"
+    log: "logs/prep_raxml/prep_raxml-{scatteritem}.log"
     shell:
         """
         python workflow/scripts/prep_raxml.py \
