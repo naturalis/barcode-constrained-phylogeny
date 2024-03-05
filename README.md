@@ -2,7 +2,7 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10519081.svg)](https://doi.org/10.5281/zenodo.10519081)
 
-![](doc/logo-small.png)
+![Logo](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/doc/logo-small.png?raw=true)
 
 # Bactria: BarCode TRee Inference and Analysis
 This repository contains code and data for building very large, topologically-constrained 
@@ -24,7 +24,7 @@ phylogenies is computationally intensive, and barcodes are not considered ideal 
 building big trees because they are short (providing insufficient signal to resolve large 
 trees) and because they tend to saturate across large patristic distances.
 
-![concept](doc/concept.png)
+![concept](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/doc/concept.png)
 
 Both problems can be mitigated by using the 
 [Open Tree of Life](https://tree.opentreeoflife.org/opentree/argus/opentree13.4@ott93302) 
@@ -100,7 +100,7 @@ In {Rule} insert the rule to be performed.
 
 Here is an overview of all the rules in the Snakefile:
 
-![graphviz (1)](doc/dag.svg)
+![graphviz (1)](https://github.com/naturalis/barcode-constrained-phylogeny/blob/main/doc/dag.svg)
 (zoomed view is available [here](https://raw.githubusercontent.com/naturalis/barcode-constrained-phylogeny/main/doc/dag.svg))
 
 ## Repository layout
