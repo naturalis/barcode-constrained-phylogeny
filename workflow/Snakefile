@@ -103,26 +103,23 @@ rule family_fasta:
             -v {params.log_level} 2> {log}
         """
 
-# Exports OpenToL newick file for each unaligned BIN sequence file. There are numerous issues to resolve here, including
-# achieving greater coverage for the ingroup as per a recent email thread with the OpenToL PIs, which suggested a
-# two-step process where a species is first expanded to its subspecies via the OpenToL taxonomy WS endpoint, which are
-# stored in an intersection table in the database, and then collapsed again here. In addition, this constrains should
-# (probably) also include the outgroup taxa. Alternatively, the branch lengths should be re-estimated after rooting.
-# TODO improve OpenToL coverage and handle outgroups better
+# Exports OpenToL newick file for each unaligned BIN sequence file. This implementation uses the induced subtree web
+# service endpoint from OpenToL. The new implementation appears to achieve better coverage.
 rule family_constraint:
     input:
         alignment = "results/fasta/family/{scatteritem}/unaligned.fa",
         megatree = 'results/databases/megatree_loader.ok'
     output: "results/fasta/family/{scatteritem}/unaligned.tre"
     params:
-        temp=config["file_names"]["fasta_dir"] + "/{scatteritem}/unaligned.txt",
-        db="results/databases/BOLD_{}_barcodes.db".format(config["marker"])
+        log_level=config['log_level']
     conda: "envs/family_constraint.yml"
     log: "logs/family_constraint/family_constraint-{scatteritem}.log"
     shell:
         """
-        grep '>' {input.alignment} | cut -f2 -d'|' | sort | uniq > {params.temp} 2> {log}
-        megatree-pruner -i {params.temp} -d {params.db} -v > {output} 2>> {log}
+        python workflow/scripts/family_constraint.py \
+            -i {input.alignment} \
+            -o {output} \
+            -v {params.log_level} 2> {log}
         """
 
 # Aligns sequences with HMM. Here, the sequences are also corrected for possible revcom issues. It is possible that this
