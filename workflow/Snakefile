@@ -309,7 +309,7 @@ rule reroot_backbone:
         tree = "results/fasta/raxml-ready.fa.raxml.bestTree.rooted"
     params:
         log_level = config['log_level']
-    log: "logs/reroot_backbone.log"
+    log: "logs/reroot_backbone/reroot_backbone.log"
     conda: "envs/reroot_backbone.yml"
     shell:
         """
