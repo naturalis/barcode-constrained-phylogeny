@@ -289,7 +289,7 @@ rule run_raxml_backbone:
         tree = "results/fasta/raxml-ready.fa.raxml.bestTree"
     params:
         model = config['model']
-    log: "logs/run_raxml_backbone.log"
+    log: "logs/run_raxml_backbone/run_raxml_backbone.log"
     conda: "envs/raxml.yml"
     shell:
         """
