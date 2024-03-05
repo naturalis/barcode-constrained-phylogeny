@@ -1,0 +1,1 @@
+Log files for rule `create_database` are written here.

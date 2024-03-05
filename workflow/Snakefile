@@ -15,7 +15,7 @@ rule create_database:
     minlength=config["minlength"],
     log_level=config['log_level']
   conda: "envs/create_database.yml"
-  log: "logs/create_database.log"
+  log: "logs/create_database/create_database.log"
   shell:
     """
     python workflow/scripts/bold_data_dump.py \
