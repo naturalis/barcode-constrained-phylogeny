@@ -268,7 +268,7 @@ rule prep_raxml_backbone:
     params:
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
         log_level = config['log_level']
-    log: "logs/prep_raxml_backbone.log"
+    log: "logs/prep_raxml_backbone/prep_raxml_backbone.log"
     conda: "envs/prep_raxml_backbone.yml"
     shell:
         """
