@@ -68,7 +68,7 @@ file and a `requirements.txt` file:
    Verify that the bactria environment was set up correctly and that all packages were 
    installed using the conda list command:
    ```bash
-   conda list
+   mamba list
    ```
    This command will list all packages installed in the active conda environment. You should 
    see all the packages specified in the environment.yml file and the requirements.txt file.
