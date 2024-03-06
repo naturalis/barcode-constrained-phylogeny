@@ -38,7 +38,7 @@ rule map_opentol:
     marker=config['marker'],
     log_level=config['log_level']
   conda: "envs/map_opentol.yml"
-  log: "logs/map_opentol.log"
+  log: "logs/map_opentol/map_opentol.log"
   shell:
       """
       python workflow/scripts/map_opentol.py \
