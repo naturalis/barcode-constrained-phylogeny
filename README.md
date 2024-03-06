@@ -35,7 +35,9 @@ chunks are then combined in a large synthesis by grafting them on a backbone mad
 exemplar taxa from the subtrees. Here too, the OpenTOL is a source of phylogenetic 
 constraint.
 
-In this repository this concept is developed for both animal species and plant species.
+In this repository this concept is developed for the COI-5P marker, but the aim is to 
+achieve equivalent functionality for plant barcoding markers (matK, rbcL) and for some
+part of the ITS region.
 
 ## Installation
 
@@ -72,6 +74,11 @@ file and a `requirements.txt` file:
    ```
    This command will list all packages installed in the active conda environment. You should 
    see all the packages specified in the environment.yml file and the requirements.txt file.
+
+It is recommended that the mamba environment is configured to use strict channel priorities. 
+This is crucial for having robust and correct environments (for details, see 
+[here](https://conda-forge.org/docs/user/tipsandtricks.html)). Consider configuring strict 
+priorities by executing `conda config --set channel_priority strict`.
 
 ## How to run
 
