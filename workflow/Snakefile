@@ -82,7 +82,9 @@ scattergather:
 # TODO this should be modified to look at more criteria for reference sequence selection, as per BGE T10.1
 rule family_fasta:
     input: rules.map_opentol.output
-    output: scatter.split("results/fasta/family/{scatteritem}/unaligned.fa")
+    output:
+      fastas=scatter.split("results/fasta/family/{scatteritem}/unaligned.fa"),
+      status=f'{config["file_names"]["fasta_dir"]}/family_fasta.ok'
     params:
       log_level=config['log_level'],
       fasta_dir=config["file_names"]["fasta_dir"],
@@ -101,7 +103,44 @@ rule family_fasta:
             -n {params.filter_name} \
             -c {params.chunks} \
             -v {params.log_level} 2> {log}
+        touch {output.fastas}
         """
+
+# Creates a local BLAST database from the exported sequences that have OTT IDs. Later on, this database will be used
+# for locating outgroups that are i) close to the ingroup but not inside it, ii) occur in the OpenToL. The latter will
+# hopefully mean that even monotypic families will have a constraint tree with >= 3 tips so all chunks can be treated
+# identically.
+rule makeblastdb:
+    input: rules.family_fasta.output.status
+    output: f'{config["blast_dir"]}/{config["blastdb"]}.nsq'
+    params:
+      chunks=config["nfamilies"],
+      fasta_dir=config["file_names"]["fasta_dir"],
+      concatenated=f'{config["blast_dir"]}/{config["blastdb"]}.fa',
+      blastdb=f'{config["blast_dir"]}/{config["blastdb"]}'
+    conda: "envs/blast.yml"
+    log: "logs/makeblastdb/makeblastdb.log"
+    shell:
+        """
+        sh makeblastdb.sh {params.blastdb} {params.fasta_dir} {params.chunks} {params.concatenated} 2> {log}
+        """
+
+
+rule get_outgroups:
+    input:
+        alignment = "results/fasta/family/{scatteritem}/unaligned.fa",
+        makeblastdb = rules.makeblastdb.output
+    output: "results/fasta/family/{scatteritem}/outgroups.fa",
+    params:
+        outgroups = config["outgroups"],
+        blastdb=f'{config["blast_dir"]}/{config["blastdb"]}'
+    conda: "envs/blast.yml"
+    log: "logs/get_outgroups/get_outgroups.log"
+    shell:
+        """
+        sh get_outgroups.sh {params.blastdb} {params.outgroups} {input.alignment} {output} 2> {log}
+        """
+
 
 # Exports OpenToL newick file for each unaligned BIN sequence file. This implementation uses the induced subtree web
 # service endpoint from OpenToL. The new implementation appears to achieve better coverage.

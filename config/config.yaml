@@ -43,6 +43,8 @@ fasta_filter:
 
 name: phylogeny
 
+blastdb: blastdb
+
 dependencies:
   - pip:
       - -r requirements.txt
@@ -52,4 +54,5 @@ file_names:
   open_tre: resources/opentree/opentree13.4_tree/labelled_supertree/labelled_supertree.tre
   hmm: resources/hmm/COI-5P.hmm
   fasta_dir: results/fasta/family
+  blast_dir: results/blast
 

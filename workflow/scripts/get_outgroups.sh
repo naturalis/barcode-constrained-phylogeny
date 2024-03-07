@@ -1,6 +1,7 @@
 DB=$1
 HITS=$2
 IN=$3
+OUT=$4
 
 # get the distinct process IDs from the FASTA header, third pipe-separated word
 grep '>' ${IN} | cut -f3 -d'|' | sort | uniq > ${IN}.ids
@@ -29,4 +30,4 @@ cut -f 2 ${IN}.blast \
 # extract the sequences. This is a multi-line FASTA file. To make the constraint tree we need to map the
 # process IDs from this file back to ott IDs and get the ott IDs from the ingroup. Also, we'll use this
 # file to get the IDs for the outgroup when running raxml.
-blastdbcmd -db ${DB} -entry_batch ${IN}.hits -out ${IN}.outgroups.fa
+blastdbcmd -db ${DB} -entry_batch ${IN}.hits -out ${OUT}
