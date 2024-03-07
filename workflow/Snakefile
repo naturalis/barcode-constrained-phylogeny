@@ -126,6 +126,9 @@ rule makeblastdb:
         """
 
 
+# Gets the nearest outgroups by blasting. The number of outgroups is defined in config["outgroups"]. The outgroups are
+# selected by querying every sequence in the ingroup for the top 10 hits, then taking the most frequently occurring
+# hits across all queries.
 rule get_outgroups:
     input:
         alignment = "results/fasta/family/{scatteritem}/unaligned.fa",
@@ -135,7 +138,7 @@ rule get_outgroups:
         outgroups = config["outgroups"],
         blastdb=f'{config["blast_dir"]}/{config["blastdb"]}'
     conda: "envs/blast.yml"
-    log: "logs/get_outgroups/get_outgroups.log"
+    log: "logs/get_outgroups/get_outgroups-{scatteritem}.log"
     shell:
         """
         sh get_outgroups.sh {params.blastdb} {params.outgroups} {input.alignment} {output} 2> {log}
