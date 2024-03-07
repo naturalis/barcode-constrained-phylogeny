@@ -3,13 +3,11 @@ import tempfile
 import argparse
 import sqlite3
 import os
+import util
 
 from Bio import SeqIO
 from Bio.AlignIO import read as read_alignment
 from subprocess import run
-
-logging.basicConfig()
-logger = logging.getLogger('msa_hmm')
 
 
 def correct_revcom(hmmfile, seqfile):
@@ -144,7 +142,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Configure logger
-    logger.setLevel(args.verbosity)
+    logger = util.get_formatted_logger('msa_hmm', args.verbosity)
 
     # Connect to the database (creates a new file if it doesn't exist)
     logger.info(f"Going to connect to database {args.db}")

@@ -1,7 +1,7 @@
 import sqlite3
 import requests
 import json
-import logging
+import util
 import os
 import argparse
 import pandas as pd
@@ -10,10 +10,6 @@ import numpy as np
 # Set the Open Tree of Life API endpoint
 # https://github.com/OpenTreeOfLife/germinator/wiki/TNRS-API-v3#match_names
 endpoint = "https://api.opentreeoflife.org/v3/tnrs/match_names"
-
-# Instantiate logger
-logging.basicConfig()
-logger = logging.getLogger(__name__)
 
 
 def tnrs_request(kingdom, names, fuzzy=False):
@@ -173,7 +169,7 @@ if __name__ == '__main__':
     database_file = args.database
 
     # Configure logger
-    logger.setLevel(args.verbosity)
+    logger = util.get_formatted_logger('map_opentol', args.verbosity)
 
     # Infer taxonomic context from marker name
     if marker == "COI-5P":

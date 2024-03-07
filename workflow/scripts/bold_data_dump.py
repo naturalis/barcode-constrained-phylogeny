@@ -1,11 +1,8 @@
 import csv
 import sqlite3
 import pandas as pd
-import logging
+import util
 import argparse
-
-logging.basicConfig()
-logger = logging.getLogger('create_database')
 
 
 def extract_bold(conn, bold_tsv, marker, minlength):
@@ -142,7 +139,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Configure logger
-    logger.setLevel(args.verbosity)
+    logger = util.get_formatted_logger('create_database', args.verbosity)
 
     # Make connection to the database
     connection = sqlite3.connect(args.database)

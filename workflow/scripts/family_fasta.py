@@ -4,10 +4,7 @@ import os
 import pandas as pd
 import logging
 import argparse
-
-# Instantiate logger
-logging.basicConfig()
-logger = logging.getLogger(__name__)
+import util
 
 
 def get_family_bins(q, conn):
@@ -84,7 +81,7 @@ if __name__ == '__main__':
     database_file = args.database
 
     # Configure logger
-    logger.setLevel(args.verbosity)
+    logger = util.get_formatted_logger('family_fasta', args.verbosity)
 
     # Connect to the database (creates a new file if it doesn't exist)
     logger.info(f"Going to connect to database {args.database}")
