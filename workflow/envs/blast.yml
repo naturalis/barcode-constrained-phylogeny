@@ -1,0 +1,10 @@
+name: blast
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - blast
+  - pip
+  - pip:
+    - -r ../../workflow/envs/blast.txt
