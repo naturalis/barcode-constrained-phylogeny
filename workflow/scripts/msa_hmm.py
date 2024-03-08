@@ -53,13 +53,14 @@ def correct_revcom(hmmfile, seqfile):
     return sequences
 
 
-def align_write(sequences, outfile, conn):
+def align_write(sequences, outfile, conn, id_list):
     """
     Aligns the reverse complement-corrected sequences. Remaps barcode_id to process_id using a database
     lookup by way of the provided conn. Writes output to outfile.
     :param sequences:
     :param outfile:
     :param conn:
+    :param id_list:
     :return:
     """
 
@@ -76,14 +77,21 @@ def align_write(sequences, outfile, conn):
     os.remove(f'{outfile}.tmp2')
 
     # Map barcode_id to process_id and write to outfile
-    with open(f'{outfile}', mode='w') as output:
+    i = 0
+    with open(f'{outfile}', mode='a') as output:
         for seq in aligned:
-            bid = seq.id.split('|')[0]
-            process_id = conn.execute(f'SELECT processid FROM barcode WHERE barcode_id={bid}').fetchone()
-            output.write(f'>{process_id[0]}\n')
+
+            # Need to lookup the process IDs in the database
+            if len(id_list) == 0:
+                bid = seq.id.split('|')[0]
+                process_id = conn.execute(f'SELECT processid FROM barcode WHERE barcode_id={bid}').fetchone()
+                output.write(f'>{process_id[0]}\n')
+            else:
+                output.write(f'>{id_list[i]}\n')
+                i += 1
             output.write(f'{seq.seq}\n')
 
-    logger.info(f'Wrote all aligned sequences to {outfile}')
+    logger.info(f'Wrote/appended aligned sequences to {outfile}')
 
 
 def align_score(record, hmmfile):
@@ -136,7 +144,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Required command line arguments.')
     parser.add_argument('-m', '--model', required=True, help='Location of HMM file, should match the marker')
     parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
-    parser.add_argument('-i', '--input', required=True, help='Input unaligned FASTA file')
+    parser.add_argument('-i', '--ingroup', required=True, help='Input unaligned ingroup FASTA file')
+    parser.add_argument('-g', '--outgroup', required=True, help='Unaligned outgroup FASTA file')
     parser.add_argument('-o', '--output', required=True, help='Output aligned FASTA file')
     parser.add_argument('-d', '--db', required=True, help="SQLite database")
     args = parser.parse_args()
@@ -148,20 +157,28 @@ if __name__ == '__main__':
     logger.info(f"Going to connect to database {args.db}")
     connection = sqlite3.connect(args.db)
 
-    # Check the HMM file
+    # Report the location of the HMM file
     hmmfile = args.model
     logger.info(f"Going to use Hidden Markov Model from {hmmfile}")
 
-    # Check the input file
-    in_file = args.input
-    logger.info(f"Going to align sequences from input file {in_file}")
+    # Report the locations of the FASTA input files
+    in_file = args.ingroup
+    group_file = args.outgroup
+    logger.info(f"Going to align sequences from input files {in_file} and {group_file}")
 
     # Announce the output file
     out_file = args.output
     logger.info(f"Will write alignment to output file {out_file}")
 
     # Do the reverse complement correction
-    seqs = correct_revcom(hmmfile, in_file)
+    in_seqs = correct_revcom(hmmfile, in_file)
+    group_seqs = correct_revcom(hmmfile, group_file)
+
+    # The last part of the process ID was being stripped by the FASTA <=> PHYLIP serialization for hmmer
+    full_ids = []
+    for seq_record in SeqIO.parse(group_file, 'fasta'):
+        full_ids.append(seq_record.id)
 
     # Write alignment
-    align_write(seqs, out_file, connection)
+    align_write(in_seqs, out_file, connection, [])
+    align_write(group_seqs, out_file, connection, full_ids)
