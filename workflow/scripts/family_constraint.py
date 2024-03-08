@@ -180,13 +180,14 @@ if __name__ == '__main__':
             unknown_ott_ids = [int(item.removeprefix('ott')) for item in result['unknown'].keys()]
             logger.warning(f'Request included unkown ott IDs: {unknown_ott_ids}')
             ott_ids = [item for item in ott_ids if item not in unknown_ott_ids]
-            logger.info(f'OTT IDs: {ott_ids}')
+            logger.debug(f'OTT IDs: {ott_ids}')
             result = fetch_induced_subtree(ott_ids)
 
         # Clean up the tip labels, remove internal node labels, remove unbranched internals
         tree = postprocess_tree(result['newick'])
 
         # Write output
+        logger.info(f'Going to write tree to {args.outtree}')
         with open(args.outtree, "w") as output_file:
             output_file.write(tree.as_string(schema="newick"))
 
