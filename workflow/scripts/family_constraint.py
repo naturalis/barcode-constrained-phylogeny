@@ -1,7 +1,9 @@
 import requests
-import logging
 import argparse
 import dendropy
+import util
+import sqlite3
+
 
 # Function to modify tip labels and remove interior node labels
 def modify_tree_labels(tree):
@@ -78,16 +80,19 @@ def fetch_induced_subtree(ids):
         return response.json()
 
 
-def extract_id_from_fasta(file_path):
+def extract_id_from_fasta(unaligned, outgroups):
     """
     Extracts the ott IDs from a FASTA file. This operates specifically on
     FASTA headers where the ott ID is the second element (i.e. at index 1)
     in the pipe-separated FASTA header.
-    :param file_path: the location of a FASTA file
+    :param unaligned: the location of an ingroup FASTA file
+    :param outgroups: the location of an outgroups FASTA file
     :return: a list of ott IDs
     """
     ids = []
-    with open(file_path, 'r') as file:
+
+    # process the ingroup file
+    with open(unaligned, 'r') as file:
         for line in file:
             if line.startswith('>'):
                 parts = line.strip().split('|')
@@ -95,7 +100,17 @@ def extract_id_from_fasta(file_path):
                     # Extract the second element and remove 'ott' prefix
                     id_with_prefix = parts[1]
                     id_number = id_with_prefix.replace('ott', '')
-                    ids.append(id_number)
+                    if id_number != 'None':
+                        ids.append(int(id_number))
+
+    # process the outgroup file
+    with open(outgroups, 'r') as file:
+        for line in file:
+            if line.startswith('>'):
+                pid = line.strip().removeprefix('>')
+                sql = f"SELECT t.opentol_id FROM taxon t, barcode b WHERE t.taxon_id=b.taxon_id and b.processid='{pid}'"
+                ott = conn.execute(sql).fetchone()
+                ids.append(ott[0])
 
     # Remove all 'None' entries
     cleaned_list = [item for item in ids if item != 'None']
@@ -124,24 +139,31 @@ def postprocess_tree(newick):
     # Remove unbranched internals
     tree_obj.suppress_unifurcations()
 
+    # Check result
+    logger.debug(tree_obj)
+
     return tree_obj
 
 
 if __name__ == '__main__':
     # Define command line arguments
     parser = argparse.ArgumentParser(description='Required command line arguments.')
-    parser.add_argument('-i', '--inaln', required=True, help='Input exemplar FASTA files')
+    parser.add_argument('-i', '--ingroup', required=True, help='FASTA file with the ingroup')
+    parser.add_argument('-g', '--outgroups', required=True, help='FASTA file with outgroup taxa')
     parser.add_argument('-o', '--outtree', required=True, help="Output constraint tree")
+    parser.add_argument('-d', '--database', required=True, help='SQLite database')
     parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
     args = parser.parse_args()
 
     # Configure logging
-    logging.basicConfig()
-    logger = logging.getLogger('backbone_constraint')
-    logger.setLevel(args.verbosity)
+    logger = util.get_formatted_logger('family_constraint', args.verbosity)
+
+    # Connect to the database (creates a new file if it doesn't exist)
+    logger.info(f"Going to connect to database {args.database}")
+    conn = sqlite3.connect(args.database)
 
     # Read input alignment, get ott IDs
-    ott_ids = extract_id_from_fasta(args.inaln)
+    ott_ids = extract_id_from_fasta(args.ingroup, args.outgroups)
 
     # If we have no IDs at all, we write a zero byte file for run_raxml
     if len(ott_ids) == 0:
@@ -154,11 +176,12 @@ if __name__ == '__main__':
         result = fetch_induced_subtree(ott_ids)
 
         # If it has unknowns in it, run it again
-        if 'unknown' in result:
-            unknown_ott_ids = [ item.removeprefix('ott') for item in result['unknown'].keys() ]
+        while 'unknown' in result and len(ott_ids) != 0:
+            unknown_ott_ids = [int(item.removeprefix('ott')) for item in result['unknown'].keys()]
             logger.warning(f'Request included unkown ott IDs: {unknown_ott_ids}')
-            cleaned_list = [item for item in ott_ids if item not in unknown_ott_ids]
-            result = fetch_induced_subtree(cleaned_list)
+            ott_ids = [item for item in ott_ids if item not in unknown_ott_ids]
+            logger.info(f'OTT IDs: {ott_ids}')
+            result = fetch_induced_subtree(ott_ids)
 
         # Clean up the tip labels, remove internal node labels, remove unbranched internals
         tree = postprocess_tree(result['newick'])
