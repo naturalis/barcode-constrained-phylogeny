@@ -1,14 +1,12 @@
-import logging
+import util
 import argparse
 import sqlite3
 import dendropy
 import io
+import statistics
 
 from Bio import SeqIO
 from Bio.Phylo import read as read_newick
-
-logging.basicConfig()
-logger = logging.getLogger('choose_exemplars')
 
 """
 In this script, we attempt to select the exemplar(s) that represent the focal family in the construction of the backbone
@@ -37,12 +35,13 @@ def get_ingroup_labels(input_file):
     return labels
 
 
-def pick_shallowest_tips(tree_file, tree, ingroup):
+def pick_tips(tree_file, tree, ingroup, strategy):
     """
-    Picks two tips nearest to the ingroup root on either side
+    Picks two exemplar tips, either the two tallest, the two shallowest, or the two closest to the median
     :param tree_file: Newick tree file
     :param tree: Parsed tree
     :param ingroup: List of labels to consider
+    :param strategy: How to pick exemplars
     :return:
     """
     logger.info(f'Going to pick exemplars from {tree_file}')
@@ -73,7 +72,19 @@ def pick_shallowest_tips(tree_file, tree, ingroup):
 
             # Get shallowest tip
             dists = sorted(dists, key=lambda x: x['dist'])
-            representatives.append(dists[0]['id'])
+            if str(strategy).capitalize().startswith('S'):
+                representatives.append(dists[0]['id'])
+
+            # Get tallest tip
+            elif str(strategy).capitalize().startswith('T'):
+                representatives.append(dists[-1]['id'])
+
+            # Get median tip
+            else:
+                median_dist = statistics.median([d['dist'] for d in dists])
+                closest = min(dists, key=lambda x: abs(x['dist'] - median_dist))
+                representatives.append(closest['id'])
+
     else:
         logger.warning(f'Ingroup root in {tree_file} is not bifurcating, will approximate rooting')
         return None
@@ -128,7 +139,7 @@ def reroot_on_split(tree_file, ingroup):
         biopython_tree = read_newick(io.StringIO(newick_string), "newick")
         logger.debug(newick_string)
         logger.info('Rerooted, attempting to pick exemplars again.')
-        return pick_shallowest_tips(tree_file, biopython_tree, ingroup)
+        return pick_tips(tree_file, biopython_tree, ingroup)
     else:
         logger.error('Something bad is happening for which we have no solution')
 
@@ -157,18 +168,20 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--tree', required=True, help='Input Newick tree')
     parser.add_argument('-i', '--inaln', required=True, help='Input aligned FASTA file')
     parser.add_argument('-o', '--outaln', required=True, help="Output FASTA alignment")
+    parser.add_argument('-n', '--num_outgroups', required=True, help='Number of outgroups')
+    parser.add_argument('-s', '--strategy', required=True, help='Tip picking strategy: [t]all, [s]hallow, [m]edian')
     parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
     args = parser.parse_args()
 
     # Configure logger
-    logger.setLevel(args.verbosity)
+    logger = util.get_formatted_logger('choose_exemplars', args.verbosity)
 
     # Connect to the database (creates a new file if it doesn't exist)
     logger.info(f"Going to connect to database {args.database}")
     connection = sqlite3.connect(args.database)
 
-    # Read FASTA, get list of ingroup tips
-    seq_labels = get_ingroup_labels(args.inaln)
+    # Read FASTA, get list of ingroup tips, truncated to remove outgroups
+    seq_labels = get_ingroup_labels(args.inaln)[:-int(args.num_outgroups)]
 
     # Maybe just include the whole file
     if len(seq_labels) < 3:
@@ -178,7 +191,7 @@ if __name__ == "__main__":
 
         # ... or just the exemplars
         tree = read_newick(args.tree, 'newick')
-        exemplars = pick_shallowest_tips(args.tree, tree, seq_labels)
+        exemplars = pick_tips(args.tree, tree, seq_labels, args.strategy)
         if exemplars is None:
             exemplars = reroot_on_split(args.tree, seq_labels)
         write_sequences(args.inaln, args.outaln, exemplars)
