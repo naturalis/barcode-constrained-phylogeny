@@ -53,25 +53,25 @@ rule map_opentol:
 # with the BOLD database (which gains a table `node`). SQLite can, at time
 # of writing, not apply foreign key constraints retroactively. This is a
 # shame because taxon.opentol_id implicitly references node.id.
-rule megatree_loader:
-    input:
-        tree = config["file_names"]["open_tre"],
-        mapping_ok = rules.map_opentol.output
-    output: 'results/databases/megatree_loader.ok'
-    conda: "envs/megatree_loader.yml"
-    log: "logs/megatree_loader/megatree_loader.log"
-    params:
-        db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
-        tempdb = temp("results/databases/opentree_nodes.db"),
-        tempsql = temp("results/databases/node.sql")
-    shell:
-        """
-        megatree-loader -i {input.tree} -d {params.tempdb} -v 2> {log}
-        sqlite3 {params.tempdb} ".dump node" > {params.tempsql} 2>> {log}
-        sqlite3 {params.db} < {params.tempsql} 2>> {log}
-        touch {output} 2>> {log}
-        rm {params.tempsql} {params.tempdb}
-        """
+# rule megatree_loader:
+#     input:
+#         tree = config["file_names"]["open_tre"],
+#         mapping_ok = rules.map_opentol.output
+#     output: 'results/databases/megatree_loader.ok'
+#     conda: "envs/megatree_loader.yml"
+#     log: "logs/megatree_loader/megatree_loader.log"
+#     params:
+#         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
+#         tempdb = temp("results/databases/opentree_nodes.db"),
+#         tempsql = temp("results/databases/node.sql")
+#     shell:
+#         """
+#         megatree-loader -i {input.tree} -d {params.tempdb} -v 2> {log}
+#         sqlite3 {params.tempdb} ".dump node" > {params.tempsql} 2>> {log}
+#         sqlite3 {params.db} < {params.tempsql} 2>> {log}
+#         touch {output} 2>> {log}
+#         rm {params.tempsql} {params.tempdb}
+#         """
 
 # TODO either this is updated dynamically or scattergather is abandoned for dynamic()
 scattergather:
@@ -79,7 +79,6 @@ scattergather:
 
 # Exports unaligned BIN sequences for each family within the total set. This task is parallelized as many times as
 # specified by config["nfamilies"]. During this task, the longest raw sequence within each BIN is selected.
-# TODO this should be modified to look at more criteria for reference sequence selection, as per BGE T10.1
 rule family_fasta:
     input: rules.map_opentol.output
     output:
@@ -103,7 +102,7 @@ rule family_fasta:
             -n {params.filter_name} \
             -c {params.chunks} \
             -v {params.log_level} 2> {log}
-        touch {output.fastas}
+        touch {output.status}
         """
 
 # Creates a local BLAST database from the exported sequences that have OTT IDs. Later on, this database will be used
@@ -112,17 +111,18 @@ rule family_fasta:
 # identically.
 rule makeblastdb:
     input: rules.family_fasta.output.status
-    output: f'{config["blast_dir"]}/{config["blastdb"]}.nsq'
+    output: f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}.nsq'
     params:
       chunks=config["nfamilies"],
       fasta_dir=config["file_names"]["fasta_dir"],
-      concatenated=f'{config["blast_dir"]}/{config["blastdb"]}.fa',
-      blastdb=f'{config["blast_dir"]}/{config["blastdb"]}'
+      concatenated=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}.fa',
+      blastdb=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}'
     conda: "envs/blast.yml"
     log: "logs/makeblastdb/makeblastdb.log"
     shell:
         """
-        sh makeblastdb.sh {params.blastdb} {params.fasta_dir} {params.chunks} {params.concatenated} 2> {log}
+        sh workflow/scripts/makeblastdb.sh \
+            {params.blastdb} {params.fasta_dir} {params.chunks} {params.concatenated} 2> {log}
         """
 
 
@@ -131,17 +131,17 @@ rule makeblastdb:
 # hits across all queries.
 rule get_outgroups:
     input:
-        alignment = "results/fasta/family/{scatteritem}/unaligned.fa",
+        unaligned = "results/fasta/family/{scatteritem}/unaligned.fa",
         makeblastdb = rules.makeblastdb.output
     output: "results/fasta/family/{scatteritem}/outgroups.fa",
     params:
         outgroups = config["outgroups"],
-        blastdb=f'{config["blast_dir"]}/{config["blastdb"]}'
+        blastdb=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}'
     conda: "envs/blast.yml"
     log: "logs/get_outgroups/get_outgroups-{scatteritem}.log"
     shell:
         """
-        sh get_outgroups.sh {params.blastdb} {params.outgroups} {input.alignment} {output} 2> {log}
+        sh workflow/scripts/get_outgroups.sh {params.blastdb} {params.outgroups} {input.unaligned} {output} 2> {log}
         """
 
 
@@ -149,17 +149,20 @@ rule get_outgroups:
 # service endpoint from OpenToL. The new implementation appears to achieve better coverage.
 rule family_constraint:
     input:
-        alignment = "results/fasta/family/{scatteritem}/unaligned.fa",
-        megatree = 'results/databases/megatree_loader.ok'
-    output: "results/fasta/family/{scatteritem}/unaligned.tre"
+        unaligned = "results/fasta/family/{scatteritem}/unaligned.fa",
+        outgroups = "results/fasta/family/{scatteritem}/outgroups.fa"
+    output: "results/fasta/family/{scatteritem}/constraint.tre"
     params:
-        log_level=config['log_level']
+        log_level=config['log_level'],
+        db="results/databases/BOLD_{}_barcodes.db".format(config["marker"])
     conda: "envs/family_constraint.yml"
     log: "logs/family_constraint/family_constraint-{scatteritem}.log"
     shell:
         """
         python workflow/scripts/family_constraint.py \
-            -i {input.alignment} \
+            -i {input.unaligned} \
+            -g {input.outgroups} \
+            -d {params.db} \
             -o {output} \
             -v {params.log_level} 2> {log}
         """
@@ -167,7 +170,9 @@ rule family_constraint:
 # Aligns sequences with HMM. Here, the sequences are also corrected for possible revcom issues. It is possible that this
 # is not needed at all because so far 0 revcom sequences were observed in BOLD.
 rule msa_hmm:
-    input: "results/fasta/family/{scatteritem}/unaligned.fa"
+    input:
+        ingroup="results/fasta/family/{scatteritem}/unaligned.fa",
+        outgroup="results/fasta/family/{scatteritem}/outgroups.fa"
     output: "results/fasta/family/{scatteritem}/aligned.fa"
     params:
         log_level=config['log_level'],
@@ -178,7 +183,8 @@ rule msa_hmm:
     shell:
         """
         python workflow/scripts/msa_hmm.py \
-            -i {input} \
+            -i {input.ingroup} \
+            -g {input.outgroup} \
             -o {output} \
             -m {params.hmm_file} \
             -v {params.log_level} \
@@ -196,14 +202,12 @@ rule msa_hmm:
 rule prep_raxml:
     input:
         alignment="results/fasta/family/{scatteritem}/aligned.fa",
-        tree="results/fasta/family/{scatteritem}/unaligned.tre"
+        tree="results/fasta/family/{scatteritem}/constraint.tre"
     output:
-        alignment="results/fasta/family/{scatteritem}/raxml-ready.fa",
-        tree="results/fasta/family/{scatteritem}/raxml-ready.tre"
+        tree="results/fasta/family/{scatteritem}/remapped.tre"
     params:
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
-        log_level=config['log_level'],
-        num_outgroups = config['outgroups']
+        log_level=config['log_level']
     conda: "envs/prep_raxml.yml"
     log: "logs/prep_raxml/prep_raxml-{scatteritem}.log"
     shell:
@@ -212,9 +216,7 @@ rule prep_raxml:
             -t {input.tree} \
             -o {output.tree} \
             -a {input.alignment} \
-            -f {output.alignment} \
             -v {params.log_level} \
-            -n {params.num_outgroups} \
             -d {params.db} 2> {log}
         """
 
@@ -224,10 +226,10 @@ rule prep_raxml:
 # to incomplete OpenToL coverage by trapping raxml-ng errors and then re-running without the constraint.
 rule run_raxml:
     input:
-        alignment = "results/fasta/family/{scatteritem}/raxml-ready.fa",
-        tree = "results/fasta/family/{scatteritem}/raxml-ready.tre"
+        alignment = "results/fasta/family/{scatteritem}/aligned.fa",
+        tree = "results/fasta/family/{scatteritem}/remapped.tre"
     output:
-        tree = "results/fasta/family/{scatteritem}/raxml-ready.fa.raxml.bestTree"
+        tree = "results/fasta/family/{scatteritem}/aligned.fa.raxml.bestTree"
     params:
         model = config['model'],
         num_outgroups= config['outgroups']
@@ -258,10 +260,10 @@ rule run_raxml:
 
 rule reroot_raxml_output:
     input:
-        tree = "results/fasta/family/{scatteritem}/raxml-ready.fa.raxml.bestTree",
-        constraint = "results/fasta/family/{scatteritem}/raxml-ready.tre"
+        tree = "results/fasta/family/{scatteritem}/aligned.fa.raxml.bestTree",
+        constraint = "results/fasta/family/{scatteritem}/remapped.tre"
     output:
-        outtree = "results/fasta/family/{scatteritem}/raxml-ready.fa.raxml.bestTree.rooted"
+        outtree = "results/fasta/family/{scatteritem}/aligned.fa.raxml.bestTree.rooted"
     params:
         log_level = config['log_level']
     log: "logs/reroot_raxml_output/reroot_raxml_output-{scatteritem}.log"
@@ -279,11 +281,13 @@ rule reroot_raxml_output:
 rule choose_exemplars:
     input:
         alignment = "results/fasta/family/{scatteritem}/aligned.fa",
-        tree= "results/fasta/family/{scatteritem}/raxml-ready.fa.raxml.bestTree.rooted"
+        tree= "results/fasta/family/{scatteritem}/aligned.fa.raxml.bestTree.rooted"
     output: "results/fasta/family/{scatteritem}/exemplars.fa"
     params:
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
-        log_level = config['log_level']
+        log_level = config['log_level'],
+        num_outgroups = config['outgroups'],
+        strategy = 'median'
     log: "logs/choose_exemplars/choose_exemplars-{scatteritem}.log"
     conda: "envs/choose_exemplars.yaml"
     shell:
@@ -293,6 +297,8 @@ rule choose_exemplars:
             -v {params.log_level} \
             -t {input.tree} \
             -i {input.alignment} \
+            -n {params.num_outgroups} \
+            -s {params.strategy} \
             -o {output} 2> {log}
         """
 
