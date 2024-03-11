@@ -81,7 +81,7 @@ if __name__ == '__main__':
         # Peprocess the focal family tree
         subfolder = f'{i}-of-{args.nfamilies}'
         alignment_file = os.path.join(base_folder, subfolder, 'aligned.fa')
-        subtree_file = os.path.join(base_folder, subfolder, 'raxml-ready.fa.raxml.bestTree.rooted')
+        subtree_file = os.path.join(base_folder, subfolder, 'aligned.fa.raxml.bestTree.rooted')
         subtree = preprocess_subtree(subtree_file, alignment_file)
 
         # Intersect the subtree labels and the backbone set
