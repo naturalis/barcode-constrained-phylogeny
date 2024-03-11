@@ -2,7 +2,6 @@ import errno
 import sqlite3
 import os
 import pandas as pd
-import logging
 import argparse
 import util
 

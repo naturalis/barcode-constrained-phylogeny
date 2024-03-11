@@ -1,6 +1,6 @@
-import logging
 import argparse
 import dendropy
+import util
 
 
 def read_tree(filename, rooting='default-rooted', schema='newick'):
@@ -76,9 +76,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Configure logging
-    logging.basicConfig()
-    logger = logging.getLogger('backbone_constraint')
-    logger.setLevel(args.verbosity)
+    logger = util.get_formatted_logger('backbone_constraint', args.verbosity)
 
     # Read trees
     backbone = read_tree(args.intree)

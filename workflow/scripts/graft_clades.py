@@ -1,7 +1,7 @@
 import argparse
 import dendropy
-import logging
 import os
+import util
 
 from Bio import SeqIO
 
@@ -66,9 +66,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Configure logger
-    logging.basicConfig()
-    logger = logging.getLogger('graft_clades')
-    logger.setLevel(args.verbosity)
+    logger = util.get_formatted_logger('graft_clades', args.verbosity)
 
     # Read the backbone
     backbone = read_tree(args.tree)
