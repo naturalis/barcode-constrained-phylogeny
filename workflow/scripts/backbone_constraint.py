@@ -1,12 +1,49 @@
 import argparse
-import logging
+import util
 import os.path
 import subprocess
 import sqlite3
+import requests
 from io import StringIO
 
 from Bio import SeqIO
 from Bio import Phylo
+
+
+def fetch_induced_subtree(ids):
+    """
+    Places a request to the OpenToL induced subtree web service endpoint.
+    Parameterized by a list of ott IDs. This service call sometimes fails,
+    when the parameter set includes IDs not in the subtree, which results
+    in a warning being emitted. In that case, the return value includes
+    a list of the unknown IDs. The caller can then remove these from the
+    input list and try again.
+    :param ids: a list of ott IDs
+    :return: a JSON data structure
+    """
+    # The API endpoint URL
+    url = "https://api.opentreeoflife.org/v3/tree_of_life/induced_subtree"
+
+    # The headers to indicate we are sending JSON data
+    headers = {
+        "Content-Type": "application/json",
+    }
+
+    # The data to be sent with the request, as a Python dictionary
+    data = {
+        "ott_ids": ids
+    }
+    logger.debug(data)
+
+    # Make the POST request
+    response = requests.post(url, json=data, headers=headers)
+
+    # Check if the request was successful
+    if response.status_code == 200:
+        return response.json()
+    else:
+        logger.warning(f"Failed to retrieve data - will try again")
+        return response.json()
 
 
 def get_ott_ids(pids, conn):
@@ -126,9 +163,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Configure logging
-    logging.basicConfig()
-    logger = logging.getLogger('backbone_constraint')
-    logger.setLevel(args.verbosity)
+    logger = util.get_formatted_logger('backbone_constraint', args.verbosity)
 
     # Configure database connection
     logger.info(f"Going to connect to database {args.database}")
