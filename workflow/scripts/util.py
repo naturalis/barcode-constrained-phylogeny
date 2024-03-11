@@ -2,11 +2,19 @@ import logging
 
 
 def get_formatted_logger(name, level):
+    """
+    Instantiates a python `logging` object for the specified name and verbosity level.
+    The function further configures this object so that the logging message it emits
+    are formatted to include a time stamp.
+    :param name: name for the logger
+    :param level: verbosity level
+    :return:
+    """
     # Create a logger
-    logger = logging.getLogger(name)
+    requested_logger = logging.getLogger(name)
 
     # Set the log level
-    logger.setLevel(level)
+    requested_logger.setLevel(level)
 
     # Create a console handler
     handler = logging.StreamHandler()
@@ -25,6 +33,7 @@ def get_formatted_logger(name, level):
     handler.setFormatter(formatter)
 
     # Add the handler to the logger
-    logger.addHandler(handler)
+    requested_logger.addHandler(handler)
 
-    return logger
+    return requested_logger
+
