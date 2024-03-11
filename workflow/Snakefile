@@ -53,25 +53,25 @@ rule map_opentol:
 # with the BOLD database (which gains a table `node`). SQLite can, at time
 # of writing, not apply foreign key constraints retroactively. This is a
 # shame because taxon.opentol_id implicitly references node.id.
-# rule megatree_loader:
-#     input:
-#         tree = config["file_names"]["open_tre"],
-#         mapping_ok = rules.map_opentol.output
-#     output: 'results/databases/megatree_loader.ok'
-#     conda: "envs/megatree_loader.yml"
-#     log: "logs/megatree_loader/megatree_loader.log"
-#     params:
-#         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
-#         tempdb = temp("results/databases/opentree_nodes.db"),
-#         tempsql = temp("results/databases/node.sql")
-#     shell:
-#         """
-#         megatree-loader -i {input.tree} -d {params.tempdb} -v 2> {log}
-#         sqlite3 {params.tempdb} ".dump node" > {params.tempsql} 2>> {log}
-#         sqlite3 {params.db} < {params.tempsql} 2>> {log}
-#         touch {output} 2>> {log}
-#         rm {params.tempsql} {params.tempdb}
-#         """
+rule megatree_loader:
+    input:
+        tree = config["file_names"]["open_tre"],
+        mapping_ok = rules.map_opentol.output
+    output: 'results/databases/megatree_loader.ok'
+    conda: "envs/megatree_loader.yml"
+    log: "logs/megatree_loader/megatree_loader.log"
+    params:
+        db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
+        tempdb = temp("results/databases/opentree_nodes.db"),
+        tempsql = temp("results/databases/node.sql")
+    shell:
+        """
+        megatree-loader -i {input.tree} -d {params.tempdb} -v 2> {log}
+        sqlite3 {params.tempdb} ".dump node" > {params.tempsql} 2>> {log}
+        sqlite3 {params.db} < {params.tempsql} 2>> {log}
+        touch {output} 2>> {log}
+        rm {params.tempsql} {params.tempdb}
+        """
 
 # TODO either this is updated dynamically or scattergather is abandoned for dynamic()
 scattergather:
@@ -241,6 +241,7 @@ rule run_raxml:
         if [ -s {input.tree} ]; then
           set -e
           raxml-ng \
+            --redo \
             --msa {input.alignment} \
             --outgroup $OG \
             --model {params.model} \
@@ -248,12 +249,13 @@ rule run_raxml:
             --search > {log} 2>&1 \
           || \
           raxml-ng \
+            --redo \
             --msa {input.alignment} \
             --outgroup $OG \
             --model {params.model} \
             --search >> {log} 2>&1
         else
-          raxml-ng --msa {input.alignment} --outgroup $OG --model {params.model} --search > {log} 2>&1
+          raxml-ng --msa {input.alignment} --outgroup $OG --model {params.model} --search --redo > {log} 2>&1
         fi
         """
 
@@ -306,7 +308,8 @@ rule choose_exemplars:
 # gathers the results
 rule prep_raxml_backbone:
     input:
-        fastas=gather.split("results/fasta/family/{scatteritem}/exemplars.fa")
+        fastas=gather.split("results/fasta/family/{scatteritem}/exemplars.fa"),
+        opentol='results/databases/megatree_loader.ok'
     output:
         fasta="results/fasta/raxml-ready.fa",
         tree="results/fasta/raxml-ready.tre"
@@ -339,6 +342,7 @@ rule run_raxml_backbone:
     shell:
         """
           raxml-ng \
+            --redo \
             --msa {input.alignment} \
             --model {params.model} \
             --tree-constraint {input.tree} \
