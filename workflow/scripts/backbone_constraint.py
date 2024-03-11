@@ -1,49 +1,11 @@
 import argparse
 import util
 import os.path
-import subprocess
 import sqlite3
-import requests
-from io import StringIO
+import opentol
+import dendropy
 
 from Bio import SeqIO
-from Bio import Phylo
-
-
-def fetch_induced_subtree(ids):
-    """
-    Places a request to the OpenToL induced subtree web service endpoint.
-    Parameterized by a list of ott IDs. This service call sometimes fails,
-    when the parameter set includes IDs not in the subtree, which results
-    in a warning being emitted. In that case, the return value includes
-    a list of the unknown IDs. The caller can then remove these from the
-    input list and try again.
-    :param ids: a list of ott IDs
-    :return: a JSON data structure
-    """
-    # The API endpoint URL
-    url = "https://api.opentreeoflife.org/v3/tree_of_life/induced_subtree"
-
-    # The headers to indicate we are sending JSON data
-    headers = {
-        "Content-Type": "application/json",
-    }
-
-    # The data to be sent with the request, as a Python dictionary
-    data = {
-        "ott_ids": ids
-    }
-    logger.debug(data)
-
-    # Make the POST request
-    response = requests.post(url, json=data, headers=headers)
-
-    # Check if the request was successful
-    if response.status_code == 200:
-        return response.json()
-    else:
-        logger.warning(f"Failed to retrieve data - will try again")
-        return response.json()
 
 
 def get_ott_ids(pids, conn):
@@ -115,42 +77,35 @@ def process_exemplars(exemplar_files, conn):
     return pids_for_ott
 
 
-def megatree_pruner(ids, db):
-    """
-    Runs the `megatree-pruner` linux command in a subprocess. The command needs a list of IDs that are expected to
-    be in the provided database.
-    :param ids: list of IDs
-    :param db: a SQLite database file
-    :return:
-    """
-    logger.info('Going to extract subtree with megatree-pruner')
-    idcsv = ','.join(ids)
-    command = ['megatree-pruner', '-d', db, '-l', idcsv]
-    result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
-    newick = result.stdout
-    tree = Phylo.read(StringIO(newick), "newick")
-    return tree
-
-
 def remap_tips(tree, pidmap):
     """
     Remaps the leaf labels of the input tree to the values provided in the pidmap. Possibly grafts additional child
     nodes if one-to-many mapping occurs.
-    :param tree: a biopython phylo tree
+    :param tree: a dendropy tree
     :param pidmap: a dictionary of lists
     :return:
     """
     logger.info('Going to remap backbone tree')
     logger.debug(pidmap)
-    for tip in tree.get_terminals():
-        name = tip.name
-        if len(pidmap[name]) == 1:
-            tip.name = pidmap[name][0]
-        else:
-            tip.split(n=len(pidmap[name]))
-            for child, process in zip(tip.get_terminals(), pidmap[name]):
-                child.name = process
-                logger.info(f'Added child {process} to {tip.name}')
+    for node in tree.preorder_node_iter():
+        if node.is_leaf():
+            name = node.taxon.label
+            if str(name).startswith('ott'):
+                if len(pidmap[name]) == 1:
+
+                    # map ott to pid
+                    node.taxon.label = pidmap[name][0]
+                else:
+
+                    # Iterate over all pids subtended by the ott
+                    for process in pidmap[name]:
+
+                        # Create a new dendropy taxon and node, associate them, append to parent
+                        new_taxon = dendropy.Taxon(label=process)
+                        new_node = dendropy.Node()
+                        new_node.taxon = new_taxon
+                        node.add_child(new_node)
+                        logger.info(f'Added child {process} to {name}')
 
 
 if __name__ == '__main__':
@@ -171,15 +126,15 @@ if __name__ == '__main__':
 
     # Get one-to-many mapping from OTT IDs to process IDs
     pidmap = process_exemplars(args.inaln.split(' '), connection)
-    connection.close()  # megatree-pruner wants file locking
+    connection.close()
 
-    # Run megatree-pruner, remap tips
-    ott_tree = megatree_pruner(pidmap.keys(), args.database)
+    # Fetch opentol subtree, remap tips
+    ids = [int(str(item).removeprefix('ott')) for item in list(pidmap.keys())]
+    ott_tree = opentol.get_subtree(ids)
     remap_tips(ott_tree, pidmap)
 
     # Write output
     logger.info(f'Going to write tree to {args.outtree}')
-    Phylo.write(ott_tree, args.outtree, 'newick')
-
-
+    with open(args.outtree, "w") as output_file:
+        output_file.write(ott_tree.as_string(schema="newick"))
 
