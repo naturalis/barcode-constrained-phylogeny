@@ -198,7 +198,6 @@ rule msa_hmm:
 # to the nearest ingroup taxon than the latter has to all other members of the ingroup. Secondly, the constraint tree
 # should be generated here so that it also includes the outgroups, which means that an additional outgroup selection
 # criterion should be that the candidate outgroups are in the OpenToL.
-# TODO make sure outgroups are really outgroups and that they occur in the constraint tree
 rule prep_raxml:
     input:
         alignment="results/fasta/family/{scatteritem}/aligned.fa",
@@ -259,53 +258,54 @@ rule run_raxml:
         fi
         """
 
-
+# Reroots the raxml output in and then prunes the outgroups. Rooting is done by finding the smallest clade subtended
+# by the root in the constraint tree, looking for the smallest bipartition in the result tree that includes those same
+# clade members and then rooting on that bipartition branch. Subsequently, the outgroup taxa are removed.
 rule reroot_raxml_output:
     input:
         tree = "results/fasta/family/{scatteritem}/aligned.fa.raxml.bestTree",
-        constraint = "results/fasta/family/{scatteritem}/remapped.tre"
+        constraint = "results/fasta/family/{scatteritem}/remapped.tre",
+        alignment = "results/fasta/family/{scatteritem}/aligned.fa"
     output:
         outtree = "results/fasta/family/{scatteritem}/aligned.fa.raxml.bestTree.rooted"
     params:
-        log_level = config['log_level']
+        log_level = config['log_level'],
+        num_outgroups = config['outgroups']
     log: "logs/reroot_raxml_output/reroot_raxml_output-{scatteritem}.log"
     conda: "envs/reroot_backbone.yml"
     shell:
         """
+        OG=$(grep '>' {input.alignment} | tail -{params.num_outgroups} | sed -e 's/>//' | tr '\n' ',')
         python workflow/scripts/reroot_backbone.py \
             -i {input.tree} \
             -c {input.constraint} \
             -o {output.outtree} \
+            -g $OG \
             -v {params.log_level} 2> {log}
         """
 
-# TODO choose tall exemplars, not shallow ones
+# TODO: experiment with exemplar selection strategies
 rule choose_exemplars:
     input:
         alignment = "results/fasta/family/{scatteritem}/aligned.fa",
         tree= "results/fasta/family/{scatteritem}/aligned.fa.raxml.bestTree.rooted"
     output: "results/fasta/family/{scatteritem}/exemplars.fa"
     params:
-        db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
         log_level = config['log_level'],
-        num_outgroups = config['outgroups'],
         strategy = 'median'
     log: "logs/choose_exemplars/choose_exemplars-{scatteritem}.log"
     conda: "envs/choose_exemplars.yaml"
     shell:
         """
         python workflow/scripts/choose_exemplars.py \
-            -d {params.db} \
             -v {params.log_level} \
             -t {input.tree} \
             -i {input.alignment} \
-            -n {params.num_outgroups} \
             -s {params.strategy} \
             -o {output} 2> {log}
         """
 
 
-# gathers the results
 rule prep_raxml_backbone:
     input:
         fastas=gather.split("results/fasta/family/{scatteritem}/exemplars.fa"),

@@ -3,8 +3,6 @@ import dendropy
 import os
 import util
 
-from Bio import SeqIO
-
 
 def read_tree(filename, rooting='default-rooted', schema='newick'):
     """
@@ -23,37 +21,6 @@ def read_tree(filename, rooting='default-rooted', schema='newick'):
     )
 
 
-def preprocess_subtree(tree_file, fasta_file):
-    """
-    Preprocesses the input tree file by pruning all the tips that are not also in the input FASTA file
-    :param tree_file: Newick tree file
-    :param fasta_file: FASTA sequence file
-    :return: pruned dendropy tree
-    """
-    logger.info(f'Going to preprocess tree {tree_file}')
-    logger.info(f'Using alignment as ingroup {fasta_file}')
-
-    # Read the tree
-    tree = read_tree(tree_file)
-
-    # Read the alignment
-    ingroup = set()
-    for record in SeqIO.parse(fasta_file, "fasta"):
-        ingroup.add(record.id)
-
-    # Iterate over the leaves
-    outgroup = set()
-    for leaf in tree.leaf_nodes():
-        if leaf.taxon.label not in ingroup:
-            logger.info(f'Going to prune outgroup sequence {leaf.taxon.label}')
-            outgroup.add(leaf.taxon)
-
-    # Prune the outgroup
-    tree.prune_taxa(outgroup)
-
-    return tree
-
-
 if __name__ == '__main__':
 
     # Define command line arguments
@@ -68,8 +35,10 @@ if __name__ == '__main__':
     # Configure logger
     logger = util.get_formatted_logger('graft_clades', args.verbosity)
 
-    # Read the backbone
+    # Read the backbone tree as a dendropy object, calculate distances to root, and get its leaves
     backbone = read_tree(args.tree)
+    backbone.calc_node_root_distances()
+    backbone_leaf_labels = set([leaf.taxon.label for leaf in backbone.leaf_nodes()])
 
     # Iterate over folders
     base_folder = os.path.abspath(args.folder)
@@ -78,23 +47,38 @@ if __name__ == '__main__':
 
         # Peprocess the focal family tree
         subfolder = f'{i}-of-{args.nfamilies}'
-        alignment_file = os.path.join(base_folder, subfolder, 'aligned.fa')
         subtree_file = os.path.join(base_folder, subfolder, 'aligned.fa.raxml.bestTree.rooted')
-        subtree = preprocess_subtree(subtree_file, alignment_file)
+        subtree = read_tree(subtree_file)
+        subtree.calc_node_root_distances()
 
-        # Intersect the subtree labels and the backbone set
+        # Intersect the subtree labels and the backbone set if subtree >= 3 tips
         subtree_leaf_labels = set([leaf.taxon.label for leaf in subtree.leaf_nodes()])
-        backbone_leaf_labels = set([leaf.taxon.label for leaf in backbone.leaf_nodes()])
-        intersection = set()
-        for label in subtree_leaf_labels:
-            if label in backbone_leaf_labels:
-                intersection.add(label)
+        if len(subtree_leaf_labels) >= 3:
+            intersection = set()
+            for label in subtree_leaf_labels:
+                if label in backbone_leaf_labels:
+                    intersection.add(label)
 
-        # Graft the subtree
-        mrca = backbone.mrca(taxon_labels=intersection)
-        mrca.clear_child_nodes()
-        for child in subtree.seed_node.child_nodes():
-            mrca.add_child(child)
+            # Find the mrca, calculate distance between exemplars
+            logger.info(f'Intersection {intersection}')
+            mrca = backbone.mrca(taxon_labels=intersection)
+            bbdist = 0
+            stdist = 0
+            for label in intersection:
+                bbleaf = backbone.find_node_with_taxon_label(label)
+                bbdist += (bbleaf.root_distance - mrca.root_distance)
+                stleaf = subtree.find_node_with_taxon_label(label)
+                stdist += stleaf.root_distance
+
+            # Adjust subtree
+            rescale = bbdist / stdist
+            logger.info(f'Rescaling by factor {rescale}')
+            for node in subtree.preorder_node_iter():
+                node.edge_length = node.edge_length * rescale
+
+            # Graft subtree
+            mrca.clear_child_nodes()
+            for child in subtree.seed_node.child_nodes():
+                mrca.add_child(child)
 
     backbone.write(path=args.out, schema="newick")
-
