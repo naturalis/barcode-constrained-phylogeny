@@ -73,6 +73,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--constraint', required=True, help="Input rooted backbone constraint")
     parser.add_argument('-o', '--outtree', required=True, help="Output rooted tree")
     parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
+    parser.add_argument('-g', '--outgroups', required=True, help='Comma-separated list of outgroups')
     args = parser.parse_args()
 
     # Configure logging
@@ -94,6 +95,11 @@ if __name__ == '__main__':
         backbone.reroot_at_edge(bipartition, length1=new_length, length2=new_length, update_bipartitions=True)
     except Exception as e:
         logger.warning(f'Reading the constraint tree failed: {e}')
+
+    # Now remove the outgroups
+    if args.outgroups:
+        ids = [item for item in args.outgroups.split(',') if item != '']
+        backbone.prune_taxa_with_labels(ids)
 
     # Write to file
     logger.info(f'Going to write rerooted tree to {args.outtree}')
