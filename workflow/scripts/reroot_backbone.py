@@ -73,7 +73,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--constraint', required=True, help="Input rooted backbone constraint")
     parser.add_argument('-o', '--outtree', required=True, help="Output rooted tree")
     parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
-    parser.add_argument('-g', '--outgroups', required=True, help='Comma-separated list of outgroups')
+    parser.add_argument('-g', '--outgroups', required=False, help='Comma-separated list of outgroups')
     args = parser.parse_args()
 
     # Configure logging
