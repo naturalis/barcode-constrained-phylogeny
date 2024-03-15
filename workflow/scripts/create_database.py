@@ -4,57 +4,80 @@ import argparse
 import subprocess
 
 
-def load_tsv(tsv_file, db_file, table_name):
+def load_tsv(tsv_file, db_file, temp_table_name, table_name):
     """
     Loads the provided TSV file into the database under the provided table name
     :param tsv_file: tab-separated file
     :param db_file: SQLite database file
+    :param temp_table_name: database table name
     :param table_name: database table name
     :return:
     """
 
     # Construct the SQLite import command
-    logger.info(f"Going to import TSV file {tsv_file} into database {db_file} in the {table_name} table")
-    command = f".mode tabs\n.import {tsv_file} {table_name}\n"
+    logger.info(f"Going to import TSV file {tsv_file} into database {db_file} in the {temp_table_name} table")
+    command = f".mode tabs\n.import {tsv_file} {temp_table_name}\n"
 
     # Execute the command using sqlite3 CLI via subprocess
     proc = subprocess.run(['sqlite3', db_file], input=command, text=True, capture_output=True)
 
     # Check if the operation was successful
     if proc.returncode == 0:
-        logger.info("TSV file has been successfully imported into the SQLite database.")
+        logger.info("TSV file has been successfully imported into the database")
     else:
         logger.error(f"An error occurred: {proc.stderr}")
 
+    # Get the headers
+    with open(tsv_file, 'r') as file:
+        first_line = file.readline().strip()
+        column_headers = [f'"{item}"' for item in first_line.split('\t')]
 
-def create_barcode_table(tsv_file, table_name):
+    # Copy over
+    logger.info("Going to copy into permanent table")
+    joined = ', '.join(column_headers)
+    statement = f'INSERT INTO {table_name}({joined}) SELECT {joined} FROM {temp_table_name};'
+    logger.debug(statement)
+    database_cursor.execute(statement)
+
+
+def create_barcode_table(tsv_file, table_name, add_keys):
     """
     Creates the barcode table from the provided TSV file under the provided table name. This operation takes all the
-    provided TSV column header names and turns these into database columns of type TEXT. In addition, a barcode_id
-    column is created as an autoincrementing integer primary key, and a taxon_id column that is a foreign key to the
-    taxon table.
+    provided TSV column header names and turns these into database columns of type TEXT. Optionally, if the table is not
+    temporary, a barcode_id column is created as an autoincrementing integer primary key, and a taxon_id column that is
+    a foreign key to the taxon table.
     :param tsv_file: tab-separated file
     :param table_name: table name
+    :param add_keys: add primary and foreign key if true
     :return:
     """
 
     # Read the first line of the TSV file to get the column headers
-    logger.info(f"Going to create {table_name} table from {tsv_file} + extra columns")
+    logger.info(f"Going to create {table_name} table from {tsv_file}")
     with open(tsv_file, 'r') as file:
         first_line = file.readline().strip()
         column_headers = first_line.split('\t')  # Assuming a tab-separated values file
 
     # Construct the SQL statement
     # Start with 'barcode_id INTEGER PRIMARY KEY AUTOINCREMENT'
-    create_table_statement = f'CREATE TABLE IF NOT EXISTS {table_name} (barcode_id INTEGER PRIMARY KEY AUTOINCREMENT, '
+    create_table_statement = f'CREATE TABLE IF NOT EXISTS {table_name} ('
 
     # Add each column header as a TEXT type column
-    for header in column_headers:
-        create_table_statement += f'{header} TEXT, '
+    for i, header in enumerate(column_headers):
+        if not add_keys and i == len(column_headers) - 1:
+            create_table_statement += f'"{header}" TEXT);'
+        else:
+            create_table_statement += f'"{header}" TEXT, '
 
-    # Postfix with 'taxon_id INTEGER'
-    create_table_statement += 'taxon_id INTEGER, FOREIGN KEY(taxon_id) REFERENCES taxon(taxon_id));'
+    # If the table is the definitive one, not the temporary one, add a primary and foreign key
+    if add_keys:
+        logger.info("Adding primary and foreign key")
+        create_table_statement += '''
+            barcode_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            taxon_id INTEGER, FOREIGN KEY(taxon_id) REFERENCES taxon(taxon_id));
+        '''
 
+    logger.debug(create_table_statement)
     database_cursor.execute(create_table_statement)
 
 
@@ -69,7 +92,7 @@ def create_taxon_table(table_name):
     # Execute SQL statement to create the taxon table
     logger.info(f"Going to create {table_name} table")
     database_cursor.execute(f"""
-        CREATE TABLE {table_name}(
+        CREATE TABLE IF NOT EXISTS {table_name}(
             taxon_id INTEGER PRIMARY KEY AUTOINCREMENT,
             kingdom TEXT NOT NULL,
             phylum TEXT NOT NULL,
@@ -81,7 +104,7 @@ def create_taxon_table(table_name):
             species TEXT NOT NULL,            
             bin_uri TEXT NOT NULL,
             opentol_id INTEGER,
-            UNIQUE(kingdom, phylum, class, "order", family, subfamily, genus, species))
+            UNIQUE(kingdom, phylum, class, "order", family, subfamily, genus, species, bin_uri));
         """)
 
 
@@ -94,7 +117,7 @@ def index_taxonomy(table):
     # Iterate over taxonomy columns and compute index
     for column in ['kingdom', 'phylum', 'class', 'order', 'family', 'subfamily', 'genus', 'species']:
         logger.info(f'Going to index {column} column of {table} table')
-        database_cursor.execute(f'CREATE INDEX {column}_idx ON {table} ("{column}")')
+        database_cursor.execute(f'CREATE INDEX {table}_{column}_idx ON {table} ("{column}");')
 
 
 def normalize_taxonomy():
@@ -151,15 +174,16 @@ if __name__ == '__main__':
 
     # Connect to the database
     logger.info('Going to connect to database')
-    connection = sqlite3.connect(args.database)
+    connection = sqlite3.connect(args.outdb)
     database_cursor = connection.cursor()
 
     # Create database tables
     create_taxon_table('taxon')
-    create_barcode_table(args.intsv, 'barcode')
+    create_barcode_table(args.intsv, 'barcode_temp', False)
+    create_barcode_table(args.intsv, 'barcode', True)
 
-    # Load TSV into barcode table, unindexed
-    load_tsv(args.intsv, args.outdb, 'barcode')
+    # Load TSV into temporary barcode table, unindexed, then copy over
+    load_tsv(args.intsv, args.outdb, 'barcode_temp', 'barcode')
 
     # Index the barcode table's taxonomy, copy its distinct tuples into the taxon table, then index the latter
     index_taxonomy('barcode')
@@ -168,5 +192,11 @@ if __name__ == '__main__':
 
     # Update the barcode table's foreign key
     update_fk()
+
+    # Commit everything
+    database_cursor.execute('DROP TABLE barcode_temp;')
+    database_cursor.execute("DELETE FROM barcode where kingdom='kingdom';")
+    database_cursor.execute("DELETE FROM taxon where kingdom='kingdom';")
+    connection.commit()
 
 
