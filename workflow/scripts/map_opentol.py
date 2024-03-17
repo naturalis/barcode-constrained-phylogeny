@@ -11,6 +11,8 @@ import numpy as np
 # https://github.com/OpenTreeOfLife/germinator/wiki/TNRS-API-v3#match_names
 endpoint = "https://api.opentreeoflife.org/v3/tnrs/match_names"
 
+# TODO compare matches counts b/w this and previous implementation
+
 
 def tnrs_request(kingdom, names, fuzzy=False):
     """
@@ -56,104 +58,42 @@ def tnrs_response(matches, score=1.0):
     return None
 
 
-def match_opentol(database, kingdom, chunksize, fuzzy):
+def match_opentol(kingdom, chunksize, fuzzy):
     """
     Matches names against the OpenTOL. Does this for all records in the taxon table that don't have an opentol_id.
     Attempts first an exact match, then tries to recover through a fuzzy match if initially there was no match.
     Updates the database records with matches.
-    :param database: Name of SQLite database
     :param kingdom: The applicable kingdom to search within.
     :param chunksize: How many names to check in batch. Literal<=10000, Fuzzy<=250
     :param fuzzy: If True do fuzzy matching, otherwise literal matching
     :return:
     """
 
-    # Try all unmatched names in database in chunks
-    conn = sqlite3.connect(database, isolation_level=None)
-    cursor = conn.cursor()
-
-    # Create temporary table
-    cursor.execute("""CREATE TABLE IF NOT EXISTS taxon_temp (
-        taxon_id INTEGER PRIMARY KEY,
-        taxon TEXT,
-        kingdom TEXT NOT NULL,
-        class TEXT NOT NULL,
-        ord TEXT NOT NULL,
-        family TEXT NOT NULL,
-        genus TEXT NOT NULL,
-        bin_uri TEXT NOT NULL,
-        opentol_id INTEGER)""")
-
     # Load all unmatched records into df, iterate over it in chunks
     df = pd.read_sql("SELECT * FROM taxon WHERE opentol_id IS NULL", conn)
     for _, chunk_df in df.groupby(np.arange(len(df)) // chunksize):
 
         # Check all names within the chunk as a list against TNRS
-        tnrs_data = tnrs_request(kingdom, chunk_df['taxon'].to_list(), fuzzy=fuzzy)
+        tnrs_data = tnrs_request(kingdom, chunk_df['species'].to_list(), fuzzy=fuzzy)
 
         # Process the results, update temp table
         for i in range(len(tnrs_data['results'])):
 
             # Prepare record to insert, coerce types
             taxon_id = int(chunk_df['taxon_id'].iloc[i])
-            taxon = str(chunk_df['taxon'].iloc[i])
-            kingdom = str(chunk_df['kingdom'].iloc[i])
-            classe = str(chunk_df['class'].iloc[i])
-            order = str(chunk_df['ord'].iloc[i])
-            family = str(chunk_df['family'].iloc[i])
-            genus = str(chunk_df['genus'].iloc[i])
-            bin_uri = str(chunk_df['bin_uri'].iloc[i])
 
             # Attempt to get OTT ID
             ott_id = tnrs_response(tnrs_data['results'][i]['matches'])
             if ott_id is not None:
                 opentol_id = int(ott_id)
-                data_to_insert = (taxon_id, taxon, kingdom, classe, order, family, genus, bin_uri, opentol_id)
-                sql_command = """
-                    INSERT INTO taxon_temp (taxon_id, taxon, kingdom, class, ord, family, genus, bin_uri, opentol_id)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """
-                cursor.execute(sql_command, data_to_insert)
-
-            else:
-                data_to_insert = (taxon_id, taxon, kingdom, classe, order, family, genus, bin_uri)
-                sql_command = """
-                    INSERT INTO taxon_temp (taxon_id, taxon, kingdom, class, ord, family, genus, bin_uri)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """
-                cursor.execute(sql_command, data_to_insert)
-            conn.commit()
-            logger.debug(data_to_insert)
-
-    # Copy over the already matched records
-    cursor.execute("""INSERT INTO taxon_temp SELECT * FROM taxon WHERE opentol_id IS NOT NULL""")
-
-    # Remove old taxon table
-    cursor.execute("""DROP TABLE taxon""")
-
-    # Rename new taxon table from temp to taxon
-    cursor.execute("""ALTER TABLE taxon_temp RENAME TO taxon""")
-
-    conn.close()
+                cursor.execute(f'UPDATE taxon SET opentol_id = {opentol_id} WHERE taxon_id = {taxon_id}')
 
 
-def postprocess_db(database):
-    # create indexes on family, genus, opentol_id, taxon_id country and nucraw
-    conn = sqlite3.connect(database, isolation_level=None)
-    cursor = conn.cursor()
-    cursor.execute("""CREATE INDEX IF NOT EXISTS class_idx ON taxon (class)""")
-    cursor.execute("""CREATE INDEX IF NOT EXISTS ord_idx ON taxon (ord)""")
-    cursor.execute("""CREATE INDEX IF NOT EXISTS family_idx ON taxon (family)""")
-    cursor.execute("""CREATE INDEX IF NOT EXISTS genus_idx ON taxon (genus)""")
-    cursor.execute("""CREATE INDEX IF NOT EXISTS bin_uri_idx ON taxon (bin_uri)""")
-    cursor.execute("""CREATE INDEX IF NOT EXISTS opentol_id_idx ON taxon (opentol_id)""")
-    cursor.execute("""CREATE INDEX IF NOT EXISTS taxon_id_idx ON barcode (taxon_id)""")
-    cursor.execute("""CREATE INDEX IF NOT EXISTS country_idx ON barcode (country)""")
-    cursor.execute("""CREATE INDEX IF NOT EXISTS nucraw_idx ON barcode (nucraw)""")
-    cursor.execute("""CREATE INDEX IF NOT EXISTS processid_idx ON barcode (processid)""")
-    cursor.execute("""CREATE INDEX IF NOT EXISTS country_idx ON barcode (country)""")
-    conn.commit()
-    conn.close()
+def postprocess_db():
+    # create indexes on opentol_id
+    logger.info('Going to index opentol_id and analyze the database for optimized queries')
+    cursor.execute('CREATE INDEX IF NOT EXISTS taxon_opentol_id_idx ON taxon (opentol_id)')
+    cursor.execute('ANALYZE')
 
 
 if __name__ == '__main__':
@@ -165,29 +105,33 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', required=True, help='0-byte status file')
     parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
     args = parser.parse_args()
-    marker = args.marker
-    database_file = args.database
 
     # Configure logger
     logger = util.get_formatted_logger('map_opentol', args.verbosity)
 
+    # Connect to database
+    logger.info(f'Going to connect to database {args.database}')
+    conn = sqlite3.connect(args.database)
+    cursor = conn.cursor()
+
     # Infer taxonomic context from marker name
-    if marker == "COI-5P":
-        kingdom = 'Animals'
+    if args.marker == "COI-5P":
+        focal_kingdom = 'Animals'
     else:
-        kingdom = "Plants"
+        focal_kingdom = "Plants"
 
     # Literal matching in big steps
     logger.info("Going to match literally in chunks of 10,000 names")
-    match_opentol(database_file, kingdom, chunksize=10000, fuzzy=False)
+    match_opentol(focal_kingdom, chunksize=10000, fuzzy=False)
 
     # Fuzzy matching in small steps
     logger.info("Going to match fuzzily in chunks of 250 names")
-    match_opentol(database_file, kingdom, chunksize=250, fuzzy=True)
+    match_opentol(focal_kingdom, chunksize=250, fuzzy=True)
 
     # Compute indexes and write to final file
-    postprocess_db(database_file)
-#    os.rename(temp_database_name, database_file)
+    postprocess_db()
+    conn.commit()
+    conn.close()
 
     # Touch the file
     filename = args.output

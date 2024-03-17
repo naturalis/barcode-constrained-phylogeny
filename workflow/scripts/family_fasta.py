@@ -15,16 +15,17 @@ def get_family_bins(q, conn):
     """
 
     # Check if filter_level in config.yaml is usable
-    if q['level'].lower() in ['kingdom', 'class', 'order', 'ord', 'family', 'genus', 'all']:
-        if q['level'].lower() == 'order':
+    if q['level'].lower() in ['kingdom', 'phylum', 'class', 'order', 'family', 'subfamily', 'genus', 'all']:
 
-            # Change order to ord so it matches database column
-            q['level'] = 'ord'
-
-        # Select all distinct family names which match config.yaml filters
+        # Select all distinct family names that match config.yaml filters
         level = q['level']
         name = q['name']
-        sql = f"SELECT family, bin_uri, taxon FROM taxon WHERE {level} = '{name}' GROUP BY family, bin_uri"
+        sql = f'''
+            SELECT family, bin_uri, species 
+            FROM taxon 
+            WHERE "{level}" = "{name}" AND species is not "None" 
+            GROUP BY family, bin_uri
+        '''
         fam = pd.read_sql_query(sql, conn)
 
         # Check if filter is all or if used filter did not resulted in any records
@@ -47,23 +48,28 @@ def write_bin(q, conn, fh):
 
     # Fetch the longest sequence in the BIN
     logger.info(f"Writing longest sequence for BIN {q['bin_uri']} to FASTA")
-    famseq = pd.read_sql_query(f"""
-        SELECT b.processid, t.bin_uri, t.opentol_id, t.taxon, b.nucraw, b.barcode_id
+    query = f'''
+        SELECT b.processid, t.bin_uri, t.opentol_id, t.species, b.nucraw, b.barcode_id
         FROM barcode b
         JOIN taxon t ON b.taxon_id = t.taxon_id
         WHERE
-            t.{q['level']} = '{q['name']}' AND
-            t.family = '{q['family']}' AND
-            bin_uri = '{q['bin_uri']}'
+            t."{q["level"]}" = "{q["name"]}" AND
+            t.family = "{q["family"]}" AND
+            t.bin_uri = "{q["bin_uri"]}" AND
+            b.marker_code = "{q["marker_code"]}"
         ORDER BY
         length(b.nucraw) DESC LIMIT 1
-        """, conn)
+        '''
+    logger.debug(query)
+    famseq = pd.read_sql_query(query, conn)
 
     # Append to file handle fh
     for _, row in famseq.iterrows():
-        defline = f'>{row["barcode_id"]}|ott{row["opentol_id"]}|{row["processid"]}|{row["bin_uri"]}|{row["taxon"]}\n'
+        defline = f'>{row["barcode_id"]}|ott{row["opentol_id"]}|{row["processid"]}|{row["bin_uri"]}|{row["species"]}\n'
         fh.write(defline)
-        seq = f'{row["nucraw"]}\n'
+
+        # Strip non-ACGT characters (dashes, esp.) because hmmer chokes on them
+        seq = row['nucraw'].replace('-', '') + '\n'
         fh.write(seq)
 
 
@@ -75,6 +81,7 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--level', required=True, help='Taxonomic level to filter (e.g. order)')
     parser.add_argument('-n', '--name', required=True, help='Taxon name to filter (e.g. Primates)')
     parser.add_argument('-c', '--chunks', required=True, help="Number of chunks (families) to write to file")
+    parser.add_argument('-m', '--marker', required=True, help='Marker code, e.g. COI-5P')
     parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
     args = parser.parse_args()
     database_file = args.database
@@ -85,8 +92,6 @@ if __name__ == '__main__':
     # Connect to the database (creates a new file if it doesn't exist)
     logger.info(f"Going to connect to database {args.database}")
     connection = sqlite3.connect(args.database)
-
-    # Create a cursor
     cursor = connection.cursor()
 
     # Get families and bins for configured level and name
@@ -116,6 +121,7 @@ if __name__ == '__main__':
                 logger.debug(f"Writing {bin_uri}")
                 query['bin_uri'] = bin_uri
                 query['family'] = family
+                query['marker_code'] = args.marker
                 write_bin(query, connection, handle)
 
         index += 1

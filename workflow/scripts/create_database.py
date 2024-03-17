@@ -115,7 +115,7 @@ def index_taxonomy(table):
     """
 
     # Iterate over taxonomy columns and compute index
-    for column in ['kingdom', 'phylum', 'class', 'order', 'family', 'subfamily', 'genus', 'species']:
+    for column in ['kingdom', 'phylum', 'class', 'order', 'family', 'subfamily', 'genus', 'species', 'bin_uri']:
         logger.info(f'Going to index {column} column of {table} table')
         database_cursor.execute(f'CREATE INDEX {table}_{column}_idx ON {table} ("{column}");')
 
@@ -136,7 +136,7 @@ def normalize_taxonomy():
 def update_fk():
     """
     Updates the taxon_id foreign key column in the barcode table by joining all denormalized records in it
-    with the normalized tuple in the taxon table
+    with the normalized tuple in the taxon table. Applies indexes to the PK and FK.
     :return:
     """
 
@@ -158,6 +158,9 @@ def update_fk():
                 barcode.bin_uri = taxon.bin_uri
         );        
     """)
+    logger.info('Going to index PK/FK taxon_id on taxon and barcode tables')
+    database_cursor.execute('CREATE INDEX "taxon_taxon_id_idx" ON "taxon"("taxon_id")')
+    database_cursor.execute('CREATE INDEX "barcode_taxon_id_idx" ON "barcode"("taxon_id")')
 
 
 if __name__ == '__main__':
@@ -184,6 +187,9 @@ if __name__ == '__main__':
 
     # Load TSV into temporary barcode table, unindexed, then copy over
     load_tsv(args.intsv, args.outdb, 'barcode_temp', 'barcode')
+    database_cursor.execute('CREATE INDEX barcode_nucraw_idx ON barcode(nucraw)')
+    database_cursor.execute('CREATE INDEX barcode_processid_idx ON barcode(processid)')
+    database_cursor.execute('CREATE INDEX barcode_marker_code_idx ON barcode(marker_code)')
 
     # Index the barcode table's taxonomy, copy its distinct tuples into the taxon table, then index the latter
     index_taxonomy('barcode')
@@ -194,6 +200,7 @@ if __name__ == '__main__':
     update_fk()
 
     # Commit everything
+    logger.info('Cleaning up temporary table and header records')
     database_cursor.execute('DROP TABLE barcode_temp;')
     database_cursor.execute("DELETE FROM barcode where kingdom='kingdom';")
     database_cursor.execute("DELETE FROM taxon where kingdom='kingdom';")

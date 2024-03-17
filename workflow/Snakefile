@@ -18,12 +18,10 @@ rule create_database:
   log: "logs/create_database/create_database.log"
   shell:
     """
-    python workflow/scripts/bold_data_dump.py \
+    python workflow/scripts/create_database.py \
       -v {params.log_level} \
-      -l {params.minlength} \
-      -d {params.db} \
-      -t {input} \
-      -m {params.marker} 2> {log}
+      -o {params.db} \
+      -i {input} 2> {log}
     touch {output}
     """
 
@@ -89,6 +87,7 @@ rule family_fasta:
       fasta_dir=config["file_names"]["fasta_dir"],
       filter_level=config["fasta_filter"]["filter_level"],
       filter_name=config["fasta_filter"]["filter_name"],
+      marker=config["marker"],
       db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
       chunks=config["nfamilies"],
     conda: "envs/family_fasta.yml"
@@ -101,6 +100,7 @@ rule family_fasta:
             -l {params.filter_level} \
             -n {params.filter_name} \
             -c {params.chunks} \
+            -m {params.marker} \
             -v {params.log_level} 2> {log}
         touch {output.status}
         """
