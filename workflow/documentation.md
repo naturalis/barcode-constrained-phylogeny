@@ -7,7 +7,7 @@
 
 Puts relevant BOLD data columns into a custom SQLite database.
 Uses BOLD dump TSV as defined in config file. Implemented by the 
-[bold_data_dump.py](scripts/create_database.py) script.
+[create_database.py](scripts/create_database.py) script.
 
 ---
 ### `map_opentol` 
