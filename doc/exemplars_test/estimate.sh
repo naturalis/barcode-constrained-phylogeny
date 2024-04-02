@@ -5,7 +5,7 @@
 # mamba activate exemplars_test
 
 # Define locations of assets
-DB=../databases/BOLD_COI-5P_barcodes.db
+DB=../../results/databases/BOLD_COI-5P_barcodes.db
 HMM=../../resources/hmm/COI-5P.hmm
 
 # Iterate over tree files
