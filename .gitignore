@@ -1,3 +1,7 @@
+*.fa
+*.reduced
+RAxML_*
+
 # ignore log files
 *.log
 
