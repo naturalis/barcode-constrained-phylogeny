@@ -2,7 +2,9 @@
 title: "Exemplars"
 author: '@rvosa'
 date: "2024-04-02"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 # Introduction
@@ -105,7 +107,7 @@ regress_grafted_estimated(tallest_grafted, tallest_estimated, 'Exemplars are sho
 
 This one is in the middle. If you get the other two, you get this one.
 
-```{r shallowest}
+```{r median}
 # Read trees
 tallest_grafted <- read.tree(file="grafted-median.tre")
 tallest_estimated <- read.tree(file="RAxML_result.grafted-median")
