@@ -86,10 +86,12 @@ The pipeline is implemented using snakemake, which is available within the conda
 environment that results from the installation. Important before running the snakemake pipeline 
 is to change in [config/config.yaml](config/config.yaml) the number of threads available on your 
 computer. Which marker gene is used in the pipeline is also specified in the config.yaml (default 
-COI-5P). Prior to execution, the BOLD data package to use (we used the 
-[release of 30 December 2022](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022)) 
-must be downloaded manually and stored in the [resources/](resources/) directory. If a BOLD release 
-from another date is used the file names in config.yaml need to be updated. 
+COI-5P). Prior to execution, the BOLD data package (we used the 
+[release of 18 December 2023](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.18-Dec-2023))
+must be downloaded manually and stored in the [resources/](resources/) directory.
+The same goes for the OpenTOL datapackage (we used the 
+[13.4 release](https://tree.opentreeoflife.org/about/synthesis-release/v13.4))
+If a BOLD or OpenTOL release from another date is used the file names in config.yaml need to be updated.
 
 How to run the entire pipeline:
 
