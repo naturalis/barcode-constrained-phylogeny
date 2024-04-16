@@ -41,9 +41,10 @@ part of the ITS region.
 
 ## Installation
 
-The pipeline and its dependencies are managed using conda. On a linux or osx system, you 
-can follow these steps to set up the `bactria` Conda environment using an `environment.yml` 
-file and a `requirements.txt` file:
+The pipeline and its dependencies are managed using conda. On a Linux-like system, you 
+can follow these steps to set up the `bactria` Conda environment using the `environment.yml` 
+file (for standalone executables that the pipeline needs) and a `requirements.txt` file
+(for Python packages that the pipeline scripts use):
 
 1. **Clone the Repository:**  
    Clone the repository containing the environment files to your local machine:
@@ -80,16 +81,30 @@ This is crucial for having robust and correct environments (for details, see
 [here](https://conda-forge.org/docs/user/tipsandtricks.html)). Consider configuring strict 
 priorities by executing `conda config --set channel_priority strict`.
 
+## How to configure
+
+The pipeline is configured using the [config.yaml](config/config.yaml) file. With the 
+settings in this file you can affect, among other things:
+
+- Which higher taxonomic group to build the tree for. The example configuration shows
+  how this is defined for the order Primates.
+- Where the BOLD data package TSV file is located. Note that the pipeline assumes data
+  packages formatted according to the BCDM syntax from 2024 onwards.
+- Where the OpenToL synthetic Newick tree file is located. This has to be the tree file
+  with only IDs as tip and node labels, not taxon names. (The file name should follow
+  the same pattern as the example configuration.)
+- How many families are in the higher taxon for which to build the tree. At time of
+  of writing this is a crucial variable that must match the number of families in the
+  taxon according to BOLD, as pipeline parallelization is based on this. (Note that we
+  are working on a better solution for this.)
+- Which marker gene to use. Note that any other value besides COI-5P (the default) means
+  you need to provide an HMM file for that marker.  
+- How verbose the pipeline needs to be in its log files.    
+
 ## How to run
 
 The pipeline is implemented using snakemake, which is available within the conda 
-environment that results from the installation. Important before running the snakemake pipeline 
-is to change in [config/config.yaml](config/config.yaml) the number of threads available on your 
-computer. Which marker gene is used in the pipeline is also specified in the config.yaml (default 
-COI-5P). Prior to execution, the BOLD data package to use (we used the 
-[release of 30 December 2022](https://www.boldsystems.org/index.php/datapackage?id=BOLD_Public.30-Dec-2022)) 
-must be downloaded manually and stored in the [resources/](resources/) directory. If a BOLD release 
-from another date is used the file names in config.yaml need to be updated. 
+environment that results from the installation.
 
 How to run the entire pipeline:
 

@@ -14,7 +14,7 @@ def tiplabels(treefile):
 
 def printseqs(pids, dbfile):
     connection = sqlite3.connect(dbfile)
-    query = 'SELECT nucraw FROM barcode WHERE processid = ?'
+    query = 'SELECT nuc FROM barcode WHERE processid = ?'
     for pid in pids:
         seq = connection.execute(query, (pid,)).fetchone()[0]
         seq = str(seq).replace('-', '')

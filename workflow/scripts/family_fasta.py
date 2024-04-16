@@ -49,7 +49,7 @@ def write_bin(q, conn, fh):
     # Fetch the longest sequence in the BIN
     logger.info(f"Writing longest sequence for BIN {q['bin_uri']} to FASTA")
     query = f'''
-        SELECT b.processid, t.bin_uri, t.opentol_id, t.species, b.nucraw, b.barcode_id
+        SELECT b.processid, t.bin_uri, t.opentol_id, t.species, b.nuc, b.barcode_id
         FROM barcode b
         JOIN taxon t ON b.taxon_id = t.taxon_id
         WHERE
@@ -58,7 +58,7 @@ def write_bin(q, conn, fh):
             t.bin_uri = "{q["bin_uri"]}" AND
             b.marker_code = "{q["marker_code"]}"
         ORDER BY
-        length(b.nucraw) DESC LIMIT 1
+        length(b.nuc) DESC LIMIT 1
         '''
     logger.debug(query)
     famseq = pd.read_sql_query(query, conn)
@@ -69,7 +69,7 @@ def write_bin(q, conn, fh):
         fh.write(defline)
 
         # Strip non-ACGT characters (dashes, esp.) because hmmer chokes on them
-        seq = row['nucraw'].replace('-', '') + '\n'
+        seq = row['nuc'].replace('-', '') + '\n'
         fh.write(seq)
 
 

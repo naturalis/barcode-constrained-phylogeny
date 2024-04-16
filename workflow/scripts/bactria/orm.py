@@ -39,7 +39,7 @@ class Barcode(Base):
     barcode_id = Column(Integer, primary_key=True)
     processid = Column(Integer, nullable=False, index=True)
     marker_code = Column(Text, nullable=False)
-    nucraw = Column(Text, nullable=False, index=True)
+    nuc = Column(Text, nullable=False, index=True)
     country = Column(Text, index=True)
     taxon_id = Column(ForeignKey('taxon.taxon_id'), nullable=False, index=True)
 

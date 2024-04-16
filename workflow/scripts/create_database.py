@@ -187,7 +187,10 @@ if __name__ == '__main__':
 
     # Load TSV into temporary barcode table, unindexed, then copy over
     load_tsv(args.intsv, args.outdb, 'barcode_temp', 'barcode')
-    database_cursor.execute('CREATE INDEX barcode_nucraw_idx ON barcode(nucraw)')
+    database_cursor.execute('CREATE INDEX barcode_nuc_idx ON barcode(nuc)')
+    database_cursor.execute('CREATE INDEX barcode_processid_idx ON barcode(processid)')
+    database_cursor.execute('CREATE INDEX barcode_marker_code_idx ON barcode(marker_code)')
+
     database_cursor.execute('CREATE INDEX barcode_processid_idx ON barcode(processid)')
     database_cursor.execute('CREATE INDEX barcode_marker_code_idx ON barcode(marker_code)')
 
