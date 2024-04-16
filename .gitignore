@@ -12,14 +12,13 @@ RAxML_*
 .DS_Store
 
 # ignore local results
-resources/BOLD_Public.18-Dec-2023
-resources/BOLD_Public.30-Dec-2022.tar.gz
+resources/BOLD_Public.*
 results/databases/
 results/fasta/
 results/blast/
 results/grafted.tre
 resources/mnt/
-resources/opentree/
+resources/opentree*
 *.sto
 
 # ignore snakemake hidden files
