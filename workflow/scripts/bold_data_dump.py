@@ -19,14 +19,14 @@ def extract_bold(conn, bold_tsv, marker, minlength):
     for chunk in pd.read_csv(bold_tsv, quoting=csv.QUOTE_NONE,
                              low_memory=False, sep="\t", chunksize=10000):
         # Strip all '-' symbols out of the sequences, i.e. unalign them
-        chunk['nucraw'] = chunk['nucraw'].str.replace('-', '', regex=False)
+        chunk['nuc'] = chunk['nuc'].str.replace('-', '', regex=False)
 
         # Keep rows that match user arguments
         if marker == "COI-5P":
             df = chunk.loc[
                 (chunk['marker_code'] == marker) &
                 (chunk["kingdom"] == "Animalia") &
-                (chunk["nucraw"].str.len() >= minlength) &
+                (chunk["nuc"].str.len() >= minlength) &
                 (chunk["species"] is not None)
                 ]
 
@@ -38,13 +38,13 @@ def extract_bold(conn, bold_tsv, marker, minlength):
                 (
                     (chunk['marker_code'] == marker_1) &
                     (chunk["kingdom"] == "Plantae") &
-                    (chunk["nucraw"].str.len() >= minlength) &
+                    (chunk[""].str.len() >= minlength) &
                     (chunk["species"] is not None)
                 ) |
                 (
                     (chunk['marker_code'] == marker_2) &
                     (chunk["kingdom"] == "Plantae") &
-                    (chunk["nucraw"].str.len() >= minlength) &
+                    (chunk["nuc"].str.len() >= minlength) &
                     (chunk["species"] is not None)
                 )
                 ]
@@ -57,7 +57,7 @@ def extract_bold(conn, bold_tsv, marker, minlength):
         df_temp.to_sql('taxon_temp', conn, if_exists='append', index=False)
 
         # Keep stated columns
-        df_temp = df[['processid', 'marker_code', 'nucraw', 'country', 'species', 'bin_uri']]
+        df_temp = df[['processid', 'marker_code', 'nuc', 'country', 'species', 'bin_uri']]
 
         # Add rows to SQLite table (makes table if not exist yet)
         df_temp.to_sql('barcode_temp', conn, if_exists='append', index=False)
@@ -91,7 +91,7 @@ def make_tables(conn, cursor):
         barcode_id INTEGER PRIMARY KEY,
         processid INTEGER NOT NULL,
         marker_code TEXT NOT NULL,
-        nucraw TEXT NOT NULL,
+        nuc TEXT NOT NULL,
         country TEXT,
         taxon_id INTEGER NOT NULL,
         FOREIGN KEY (taxon_id) REFERENCES taxon(taxon_id)
@@ -114,9 +114,9 @@ def make_distinct(conn, cursor):
 
     # Get taxon_id from taxon table as foreign key insert
     cursor.execute("""
-     INSERT INTO barcode (processid, marker_code, nucraw, country, taxon_id) 
+     INSERT INTO barcode (processid, marker_code, nuc, country, taxon_id) 
      SELECT DISTINCT barcode_temp.processid, barcode_temp.marker_code,
-     barcode_temp.nucraw, barcode_temp.country, taxon.taxon_id
+     barcode_temp.nuc, barcode_temp.country, taxon.taxon_id
      FROM barcode_temp INNER JOIN taxon ON barcode_temp.bin_uri = taxon.bin_uri""")
 
     # Drop old tables
