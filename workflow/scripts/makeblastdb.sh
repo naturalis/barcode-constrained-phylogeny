@@ -11,10 +11,10 @@ for i in $(seq 1 $ITERATIONS); do
 
   # only keep records with ott IDs, reformat the headers to retain the process ID, write to $TMP
   # start new file on first iteration, then append
-  if [[ ${i} == 1 ]]; then
-    egrep -A 1 'ott\d+' ${INFILE} | awk -F'|' '/^>/ {print ">"$3; next} {print}' > ${TMP}
+  if [ "${i}" -eq 1 ]; then
+    egrep -A 1 'ott[0-9]+' ${INFILE} | awk -F'|' '/^>/ {print ">"$3; next} {print}' > ${TMP}
   else
-    egrep -A 1 'ott\d+' ${INFILE} | awk -F'|' '/^>/ {print ">"$3; next} {print}' >> ${TMP}
+    egrep -A 1 'ott[0-9]+' ${INFILE} | awk -F'|' '/^>/ {print ">"$3; next} {print}' >> ${TMP}
   fi
 
 done
