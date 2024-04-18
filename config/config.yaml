@@ -52,7 +52,7 @@ dependencies:
       - -r requirements.txt
 
 file_names:
-  bold_tsv: resources/BOLD_Public.05-Apr-2024.tsv
+  bold_tsv: resources/BOLD_Public.05-Apr-2024-curated.tsv
   open_tre: resources/opentree14.9_tree/labelled_supertree/labelled_supertree.tre
   hmm: resources/hmm/COI-5P.hmm
   fasta_dir: results/fasta/family
