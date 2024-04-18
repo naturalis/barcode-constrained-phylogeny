@@ -23,7 +23,7 @@ def get_family_bins(q, conn):
         sql = f'''
             SELECT family, bin_uri, species 
             FROM taxon 
-            WHERE "{level}" = "{name}" AND species is not "None" 
+            WHERE "{level}" = "{name}" AND family IS NOT NULL AND family <> ''
             GROUP BY family, bin_uri
         '''
         fam = pd.read_sql_query(sql, conn)
@@ -56,7 +56,9 @@ def write_bin(q, conn, fh):
             t."{q["level"]}" = "{q["name"]}" AND
             t.family = "{q["family"]}" AND
             t.bin_uri = "{q["bin_uri"]}" AND
-            b.marker_code = "{q["marker_code"]}"
+            b.marker_code = "{q["marker_code"]}" AND
+            t.species IS NOT NULL AND
+            t.species <> '' 
         ORDER BY
         length(b.nuc) DESC LIMIT 1
         '''
