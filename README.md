@@ -114,7 +114,7 @@ snakemake -j {number of threads} --use-conda
 
 Snakemake rules can be performed separately:
 ```bash 
-snakemake -R {Rule} -j {number of threads} --use-conda
+snakemake --until {Rule} -j {number of threads} --use-conda
 ```
 
 Enter the same number at {number of threads} as you filled in previously in src/config.yaml.
