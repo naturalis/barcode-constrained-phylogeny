@@ -6,6 +6,7 @@ channels:
 dependencies:
   - sqlite
   - hmmer
+  - seqmagick
   - pip
   - pip:
     - -r ../../workflow/envs/prep_raxml_backbone.txt
