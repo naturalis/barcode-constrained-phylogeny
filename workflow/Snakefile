@@ -284,7 +284,12 @@ rule reroot_raxml_output:
             -v {params.log_level} 2> {log}
         """
 
-# TODO: experiment with exemplar selection strategies
+# In principle, exemplar choosing can be performed using one of three ways:
+# 1. the tallest tips on either side of the root are chosen
+# 2. the shallowest tips on either side
+# 3. the ones closest to the median root-to-tip path length
+# Empirically, the first option yields rescaled branch lengths that are closest
+# to those optimized freely on a total tree.
 rule choose_exemplars:
     input:
         alignment = "results/fasta/family/{scatteritem}/aligned.fa",
@@ -305,7 +310,11 @@ rule choose_exemplars:
             -o {output} 2> {log}
         """
 
-
+# When aligning the family-level subsets, different families may have different indel
+# patterns. So, although they are all orientated against the model in the same way,
+# there can be some frame shifting. The least bad option is to unalign and realign 
+# the exemplar sequences on the fly. Sed does the unaligning, hmmalign emits Stockholm
+# data on the command line, awk turns it into FASTA.
 rule prep_raxml_backbone:
     input:
         fastas=gather.split("results/fasta/family/{scatteritem}/exemplars.fa"),
@@ -315,12 +324,25 @@ rule prep_raxml_backbone:
         tree="results/fasta/raxml-ready.tre"
     params:
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
-        log_level = config['log_level']
+        log_level = config['log_level'],
+        hmm_file=config['file_names']['hmm']
     log: "logs/prep_raxml_backbone/prep_raxml_backbone.log"
     conda: "envs/prep_raxml_backbone.yml"
     shell:
         """
-        cat {input.fastas} > {output.fasta}
+        # Concatenate all input FASTA files into one
+        cat {input.fastas} > results/fasta/exemplars.fasta
+        
+        # Clean the concatenated FASTA by removing gaps (dashes)
+        sed '/^>/! s/-//g' results/fasta/exemplars.fasta > results/fasta/exemplars-unaligned.fasta
+        
+        # Align with hmmalign and output in Stockholm format
+        hmmalign --trim --dna --informat FASTA --outformat Stockholm {params.hmm_file} results/fasta/exemplars-unaligned.fasta > results/fasta/aligned.sto
+        
+        # Convert the Stockholm alignment to a non-interleaved FASTA format for RAxML
+        seqmagick convert results/fasta/aligned.sto {output.fasta}
+        
+        # Generate phylogenetic tree
         python workflow/scripts/backbone_constraint.py \
             -d {params.db} \
             -v {params.log_level} \
