@@ -74,6 +74,9 @@ if __name__ == '__main__':
             rescale = bbdist / stdist
             logger.info(f'Rescaling by factor {rescale}')
             for node in subtree.preorder_node_iter():
+                if node.edge_length is None:
+                    logger.warning(f"Set length=0 for {node.label} in {subtree_file}")
+                    node.edge_length = 0
                 node.edge_length = node.edge_length * rescale
 
             # Graft subtree
