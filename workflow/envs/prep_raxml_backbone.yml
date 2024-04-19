@@ -5,6 +5,7 @@ channels:
   - defaults
 dependencies:
   - sqlite
+  - hmmer
   - pip
   - pip:
     - -r ../../workflow/envs/prep_raxml_backbone.txt
