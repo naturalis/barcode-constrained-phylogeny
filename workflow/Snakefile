@@ -321,7 +321,8 @@ rule prep_raxml_backbone:
         opentol='results/databases/megatree_loader.ok'
     output:
         fasta="results/fasta/raxml-ready.fa",
-        tree="results/fasta/raxml-ready.tre"
+        tree="results/fasta/raxml-ready.tre",
+        extinct="results/fasta/extinct_pids.txt"
     params:
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
         log_level = config['log_level'],
@@ -330,27 +331,32 @@ rule prep_raxml_backbone:
     conda: "envs/prep_raxml_backbone.yml"
     shell:
         """
-        # Concatenate all input FASTA files into one
-        cat {input.fastas} > results/fasta/exemplars.fasta
-        
-        # Clean the concatenated FASTA by removing gaps (dashes)
-        sed '/^>/! s/-//g' results/fasta/exemplars.fasta > results/fasta/exemplars-unaligned.fasta
-        
-        # Align with hmmalign and output in Stockholm format
-        hmmalign --trim --dna --informat FASTA --outformat Stockholm {params.hmm_file} results/fasta/exemplars-unaligned.fasta > results/fasta/aligned.sto
-        
-        # Convert the Stockholm alignment to a non-interleaved FASTA format for RAxML
-        seqmagick convert results/fasta/aligned.sto {output.fasta}
-        
-        # Generate phylogenetic tree
+        # Generate constraint tree and list of extinct PIDs
         python workflow/scripts/backbone_constraint.py \
             -d {params.db} \
             -v {params.log_level} \
             -i '{input.fastas}' \
+            -e {output.extinct} \
             -o {output.tree} 2> {log}
+
+        # Clean the concatenated FASTA by removing gaps (dashes)
+        sed '/^>/! s/-//g' {input.fastas} > results/fasta/unaligned.fa
+        
+        # Align with hmmalign and output in Stockholm format
+        hmmalign --trim --dna --informat FASTA --outformat Stockholm {params.hmm_file} results/fasta/unaligned.fa > results/fasta/aligned.sto
+        
+        # Convert the Stockholm alignment to a non-interleaved FASTA format for RAxML
+        seqmagick convert results/fasta/aligned.sto {output.fasta}
+
+        # Remove any extinct PIDs
+        [ -e {output.extinct} ] && seqmagick mogrify --exclude-from-file {output.extinct} {output.fasta}        
         """
 
 
+# Constructs the backbone topology under ML using raxml-ng with a tree constraint that
+# is intended to keep all pairs of exemplars monophyletic. Here, no outgroups are 
+# specified, because in principle this step could be dealing with the entire 
+# taxonomic width of BOLD. Instead, the tree will be rooted using the constraint.
 rule run_raxml_backbone:
     input:
         alignment = "results/fasta/raxml-ready.fa",
