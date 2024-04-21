@@ -377,7 +377,11 @@ rule run_raxml_backbone:
             --search > {log} 2>&1
         """
 
-
+# Reroots the backbone using the constraint tree. The basic method is to find the
+# basal split in the constraint, look for the equivalent bipartition in the inferred
+# tree, and root there. TODO: this approach currently places the root on the midpoint
+# of the bipartition. This is not ideal but it is not obvious what better options
+# are available if there are no outgroups.
 rule reroot_backbone:
     input:
         backbone = "results/fasta/raxml-ready.fa.raxml.bestTree",
@@ -401,7 +405,8 @@ rule reroot_backbone:
 rule graft_clades:
     input:
         backbone = "results/fasta/raxml-ready.fa.raxml.bestTree.rooted",
-        clades = config['file_names']['fasta_dir']
+        clades = config['file_names']['fasta_dir'],
+        extinct = "results/fasta/extinct_pids.txt"
     output:
         tree = "results/grafted.tre"
     params:
@@ -414,6 +419,7 @@ rule graft_clades:
         python workflow/scripts/graft_clades.py \
             -t {input.backbone} \
             -f {input.clades} \
+            -e {input.extinct} \
             -o {output.tree} \
             -n {params.nfamilies} \
             -v {params.log_level} 2> {log}                  
