@@ -11,7 +11,7 @@ cpu_cores: 56
 # `Odonata`. TODO: make this so that it is done automatically from the data. At present, this needs to be 
 # calculated by the user from the input file, e.g. by first making the sqlite database, or by grepping the 
 # TSV file somehow.
-nfamilies: 36
+nfamilies: 134
 
 # Number of outgroups to include in each family-level analysis. Minimum is 2.
 outgroups: 3
@@ -47,7 +47,7 @@ datatype: NT
 # filter levels: class, order, family, genus, all (no filter)
 fasta_filter:
   filter_level: order
-  filter_name: Odonata
+  filter_name: Lepidoptera
 
 name: phylogeny
 
