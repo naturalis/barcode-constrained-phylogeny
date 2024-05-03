@@ -10,9 +10,12 @@ from Bio import SeqIO
 
 def get_ott_ids(pids, conn):
     """
+    Given a list of BOLD process IDs, checks to verify that these all belong to the same family
+    and if so, maps them to OTT IDs. The OTT IDs come from the synthetic tree (i.e. not 
+    'broken' taxa).
     :param pids: a list of BOLD process IDs
     :param conn: a sqlite3 database handle
-    :return:
+    :return: a dictionary where key is OTT ID, value is list of process IDs
     """
     pids_for_ott = {}
     family = None
@@ -57,24 +60,31 @@ def process_exemplars(exemplar_files, conn):
     logger.info('Going to process input files')
     logger.debug(exemplar_files)
     pids_for_ott = {}
+    extinct_pids = []
     for exemplar_file in exemplar_files:
         if not os.path.isfile(exemplar_file):
             logger.info(f'Location "{exemplar_file}" is not a file - skipping...')
             continue
 
-        # Ideally, these have OTT IDs that we can use
+        # Read process IDs from exemplar file into a list
         logger.info(f'Processing input file {exemplar_file}')
         process_ids = []
         for record in SeqIO.parse(exemplar_file, 'fasta'):
             process_ids.append(record.id)
 
-        # Check the database
+        # Get an OTT ID for the process IDs in the list
         dict_of_lists = get_ott_ids(process_ids, conn)
         if dict_of_lists:
             pids_for_ott.update(dict_of_lists)
         else:
+
+            # The process IDs have no family that occurs in the OpenTree. In two cases now this
+            # occurred because the focal exemplar file consisted entirely of extinct taxa 
+            # (i.e. an entire extinct family, such as Megaladapidae). The least bad thing to do
+            # with these is to remove them from the backbone.
             logger.warning(f'Input file with unconstrained sequences (maybe extinct?): {exemplar_file}')
-    return pids_for_ott
+            extinct_pids.extend(process_ids)
+    return pids_for_ott, extinct_pids
 
 
 def remap_tips(tree, pidmap):
@@ -114,6 +124,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--database', required=True, help='SQLite database file')
     parser.add_argument('-i', '--inaln', required=True, help='Input exemplar FASTA files')
     parser.add_argument('-o', '--outtree', required=True, help="Output constraint tree")
+    parser.add_argument('-e', '--extinctpids', required=True, help='Putatively extinct PIDs')
     parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
     args = parser.parse_args()
 
@@ -124,12 +135,17 @@ if __name__ == '__main__':
     logger.info(f"Going to connect to database {args.database}")
     connection = sqlite3.connect(args.database)
 
-    # Get one-to-many mapping from OTT IDs to process IDs
-    pidmap = process_exemplars(args.inaln.split(' '), connection)
+    # Get one-to-many mapping from OTT IDs to process IDs and store extinct PIDs
+    pidmap, extinctpids = process_exemplars(args.inaln.split(' '), connection)
     connection.close()
+    if len(extinctpids) != 0:
+        with open(args.extinctpids, 'w') as file:
+            for pid in extinctpids:
+                file.write(f"{pid}\n")
 
     # Fetch opentol subtree, remap tips
     ids = [int(str(item).removeprefix('ott')) for item in list(pidmap.keys())]
+    logger.info(f'Getting subtree for tips {ids}')
     ott_tree = opentol.get_subtree(ids)
     remap_tips(ott_tree, pidmap)
 

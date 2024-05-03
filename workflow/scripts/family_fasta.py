@@ -20,15 +20,19 @@ def get_family_bins(q, conn):
         # Select all distinct family names that match config.yaml filters
         level = q['level']
         name = q['name']
+        marker_code = q['marker_code']
         sql = f'''
-            SELECT family, bin_uri, species 
-            FROM taxon 
-            WHERE "{level}" = "{name}" AND species is not "None" 
-            GROUP BY family, bin_uri
+            SELECT DISTINCT family, bin_uri
+            FROM barcode
+            WHERE marker_code = '{marker_code}' 
+              AND "{level}" = '{name}'
+              AND family IS NOT NULL 
+              AND family <> ''
+            ORDER BY family ASC, bin_uri ASC;
         '''
         fam = pd.read_sql_query(sql, conn)
 
-        # Check if filter is all or if used filter did not resulted in any records
+        # Check if this configuration contains any records at all
         if len(fam) == 0:
             raise Exception(f"No records found with {q}.")
 
@@ -56,9 +60,11 @@ def write_bin(q, conn, fh):
             t."{q["level"]}" = "{q["name"]}" AND
             t.family = "{q["family"]}" AND
             t.bin_uri = "{q["bin_uri"]}" AND
-            b.marker_code = "{q["marker_code"]}"
+            b.marker_code = "{q["marker_code"]}" AND
+            t.species IS NOT NULL AND
+            t.species <> '' 
         ORDER BY
-        length(b.nuc) DESC LIMIT 1
+        b.nuc_basecount DESC LIMIT 1
         '''
     logger.debug(query)
     famseq = pd.read_sql_query(query, conn)
@@ -97,7 +103,8 @@ if __name__ == '__main__':
     # Get families and bins for configured level and name
     query = {
         'level': args.level,
-        'name': args.name
+        'name': args.name,
+        'marker_code': args.marker
     }
     df = get_family_bins(query, connection)
 
@@ -121,7 +128,6 @@ if __name__ == '__main__':
                 logger.debug(f"Writing {bin_uri}")
                 query['bin_uri'] = bin_uri
                 query['family'] = family
-                query['marker_code'] = args.marker
                 write_bin(query, connection, handle)
 
         index += 1

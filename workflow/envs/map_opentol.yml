@@ -4,6 +4,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
+  - sqlite
   - pip
   - pip:
     - -r ../../workflow/envs/map_opentol.txt

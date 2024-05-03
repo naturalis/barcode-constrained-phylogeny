@@ -1,9 +1,17 @@
 
-# Used for parallelization by snakemake
-cpu_cores: 8
+# Used for parallelization by snakemake. This setting is based on the architecture of the metal-as-as-service 
+# node netdc-bms-c11g.maas - which has 56 cores. Adjust this setting as needed. For example, on most laptops
+# a reasonable value might be 4, or 8.
+cpu_cores: 56
 
-# Used for scatter/gather processing, corresponds with the number of families within the taxon defined in fasta_filter
-nfamilies: 17
+# Used for scatter/gather processing, corresponds with the number of families within the taxon defined in 
+# fasta_filter that have records for the specified marker. In practice, this means that the input BCDM TSV
+# file has to have exactly this many distinct (not empty) values for the `family` column where the column
+# named under fasta_filter.filter_level has has value fasta_filter.filter_name (e.g. the `order` must be
+# `Odonata`. TODO: make this so that it is done automatically from the data. At present, this needs to be 
+# calculated by the user from the input file, e.g. by first making the sqlite database, or by grepping the 
+# TSV file somehow.
+nfamilies: 36
 
 # Number of outgroups to include in each family-level analysis. Minimum is 2.
 outgroups: 3
@@ -39,7 +47,7 @@ datatype: NT
 # filter levels: class, order, family, genus, all (no filter)
 fasta_filter:
   filter_level: order
-  filter_name: Primates
+  filter_name: Odonata
 
 name: phylogeny
 
@@ -50,8 +58,8 @@ dependencies:
       - -r requirements.txt
 
 file_names:
-  bold_tsv: resources/BOLD_Public.18-Dec-2023/BOLD_Public.18-Dec-2023.tsv
-  open_tre: resources/opentree/opentree13.4_tree/labelled_supertree/labelled_supertree.tre
+  bold_tsv: resources/BOLD_Public.05-Apr-2024-curated.tsv
+  open_tre: resources/opentree14.9_tree/labelled_supertree/labelled_supertree.tre
   hmm: resources/hmm/COI-5P.hmm
   fasta_dir: results/fasta/family
   blast_dir: results/blast

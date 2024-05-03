@@ -4,4 +4,5 @@ channels:
   - bioconda
   - defaults
 dependencies:
+  - sqlite
   - perl-bio-phylo-forest-dbtree

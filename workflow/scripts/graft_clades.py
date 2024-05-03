@@ -27,6 +27,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Required command line arguments.')
     parser.add_argument('-t', '--tree', required=True, help='Input backbone Newick tree')
     parser.add_argument('-f', '--folder', required=True, help='Location of folder with subtree folders')
+    parser.add_argument('-e', '--extinct', required=True, help='File with extinct PIDs to skip')
     parser.add_argument('-o', '--out', required=True, help="Output grafted newick")
     parser.add_argument('-n', '--nfamilies', required=True, help='Number of families')
     parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
@@ -34,6 +35,13 @@ if __name__ == '__main__':
 
     # Configure logger
     logger = util.get_formatted_logger('graft_clades', args.verbosity)
+
+    # Read the extinct PIDs
+    extinct = []
+    with open(args.extinct, 'r') as file:
+        for line in file:
+            clean_line = line.strip()
+            extinct.append(clean_line)
 
     # Read the backbone tree as a dendropy object, calculate distances to root, and get its leaves
     backbone = read_tree(args.tree)
@@ -51,8 +59,15 @@ if __name__ == '__main__':
         subtree = read_tree(subtree_file)
         subtree.calc_node_root_distances()
 
-        # Intersect the subtree labels and the backbone set if subtree >= 3 tips
+        # Get the tip labels of the subtree
         subtree_leaf_labels = set([leaf.taxon.label for leaf in subtree.leaf_nodes()])
+
+        # See if this needs to be skipped
+        if subtree_leaf_labels.intersection(extinct):
+            logger.warning(f'Skipping {subfolder} as it intersects with extinct exemplars')
+            continue
+
+        # Intersect the subtree labels and the backbone set if subtree >= 3 tips
         if len(subtree_leaf_labels) >= 3:
             intersection = set()
             for label in subtree_leaf_labels:
@@ -74,6 +89,9 @@ if __name__ == '__main__':
             rescale = bbdist / stdist
             logger.info(f'Rescaling by factor {rescale}')
             for node in subtree.preorder_node_iter():
+                if node.edge_length is None:
+                    logger.warning(f"Set length=0 for {node.label} in {subtree_file}")
+                    node.edge_length = 0
                 node.edge_length = node.edge_length * rescale
 
             # Graft subtree

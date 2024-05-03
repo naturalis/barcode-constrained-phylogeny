@@ -117,7 +117,7 @@ def index_taxonomy(table):
     # Iterate over taxonomy columns and compute index
     for column in ['kingdom', 'phylum', 'class', 'order', 'family', 'subfamily', 'genus', 'species', 'bin_uri']:
         logger.info(f'Going to index {column} column of {table} table')
-        database_cursor.execute(f'CREATE INDEX {table}_{column}_idx ON {table} ("{column}");')
+        database_cursor.execute(f'CREATE INDEX IF NOT EXISTS {table}_{column}_idx ON {table} ("{column}");')
 
 
 def normalize_taxonomy():
@@ -187,12 +187,12 @@ if __name__ == '__main__':
 
     # Load TSV into temporary barcode table, unindexed, then copy over
     load_tsv(args.intsv, args.outdb, 'barcode_temp', 'barcode')
-    database_cursor.execute('CREATE INDEX barcode_nuc_idx ON barcode(nuc)')
-    database_cursor.execute('CREATE INDEX barcode_processid_idx ON barcode(processid)')
-    database_cursor.execute('CREATE INDEX barcode_marker_code_idx ON barcode(marker_code)')
+    database_cursor.execute('CREATE INDEX IF NOT EXISTS barcode_nuc_idx ON barcode(nuc)')
+    database_cursor.execute('CREATE INDEX IF NOT EXISTS barcode_processid_idx ON barcode(processid)')
+    database_cursor.execute('CREATE INDEX IF NOT EXISTS barcode_marker_code_idx ON barcode(marker_code)')
 
-    database_cursor.execute('CREATE INDEX barcode_processid_idx ON barcode(processid)')
-    database_cursor.execute('CREATE INDEX barcode_marker_code_idx ON barcode(marker_code)')
+    database_cursor.execute('CREATE INDEX IF NOT EXISTS barcode_processid_idx ON barcode(processid)')
+    database_cursor.execute('CREATE INDEX IF NOT EXISTS barcode_marker_code_idx ON barcode(marker_code)')
 
     # Index the barcode table's taxonomy, copy its distinct tuples into the taxon table, then index the latter
     index_taxonomy('barcode')
