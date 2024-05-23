@@ -18,7 +18,11 @@ def make_constraint(intree, outtree, processmap):
     :return:
     """
     logger.info(f"Going to create constraint tree from {intree} to {outtree}")
-    tree = read_newick(intree, 'newick')
+    try:
+        tree = read_newick(intree, 'newick')
+    except ValueError:
+        logger.info("No trees made for this family.")
+        return
 
     # Map opentol_id to process_id, possibly adding tips if there are multiple process_ids
     # for this opentol_id (which means there are multiple BINs in this species)
@@ -107,7 +111,12 @@ if __name__ == '__main__':
     # Read input file, exit if it is empty
     logger.info(f'Going to read FASTA file {args.inaln}')
     infile = os.path.realpath(os.path.abspath(args.inaln))
-    alignment = read_alignment(infile, 'fasta')
+    try:
+        alignment = read_alignment(infile, 'fasta')
+    except:
+        logger.info("No records in the family.")
+        alignment = []
+        open(args.outtree, 'a')
 
     # Write Newick tree using process_id as labels, grafting subtended split BINS and outgroups
     logger.info(f'Going to expand OpenToL constraint to subtended process IDs')

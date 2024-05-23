@@ -42,7 +42,7 @@ if __name__ == '__main__':
         for line in file:
             clean_line = line.strip()
             extinct.append(clean_line)
-
+    logger.info(f"extinct: {extinct}")
     # Read the backbone tree as a dendropy object, calculate distances to root, and get its leaves
     backbone = read_tree(args.tree)
     backbone.calc_node_root_distances()
@@ -56,12 +56,14 @@ if __name__ == '__main__':
         # Peprocess the focal family tree
         subfolder = f'{i}-of-{args.nfamilies}'
         subtree_file = os.path.join(base_folder, subfolder, 'aligned.fa.raxml.bestTree.rooted')
-        subtree = read_tree(subtree_file)
+        try:
+            subtree = read_tree(subtree_file)
+        except:
+            continue
         subtree.calc_node_root_distances()
 
         # Get the tip labels of the subtree
         subtree_leaf_labels = set([leaf.taxon.label for leaf in subtree.leaf_nodes()])
-
         # See if this needs to be skipped
         if subtree_leaf_labels.intersection(extinct):
             logger.warning(f'Skipping {subfolder} as it intersects with extinct exemplars')
@@ -73,6 +75,9 @@ if __name__ == '__main__':
             for label in subtree_leaf_labels:
                 if label in backbone_leaf_labels:
                     intersection.add(label)
+            if len(intersection) == 0:
+                logger.warning(f' all labels have been removed from the backbone')
+                continue
 
             # Find the mrca, calculate distance between exemplars
             logger.info(f'Intersection {intersection}')
@@ -80,6 +85,7 @@ if __name__ == '__main__':
             bbdist = 0
             stdist = 0
             for label in intersection:
+                logger.info(f"{backbone} + {label}")
                 bbleaf = backbone.find_node_with_taxon_label(label)
                 bbdist += (bbleaf.root_distance - mrca.root_distance)
                 stleaf = subtree.find_node_with_taxon_label(label)

@@ -70,7 +70,11 @@ def align_write(sequences, outfile, conn):
 
     # Align with hmmalign, capture and parse output as phylip
     run(['hmmalign', '--trim', '-o', f'{outfile}.tmp2', '--outformat', 'phylip', hmmfile, f'{outfile}.tmp1'])
-    aligned = read_alignment(f'{outfile}.tmp2', 'phylip')
+    try:
+        aligned = read_alignment(f'{outfile}.tmp2', 'phylip')
+    except ValueError:
+        logger.info("No sequences found.")
+        aligned = []
     os.remove(f'{outfile}.tmp1')
     os.remove(f'{outfile}.tmp2')
 

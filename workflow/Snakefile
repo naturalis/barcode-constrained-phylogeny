@@ -16,6 +16,8 @@ rule create_database:
     log_level=config['log_level']
   conda: "envs/create_database.yml"
   log: "logs/create_database/create_database.log"
+  benchmark:
+        "benchmarks/create_database.benchmark.txt"
   shell:
     """
     python workflow/scripts/create_database.py \
@@ -37,6 +39,8 @@ rule map_opentol:
     log_level=config['log_level']
   conda: "envs/map_opentol.yml"
   log: "logs/map_opentol/map_opentol.log"
+  benchmark:
+        "benchmarks/map_opentol.benchmark.txt"
   shell:
       """
       python workflow/scripts/map_opentol.py \
@@ -58,6 +62,8 @@ rule megatree_loader:
     output: 'results/databases/megatree_loader.ok'
     conda: "envs/megatree_loader.yml"
     log: "logs/megatree_loader/megatree_loader.log"
+    benchmark:
+        "benchmarks/megatree_loader.benchmark.txt"
     params:
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
         tempdb = temp("results/databases/opentree_nodes.db"),
@@ -92,6 +98,8 @@ rule family_fasta:
       chunks=config["nfamilies"],
     conda: "envs/family_fasta.yml"
     log: "logs/family_fasta/family_fasta.log"
+    benchmark:
+        "benchmarks/family_fasta.benchmark.txt"
     shell:
         """
         python workflow/scripts/family_fasta.py \
@@ -119,6 +127,8 @@ rule makeblastdb:
       blastdb=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}'
     conda: "envs/blast.yml"
     log: "logs/makeblastdb/makeblastdb.log"
+    benchmark:
+        "benchmarks/makeblastdb.benchmark.txt"
     shell:
         """
         sh workflow/scripts/makeblastdb.sh \
@@ -139,6 +149,8 @@ rule get_outgroups:
         blastdb=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}'
     conda: "envs/blast.yml"
     log: "logs/get_outgroups/get_outgroups-{scatteritem}.log"
+    benchmark:
+        "benchmarks/get_outgroups/get_outgroups-{scatteritem}.benchmark.txt"
     shell:
         """
         sh workflow/scripts/get_outgroups.sh {params.blastdb} {params.outgroups} {input.unaligned} {output} 2> {log}
@@ -157,6 +169,8 @@ rule family_constraint:
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"])
     conda: "envs/family_constraint.yml"
     log: "logs/family_constraint/family_constraint-{scatteritem}.log"
+    benchmark:
+        "benchmarks/family_constraint/family_constraint-{scatteritem}.benchmark.txt"
     shell:
         """
         python workflow/scripts/family_constraint.py \
@@ -180,6 +194,8 @@ rule msa_hmm:
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"])
     conda: "envs/msa_hmm.yml"
     log: "logs/msa_hmm/msa_hmm-{scatteritem}.log"
+    benchmark:
+        "benchmarks/msa_hmm/msa_hmm-{scatteritem}.benchmark.txt"
     shell:
         """
         python workflow/scripts/msa_hmm.py \
@@ -209,6 +225,8 @@ rule prep_raxml:
         log_level=config['log_level']
     conda: "envs/prep_raxml.yml"
     log: "logs/prep_raxml/prep_raxml-{scatteritem}.log"
+    benchmark:
+        "benchmarks/prep_raxml/prep_raxml-{scatteritem}.benchmark.txt"
     shell:
         """
         python workflow/scripts/prep_raxml.py \
@@ -233,28 +251,34 @@ rule run_raxml:
         model = config['model'],
         num_outgroups= config['outgroups']
     log: "logs/run_raxml/run_raxml-{scatteritem}.log"
+    benchmark:
+        "benchmarks/run_raxml/run_raxml-{scatteritem}.benchmark.txt"
     conda: "envs/raxml.yml"
     shell:
         """
-        OG=$(grep '>' {input.alignment} | tail -{params.num_outgroups} | sed -e 's/>//' | tr '\n' ',')
-        if [ -s {input.tree} ]; then
-          set -e
-          raxml-ng \
-            --redo \
-            --msa {input.alignment} \
-            --outgroup $OG \
-            --model {params.model} \
-            --tree-constraint {input.tree} \
-            --search > {log} 2>&1 \
-          || \
-          raxml-ng \
-            --redo \
-            --msa {input.alignment} \
-            --outgroup $OG \
-            --model {params.model} \
-            --search >> {log} 2>&1
+        if [ -s {input.alignment} ]; then
+            OG=$(grep '>' {input.alignment} | tail -{params.num_outgroups} | sed -e 's/>//' | tr '\n' ',')
+            if [ -s {input.tree} ]; then
+            set -e
+            raxml-ng \
+                --redo \
+                --msa {input.alignment} \
+                --outgroup $OG \
+                --model {params.model} \
+                --tree-constraint {input.tree} \
+                --search1 > {log} 2>&1 \
+            || \
+            raxml-ng \
+                --redo \
+                --msa {input.alignment} \
+                --outgroup $OG \
+                --model {params.model} \
+                --search1 >> {log} 2>&1
+            else
+                raxml-ng --msa {input.alignment} --outgroup $OG --model {params.model} --search --redo > {log} 2>&1
+            fi
         else
-          raxml-ng --msa {input.alignment} --outgroup $OG --model {params.model} --search --redo > {log} 2>&1
+            touch {output.tree}
         fi
         """
 
@@ -272,16 +296,22 @@ rule reroot_raxml_output:
         log_level = config['log_level'],
         num_outgroups = config['outgroups']
     log: "logs/reroot_raxml_output/reroot_raxml_output-{scatteritem}.log"
+    benchmark:
+        "benchmarks/reroot_raxml_output/reroot_raxml_output-{scatteritem}.benchmark.txt"
     conda: "envs/reroot_backbone.yml"
     shell:
         """
-        OG=$(grep '>' {input.alignment} | tail -{params.num_outgroups} | sed -e 's/>//' | tr '\n' ',')
-        python workflow/scripts/reroot_backbone.py \
-            -i {input.tree} \
-            -c {input.constraint} \
-            -o {output.outtree} \
-            -g $OG \
-            -v {params.log_level} 2> {log}
+        if [ -s {input.alignment} ]; then
+            OG=$(grep '>' {input.alignment} | tail -{params.num_outgroups} | sed -e 's/>//' | tr '\n' ',')
+            python workflow/scripts/reroot_backbone.py \
+                -i {input.tree} \
+                -c {input.constraint} \
+                -o {output.outtree} \
+                -g $OG \
+                -v {params.log_level} 2> {log}
+        else 
+            touch {output.outtree}
+        fi
         """
 
 # In principle, exemplar choosing can be performed using one of three ways:
@@ -299,15 +329,21 @@ rule choose_exemplars:
         log_level = config['log_level'],
         strategy = 'median'
     log: "logs/choose_exemplars/choose_exemplars-{scatteritem}.log"
+    benchmark:
+        "benchmarks/choose_exemplars/choose_exemplars-{scatteritem}.benchmark.txt"
     conda: "envs/choose_exemplars.yaml"
     shell:
         """
-        python workflow/scripts/choose_exemplars.py \
-            -v {params.log_level} \
-            -t {input.tree} \
-            -i {input.alignment} \
-            -s {params.strategy} \
-            -o {output} 2> {log}
+        if [ -s {input.alignment} ]; then
+            python workflow/scripts/choose_exemplars.py \
+                -v {params.log_level} \
+                -t {input.tree} \
+                -i {input.alignment} \
+                -s {params.strategy} \
+                -o {output} 2> {log}
+        else
+            touch {output}
+        fi
         """
 
 # When aligning the family-level subsets, different families may have different indel
@@ -366,6 +402,8 @@ rule run_raxml_backbone:
     params:
         model = config['model']
     log: "logs/run_raxml_backbone/run_raxml_backbone.log"
+    benchmark:
+        "benchmarks/run_raxml_backbone.benchmark.txt"
     conda: "envs/raxml.yml"
     shell:
         """
@@ -391,6 +429,8 @@ rule reroot_backbone:
     params:
         log_level = config['log_level']
     log: "logs/reroot_backbone/reroot_backbone.log"
+    benchmark:
+        "benchmarks/reroot_backbone.benchmark.txt"
     conda: "envs/reroot_backbone.yml"
     shell:
         """
@@ -413,6 +453,8 @@ rule graft_clades:
         log_level = config['log_level'],
         nfamilies = config["nfamilies"]
     log: "logs/graft_clades/graft_clades.log"
+    benchmark:
+        "benchmarks/graft_clades.benchmark.txt"
     conda: "envs/graft_clades.yml"
     shell:
         """

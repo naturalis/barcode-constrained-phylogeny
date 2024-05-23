@@ -60,6 +60,8 @@ def write_sequences(inaln, outaln, subset):
     :param subset:
     :return:
     """
+    if subset == None:
+        subset = []
     logger.info(f'Going to write {len(subset)} sequences to {outaln}')
     with open(outaln, 'a') as outfh:
         for record in SeqIO.parse(inaln, "fasta"):
@@ -102,4 +104,3 @@ if __name__ == "__main__":
     else:
         exemplars = pick_tips(tree, args.strategy)
         write_sequences(args.inaln, args.outaln, exemplars)
-

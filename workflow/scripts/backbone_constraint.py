@@ -71,19 +71,19 @@ def process_exemplars(exemplar_files, conn):
         process_ids = []
         for record in SeqIO.parse(exemplar_file, 'fasta'):
             process_ids.append(record.id)
+        if not process_ids == []:
+            # Get an OTT ID for the process IDs in the list
+            dict_of_lists = get_ott_ids(process_ids, conn)
+            if dict_of_lists:
+                pids_for_ott.update(dict_of_lists)
+            else:
 
-        # Get an OTT ID for the process IDs in the list
-        dict_of_lists = get_ott_ids(process_ids, conn)
-        if dict_of_lists:
-            pids_for_ott.update(dict_of_lists)
-        else:
-
-            # The process IDs have no family that occurs in the OpenTree. In two cases now this
-            # occurred because the focal exemplar file consisted entirely of extinct taxa 
-            # (i.e. an entire extinct family, such as Megaladapidae). The least bad thing to do
-            # with these is to remove them from the backbone.
-            logger.warning(f'Input file with unconstrained sequences (maybe extinct?): {exemplar_file}')
-            extinct_pids.extend(process_ids)
+                # The process IDs have no family that occurs in the OpenTree. In two cases now this
+                # occurred because the focal exemplar file consisted entirely of extinct taxa 
+                # (i.e. an entire extinct family, such as Megaladapidae). The least bad thing to do
+                # with these is to remove them from the backbone.
+                logger.warning(f'Input file with unconstrained sequences (maybe extinct?): {exemplar_file}')
+                extinct_pids.extend(process_ids)
     return pids_for_ott, extinct_pids
 
 
