@@ -80,7 +80,6 @@ if __name__ == '__main__':
                 continue
 
             # Find the mrca, calculate distance between exemplars
-            logger.info(f'Intersection {intersection}')
             mrca = backbone.mrca(taxon_labels=intersection)
             bbdist = 0
             stdist = 0
