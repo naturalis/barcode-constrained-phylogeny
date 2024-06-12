@@ -29,10 +29,10 @@ def boxplot_filter(lengths):
     print("Boxplot:")
     print(f"The IQR is {IQR} and the max value is {filter_at}")
     print(f"Using this method would filter out {len([x for x in lenghts if x >= filter_at])} tips.")
-    plt.savefig("box_log10_branchlengths.png")
+    plt.savefig("doc/box_log10_branchlengths.png")
     plt.clf()
     plt.boxplot(lenghts)
-    plt.savefig("box_branchlengths.png")
+    plt.savefig("doc/box_branchlengths.png")
     plt.clf()
     return filter_at
 
@@ -54,7 +54,7 @@ def histogram(lenghts, threshold):
     plt.hist(data_outliers, density=True, label=f"Outliers (>={threshold})")
     plt.title("Distribution of Data with Outliers (Logarithmic Scale)")
     plt.legend()
-    plt.savefig("hist_branchlengths.png")
+    plt.savefig("doc/hist_branchlengths.png")
     plt.clf()
 
 
