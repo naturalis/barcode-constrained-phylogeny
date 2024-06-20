@@ -90,6 +90,7 @@ def prune_tree(filename_tree, filter_at):
                         pruned.append(str(terminal))
         else:
             print(None)
+    open("pruned_clades.txt", "w").write('\n'.join(list(set(pruned))))
     return tree
 
 
