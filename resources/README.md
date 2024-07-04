@@ -6,6 +6,6 @@ barcode markers.
 The file [bold_ids.tsv](bold_ids.tsv) is a mapping between the taxonomic names connected
 to BOLD process IDs and taxa from the Netherlands Species Registry. This file was produced by:
 
-- (link to the script that ran the mapping)
-- (release number/date of the BOLD data package)
-- (release number/date of the NSR)
+- workflow/scripts/gather_bold_ids.py
+- BOLD_Public.05-Apr-2024-curated.tsv
+- NSR: https://doi.org/10.15468/rjdpzy (10-06-2024)
