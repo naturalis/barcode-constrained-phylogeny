@@ -5,6 +5,7 @@ import json
 import logging
 import requests
 import sys
+import time
 from typing import TextIO, Iterator, Tuple
 
 
@@ -71,13 +72,14 @@ def process_csv(file: TextIO) -> Iterator[Tuple[str, str, str]]:
         yield row['taxonID'], row['genus'], row['specificEpithet']
 
 
-def fetch_taxon_info(genus: str, specific_epithet: str) -> Tuple[str, str]:
+def fetch_taxon_info(genus: str, specific_epithet: str, verbosity: int) -> Tuple[str, str]:
     """
     Fetch taxon information from the BOLD Systems API.
 
     Args:
         genus (str): The genus name.
         specific_epithet (str): The specific epithet.
+        verbosity (int): The verbosity level.
 
     Returns:
         Tuple[str, str]: A tuple containing the taxid and taxon name if found, or empty strings if not found.
@@ -85,12 +87,20 @@ def fetch_taxon_info(genus: str, specific_epithet: str) -> Tuple[str, str]:
     url = f"https://boldsystems.org/index.php/API_Tax/TaxonSearch?taxName={genus}%20{specific_epithet}"
     logging.debug(f"Sending request to: {url}")
     response = requests.get(url)
+
+    if verbosity >= 1:
+        logging.debug(f"Raw response: {response.text}")
+
     if response.status_code == 200:
-        data = response.json()
-        logging.debug(f"Received data: {json.dumps(data, indent=2)}")
-        if data.get('total_matched_names', 0) > 0:
-            match = data['top_matched_names'][0]
-            return match.get('taxid', ''), match.get('taxon', '')
+        try:
+            data = response.json()
+            if verbosity >= 2:
+                logging.debug(f"Parsed JSON data: {json.dumps(data, indent=2)}")
+            if data.get('total_matched_names', 0) > 0:
+                match = data['top_matched_names'][0]
+                return match.get('taxid', ''), match.get('taxon', '')
+        except json.JSONDecodeError:
+            logging.error(f"Failed to parse JSON response: {response.text}")
     else:
         logging.warning(f"Request failed with status code: {response.status_code}")
     return '', ''
@@ -114,8 +124,9 @@ def main() -> None:
         with open_file(args.file_path) as file:
             for taxon_id, genus, specific_epithet in process_csv(file):
                 logging.debug(f"Processing: taxonID={taxon_id}, genus={genus}, specificEpithet={specific_epithet}")
-                taxid, taxon = fetch_taxon_info(genus, specific_epithet)
+                taxid, taxon = fetch_taxon_info(genus, specific_epithet, args.verbose)
                 print(f"{taxon_id}\t{genus}\t{specific_epithet}\t{taxid}\t{taxon}")
+                time.sleep(1)  # 1 second delay between requests
     except Exception as e:
         logging.error(f"An error occurred: {str(e)}")
         sys.exit(1)
