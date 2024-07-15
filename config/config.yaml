@@ -2,7 +2,7 @@
 # Used for parallelization by snakemake. This setting is based on the architecture of the metal-as-as-service 
 # node netdc-bms-c11g.maas - which has 56 cores. Adjust this setting as needed. For example, on most laptops
 # a reasonable value might be 4, or 8.
-cpu_cores: 56
+cpu_cores: 4
 
 # Used for scatter/gather processing, corresponds with the number of families within the taxon defined in 
 # fasta_filter that have records for the specified marker. In practice, this means that the input BCDM TSV
@@ -59,7 +59,7 @@ dependencies:
 
 file_names:
   bold_tsv: resources/BOLD_Public.21-Jun-2024.curated.NL.tsv
-  open_tre: resources/opentree14.9_tree/labelled_supertree/labelled_supertree.tre
+  open_tre: resources/opentree/opentree14.9_tree/labelled_supertree/labelled_supertree.tre
   hmm: resources/hmm/COI-5P.hmm
   fasta_dir: results/fasta/family
   blast_dir: results/blast
