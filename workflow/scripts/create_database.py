@@ -63,11 +63,11 @@ def create_barcode_table(tsv_file, table_name, add_keys):
     create_table_statement = f'CREATE TABLE IF NOT EXISTS {table_name} ('
 
     # Add each column header as a TEXT type column
-    column_headers[column_headers.index('COLLECTORS')] = 'COLLECTORS2' # double column names in the curated BOLD
-    column_headers[column_headers.index('COLLECTION_DATE')] = 'COLLECTION_DATE2'
-    column_headers[column_headers.index('COUNTRY')] = 'COUNTRY2'
-    column_headers[column_headers.index('SITE')] = 'SITE2'
-    column_headers[column_headers.index('COORD')] = 'COORD2'
+#    column_headers[column_headers.index('COLLECTORS')] = 'COLLECTORS2' # double column names in the curated BOLD
+#    column_headers[column_headers.index('COLLECTION_DATE')] = 'COLLECTION_DATE2'
+#    column_headers[column_headers.index('COUNTRY')] = 'COUNTRY2'
+#    column_headers[column_headers.index('SITE')] = 'SITE2'
+#    column_headers[column_headers.index('COORD')] = 'COORD2'
     for i, header in enumerate(column_headers):
         if not add_keys and i == len(column_headers) - 1:
             create_table_statement += f'"{header}" TEXT);'
