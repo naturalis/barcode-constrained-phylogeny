@@ -1,5 +1,10 @@
 configfile: "config/config.yaml"
 
+# TODO refactor the snakefile so that all dependencies are managed by a containerized mamba.
+# TODO make it so that parallelization is dynamic, probably using checkpoints.
+# container: "docker://condaforge/mambaforge:23.1.0-1"
+
+
 rule all:
     input:
         "results/grafted.tre"
