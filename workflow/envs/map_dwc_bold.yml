@@ -1,0 +1,9 @@
+name: map_dwc_bold
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pip
+  - pip:
+    - -r ../../workflow/envs/map_dwc_bold.txt
