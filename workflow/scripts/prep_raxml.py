@@ -7,6 +7,24 @@ from Bio.AlignIO import read as read_alignment
 from Bio.Phylo import read as read_newick, write as write_newick
 
 
+"""
+This script, `prep_raxml.py`, is responsible for preparing the input for RAxML, a tool for phylogenetic analysis.
+
+The script performs the following steps:
+1. Connects to the SQLite database.
+2. Reads the input FASTA alignment file.
+3. Creates a mapping between Open Tree of Life (OpenTOL) IDs and process IDs from the alignment.
+4. Expands the input Newick tree based on the mapping. If a tip in the tree corresponds to multiple process IDs, it 
+   splits the tip into multiple tips, each labeled with a process ID. If a tip does not correspond to any process ID, 
+   it removes the tip.
+5. Writes the expanded tree to an output file in Newick format.
+
+The script uses command line arguments for the input Newick tree file, input FASTA alignment file, output Newick tree 
+file, SQLite database file, and log level. The script is invoked by the Snakefile as a shell command with the required
+arguments in the rule `prep_raxml`.
+"""
+
+
 def make_constraint(intree, outtree, processmap):
     """
     Makes a constraint tree compatible with the opentol input tree, but expanded

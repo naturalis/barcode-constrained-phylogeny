@@ -3,6 +3,20 @@ HITS=$2
 IN=$3
 OUT=$4
 
+# This shell script, `get_outgroups.sh`, is responsible for identifying potential outgroup sequences for a given set of
+# sequences. The script performs the following steps:
+# 1. Extracts the distinct process IDs from the FASTA header of the input file.
+# 2. Aliases the IDs for better runtime performance and to suppress warnings.
+# 3. Runs a BLAST search on the input file against a specified database, excluding the input IDs in the query, and
+#    retrieves the top 10 hits for each query.
+# 4. Parses the BLAST report to get the distinct IDs of the hits along with their occurrence counts, sorts them in
+#    ascending order based on the counts, and retrieves the most common hits specified by the user.
+# 5. Removes the occurrence count and writes the hit IDs to a file, one ID per line.
+# 6. Extracts the sequences of the hits from the BLAST database and writes them to an output file.
+#
+# The script uses command line arguments for the database file to query, number of hits to retrieve, input FASTA file,
+# and output file for the hit sequences. It is invoked by the Snakefile as a shell command in the rule `get_outgroups`.
+
 # get the distinct process IDs from the FASTA header, third pipe-separated word
 grep '>' ${IN} | cut -f3 -d'|' | sort | uniq > ${IN}.ids
 

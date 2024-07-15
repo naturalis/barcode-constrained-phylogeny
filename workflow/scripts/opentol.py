@@ -5,6 +5,27 @@ import requests
 logger = util.get_formatted_logger(__name__, 'INFO')
 
 
+"""
+This script, `opentol.py`, is responsible for retrieving a subtree from the Open Tree of Life (OpenTOL) Web Service API 
+using a list of OpenTOL IDs and processing the subtree.
+
+The script performs the following steps:
+1. Connects to the OpenTOL Web Service API.
+2. Sends a request to the API to retrieve a subtree induced by the list of OpenTOL IDs. If the request fails due to 
+   unknown IDs, it removes these IDs from the list and tries again.
+3. Reads the subtree from the response in Newick format.
+4. Processes the tip and node labels of the subtree to keep only the OpenTOL ID or most recent common ancestor (MRCA) 
+   ID.
+5. If the response includes a list of 'broken' tips, it finds the MRCA placeholder for each broken tip in the subtree 
+   and grafts a new leaf labeled with the OpenTOL ID onto the MRCA.
+6. Removes unbranched internal nodes from the subtree.
+7. Removes labels from interior nodes of the subtree.
+
+The script uses a function argument for the list of OpenTOL IDs. The script is imported by other scripts in the workflow
+to retrieve and process a subtree from the OpenTOL Web Service API.
+"""
+
+
 def _modify_tree_labels(tree):
     """
     Processes the tip and node labels. Removes everything but the

@@ -3,6 +3,26 @@ import util
 import argparse
 import subprocess
 
+"""
+This script is responsible for creating and populating a SQLite database from a given BOLD (Barcode of Life Data 
+Systems) TSV file. 
+
+The script performs the following steps:
+1. Connects to the SQLite database.
+2. Creates the 'taxon' and 'barcode' tables in the database.
+3. Loads the data from the TSV file into a temporary 'barcode' table.
+4. Copies the data from the temporary 'barcode' table into the permanent 'barcode' table.
+5. Indexes the 'barcode' table.
+6. Normalizes the taxonomy data by copying distinct tuples from the 'barcode' table into the 'taxon' table.
+7. Indexes the 'taxon' table.
+8. Updates the foreign key 'taxon_id' in the 'barcode' table by joining all denormalized records with the normalized 
+   tuple in the 'taxon' table.
+9. Cleans up the temporary table and header records.
+
+The script uses command line arguments for input TSV file, output SQLite database file, and log level. It is invoked
+in the Snakefile as a shell command in the rule 'create_database'.
+"""
+
 
 def load_tsv(tsv_file, db_file, temp_table_name, table_name):
     """

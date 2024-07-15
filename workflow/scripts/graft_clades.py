@@ -4,6 +4,30 @@ import os
 import util
 
 
+"""
+This script, `graft_clades.py`, is responsible for grafting subtrees onto a backbone tree based on a specified set of 
+extinct process IDs.
+
+The script performs the following steps:
+1. Reads the input backbone tree and calculates distances to the root for each node.
+2. Reads the list of extinct process IDs from a file.
+3. Iterates over a set of folders, each containing a subtree.
+4. For each subtree, it reads the tree, calculates distances to the root for each node, and gets the set of leaf labels.
+5. If the set of leaf labels intersects with the set of extinct process IDs, it skips the subtree.
+6. If the subtree has at least 3 tips, it intersects the set of leaf labels with the set of backbone leaf labels.
+7. If the intersection is empty, it skips the subtree.
+8. Otherwise, it finds the most recent common ancestor (MRCA) of the intersecting labels in the backbone tree, 
+   calculates the total distance from the MRCA to each of the intersecting labels in both the backbone and the subtree, 
+   and rescales the subtree by the ratio of these two distances.
+9. It then grafts the subtree onto the backbone tree at the MRCA, replacing the existing children of the MRCA.
+10. Writes the grafted tree to an output file in Newick format.
+
+The script uses command line arguments for the input backbone tree file, directory containing the subtree folders, file 
+with extinct process IDs, output tree file, number of families, and log level. The script is invoked by the Snakefile as
+a shell command with the required arguments in the rule `graft_clades`.
+"""
+
+
 def read_tree(filename, rooting='default-rooted', schema='newick'):
     """
     Reads the provided tree file (in the format specified as `schema`) using Dendropy with the

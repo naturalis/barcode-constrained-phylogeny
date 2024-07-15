@@ -3,6 +3,26 @@ import dendropy
 import util
 
 
+"""
+This script, `reroot_backbone.py`, is responsible for rerooting a phylogenetic tree based on a constraint tree and 
+removing specified outgroups.
+
+The script performs the following steps:
+1. Reads the input unrooted backbone tree and the input rooted backbone constraint tree.
+2. Identifies the smallest clade subtended by the root in the constraint tree and gets the set of leaf labels of its 
+   descendants (pseudo-outgroup).
+3. Finds the smallest edge bipartition in the unrooted backbone tree that monophylizes the pseudo-outgroup.
+4. Reroots the backbone tree at the midpoint of the identified bipartition.
+5. If outgroups are specified, it removes these outgroups from the rerooted tree.
+6. Writes the rerooted tree to an output file in Newick format.
+
+The script uses command line arguments for the input unrooted backbone tree file, input rooted backbone constraint tree 
+file, output rerooted tree file, log level, and a comma-separated list of outgroups to remove. The script is invoked
+by the Snakefile as a shell command with the required arguments both in the rules `reroot_raxml_output` and in the rule 
+`reroot_backbone`.
+"""
+
+
 def read_tree(filename, rooting='default-rooted', schema='newick'):
     """
     Reads the provided tree file (in the format specified as `schema`) using Dendropy with the
