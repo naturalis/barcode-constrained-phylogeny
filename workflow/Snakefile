@@ -446,7 +446,8 @@ rule reroot_backbone:
             -v {params.log_level} 2> {log}
         """
 
-
+# Grafts the individual family clades onto the backbone. This is done by taking the
+# backbone tree and replacing the tips that are in the clade with the clade tree.
 rule graft_clades:
     input:
         backbone = "results/fasta/raxml-ready.fa.raxml.bestTree.rooted",
