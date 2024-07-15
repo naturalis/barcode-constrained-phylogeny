@@ -11,7 +11,7 @@ cpu_cores: 56
 # `Odonata`. TODO: make this so that it is done automatically from the data. At present, this needs to be 
 # calculated by the user from the input file, e.g. by first making the sqlite database, or by grepping the 
 # TSV file somehow.
-nfamilies: 134
+nfamilies: 63
 
 # Number of outgroups to include in each family-level analysis. Minimum is 2.
 outgroups: 3
@@ -46,8 +46,8 @@ datatype: NT
 # Choose which records to use from the database for the pipeline. filter_name only takes one name, so does filter level.
 # filter levels: class, order, family, genus, all (no filter)
 fasta_filter:
-  filter_level: order
-  filter_name: Lepidoptera
+  filter_level: kingdom
+  filter_name: Animalia
 
 name: phylogeny
 
@@ -58,7 +58,7 @@ dependencies:
       - -r requirements.txt
 
 file_names:
-  bold_tsv: resources/BOLD_Public.05-Apr-2024-curated.tsv
+  bold_tsv: resources/BOLD_Public.21-Jun-2024.curated.NL.tsv
   open_tre: resources/opentree14.9_tree/labelled_supertree/labelled_supertree.tre
   hmm: resources/hmm/COI-5P.hmm
   fasta_dir: results/fasta/family
