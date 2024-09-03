@@ -25,6 +25,21 @@ grep '>' ${IN} | cut -f3 -d'|' | sort | uniq > ${IN}.ids
 blastdb_aliastool -seqid_file_in ${IN}.ids -seqid_file_out ${IN}.ids.aliased
 
 # run blast on the infile, omit the infile IDs in the query, get top 10 hits for each query, write to tabular report
+# TODO: Here is the better solution:
+# 1. Create a concatenated FASTA file of all curated sequences for the focal marker irrespective of whether they are
+#    subtended by the focal taxon. This can be done around the `family_fasta` stage.
+# 2. Create a separate SQLite database that mimics the schema that NCBI uses. This should be possible with the
+#    information contained in the dbtree schema, i.e. after the `megatree_loader` stage.
+# 3. Create a mapping between the process IDs in the deflines of 1. and the OTT IDs in the database of 2. This should
+#    be doable after the `map_opentol` rule.
+# 4. When creating the database used below, run `makeblastdb` with the `-taxid_map` argument, providing it with the
+#    mapping created in 3., i.e. update the `makeblasdb` rule.
+# 5. Then, when running the query below, run it on what is now a much larger database. Limit the query not to a
+#    negative sequence ID list but to the list of the sister taxa (e.g. families) subtended by the direct ancestor
+#    of the focal family, omitting the focal family itself. (It would have been more elegant if you could specify
+#    the ancestor under -taxids and the focal family under -negative_taxids, but blast doesn't allow that combination
+#    of parameters.)
+# NB: also add the $BLASTDB environment variable by which blast locates the SQLite taxonomy database.
 blastn \
   -query ${IN} \
   -db ${DB} \
