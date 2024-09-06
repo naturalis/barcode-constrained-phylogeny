@@ -13,7 +13,7 @@ class OpenTOLTree(dendropy.Tree):
     handling broken tips, and removing interior labels.
     """
 
-    def __init__(self, config: bactria.config.Config, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
         Initialize the OpenTOLTree.
         :param config: bactria.config.Config object
@@ -21,10 +21,10 @@ class OpenTOLTree(dendropy.Tree):
         :param kwargs: Keyword arguments to pass to the superclass constructor
         """
         super().__init__(*args, **kwargs)
-        self.logger = bactria.logger.get_formatted_logger(__name__, config)
+        self.logger = bactria.logger.get_formatted_logger(__name__)
 
     @classmethod
-    def get(cls, *args, **kwargs) -> 'OpenTOLTree':
+    def get(cls, *args, **kwargs):
         """
         Override the get method to return an instance of OpenTOLTree instead of dendropy.Tree.
 
@@ -32,6 +32,7 @@ class OpenTOLTree(dendropy.Tree):
         :param kwargs: Keyword arguments to pass to dendropy.Tree.get()
         :return: An instance of OpenTOLTree
         """
+        config = kwargs.pop('config', None)
         tree = super().get(*args, **kwargs)
         return cls.from_tree(tree)
 
@@ -43,8 +44,8 @@ class OpenTOLTree(dendropy.Tree):
         :param tree: An existing dendropy.Tree instance
         :return: An OpenTOLTree instance with the same structure and data as the input tree
         """
-        new_tree = cls(tree.seed_node)
-        new_tree.clone_from(tree)
+        new_tree = cls(seed_node=tree.seed_node)
+        new_tree._clone_from(tree, {})
         return new_tree
 
     def process_tree(self, broken: Dict[str, str]) -> None:
@@ -101,24 +102,24 @@ class OpenTOLTree(dendropy.Tree):
         """
         self.logger.info('Going to remap backbone tree')
         self.logger.debug(pidmap)
-        for node in self.preorder_node_iter():
-            if node.is_leaf():
-                name = node.taxon.label
-                if str(name).startswith('ott'):
-                    if len(pidmap[name]) == 1:
+        tips = self.leaf_nodes()
+        for node in tips:
+            name = node.taxon.label
+            if str(name).startswith('ott'):
+                if len(pidmap[name]) == 1:
 
-                        # map ott to pid
-                        node.taxon.label = pidmap[name][0]
-                    else:
+                    # map ott to pid
+                    node.taxon.label = pidmap[name][0]
+                else:
 
-                        # Iterate over all pids subtended by the ott
-                        for process in pidmap[name]:
-                            # Create a new dendropy taxon and node, associate them, append to parent
-                            new_taxon = dendropy.Taxon(label=process)
-                            new_node = dendropy.Node()
-                            new_node.taxon = new_taxon
-                            node.add_child(new_node)
-                            self.logger.info(f'Added child {process} to {name}')
+                    # Iterate over all pids subtended by the ott
+                    for process in pidmap[name]:
+                        # Create a new dendropy taxon and node, associate them, append to parent
+                        new_taxon = dendropy.Taxon(label=process)
+                        new_node = dendropy.Node()
+                        new_node.taxon = new_taxon
+                        node.add_child(new_node)
+                        self.logger.debug(f'Added child {process} to {name}')
 
     def pick_exemplars(self, strategy):
         """
@@ -126,7 +127,7 @@ class OpenTOLTree(dendropy.Tree):
         :param strategy: How to pick exemplars
         :return:
         """
-        self.logger.info(f'Going to pick exemplars following {strategy} strategy')
+        self.logger.debug(f'Going to pick exemplars following {strategy} strategy')
 
         # List of exemplars to return
         representatives = []
@@ -170,7 +171,7 @@ class OpenTOLTree(dendropy.Tree):
         the set of leaf labels of its descendants.
         :return: a set of leaf labels
         """
-        self.logger.info(f"Going to find pseudo outgroup in input tree")
+        self.logger.debug(f"Going to find pseudo outgroup in input tree")
         root = self.seed_node
 
         # Check if tree is bifurcating at the root
@@ -190,7 +191,7 @@ class OpenTOLTree(dendropy.Tree):
         :param query_set: a set of leaf labels
         :return:
         """
-        self.logger.info(f"Going to find bipartition for provided input set")
+        self.logger.debug(f"Going to find bipartition for provided input set")
         self.logger.debug(query_set)
         self.update_bipartitions()
 
