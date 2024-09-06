@@ -79,11 +79,13 @@ def test_load_bcdm(db_instance, temp_data_package):
         cursor.execute("SELECT COUNT(*) FROM taxon;")
         taxon_count = cursor.fetchone()[0]
 
-        bc = db_instance.get_barcode({ 'processid': 'AAASF001-17'})[0]
+        bc = db_instance.get_barcode({'processid': 'AAASF001-17'})[0]
+        taxon = bc.taxon
 
         assert barcode_count == 999  # 1000 lines in barcode TSV, including header
         assert taxon_count > 0  # There should be some distinct taxa
         assert bc.identification == 'Lutzomyia cruciata'
+        assert taxon.bin_uri == 'BOLD:ADP3520'
 
     finally:
         # End the session
