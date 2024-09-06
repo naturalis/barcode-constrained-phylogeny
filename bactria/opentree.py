@@ -1,6 +1,6 @@
 import requests
 import bactria.logger
-import bactria.config
+from bactria.config import Config
 from typing import List, Dict, Any
 from bactria.tree import OpenTOLTree
 
@@ -13,11 +13,11 @@ class OpenTOLClient:
     including the TNRS (Taxonomic Name Resolution Service) and the induced subtree service.
     """
 
-    def __init__(self, config: bactria.config.Config):
+    def __init__(self, config: Config):
         """
         Initialize the OpenTOLClient.
 
-        :param log_level: The logging level (default: 'INFO')
+        :param config: Config object
         """
         self.logger = bactria.logger.get_formatted_logger(__name__, config)
         self.base_url = "https://api.opentreeoflife.org/v3"
