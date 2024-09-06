@@ -61,9 +61,9 @@ class Database:
 
     # All subsequent times:
     db = Database('db.sqlite', '/path/to/BOLD_Public.18-Dec-2023')
-    node = db.Node('ott34728')
-    barcode = db.Barcode(...)
-    taxon = db.Taxon(...)
+    node = db.get_node({'id':'ott34728'})
+    barcode = db.get_barcode(...)
+    taxon = db.get_taxon(...)
     """
 
     def __init__(self, db_file: Path, data_package: Path):
