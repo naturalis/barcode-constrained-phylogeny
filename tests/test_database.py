@@ -71,26 +71,22 @@ def test_load_bcdm(db_instance, temp_data_package):
     # Start a new session
     db_instance.start_session()
 
-    try:
-        # Check if data is loaded
-        cursor = db_instance.connection.cursor()
-        cursor.execute("SELECT COUNT(*) FROM barcode;")
-        barcode_count = cursor.fetchone()[0]
-        cursor.execute("SELECT COUNT(*) FROM taxon;")
-        taxon_count = cursor.fetchone()[0]
+    # Check if data is loaded
+    db_instance.cursor.execute("SELECT COUNT(*) FROM barcode;")
+    barcode_count = db_instance.cursor.fetchone()[0]
+    db_instance.cursor.execute("SELECT COUNT(*) FROM taxon;")
+    taxon_count = db_instance.cursor.fetchone()[0]
 
-        bc = db_instance.get_barcode({'processid': 'AAASF001-17'})[0]
-        taxon = bc.taxon
+    bc = db_instance.get_barcode({'processid': 'AAASF001-17'})[0]
+    taxon = bc.taxon
 
-        assert barcode_count == 999  # 1000 lines in barcode TSV, including header
-        assert taxon_count > 0  # There should be some distinct taxa
-        assert bc.identification == 'Lutzomyia cruciata'
-        assert taxon.bin_uri == 'BOLD:ADP3520'
+    assert barcode_count == 999  # 1000 lines in barcode TSV, including header
+    assert taxon_count > 0  # There should be some distinct taxa
+    assert bc.identification == 'Lutzomyia cruciata'
+    assert taxon.bin_uri == 'BOLD:ADP3520'
 
-    finally:
-        # End the session
-        db_instance.end_session()
-
+    # End the session
+    db_instance.end_session()
 
 
 def test_invalid_data_package_path():
