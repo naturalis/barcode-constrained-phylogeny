@@ -1,7 +1,7 @@
 import logging
 
 
-def get_formatted_logger(name, config):
+def get_formatted_logger(name, config=None):
     """
     Instantiates a python `logging` object for the specified name and verbosity level.
     The function further configures this object so that the logging message it emits
@@ -13,8 +13,13 @@ def get_formatted_logger(name, config):
     # Create a logger
     requested_logger = logging.getLogger(name)
 
+    if config:
+        log_level = config.get('log_level')
+    else:
+        log_level = 'INFO'
+
     # Set the log level
-    requested_logger.setLevel(config.get('log_level'))
+    requested_logger.setLevel(log_level)
 
     # Create a console handler
     handler = logging.StreamHandler()
