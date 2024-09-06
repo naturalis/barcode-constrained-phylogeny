@@ -21,13 +21,13 @@ class OpenTOLClient:
         """
         self.logger = bactria.logger.get_formatted_logger(__name__, config)
         self.base_url = "https://api.opentreeoflife.org/v3"
-        self.endpoint = f"{self.base_url}/tnrs/match_names"
+        self._endpoint = f"{self.base_url}/tnrs/match_names"
         self.headers = {"Content-Type": "application/json"}
 
     @property
     def endpoint(self) -> str:
         """Get the current API endpoint."""
-        return self.endpoint
+        return self._endpoint
 
     @endpoint.setter
     def endpoint(self, new_endpoint: str):
@@ -36,7 +36,7 @@ class OpenTOLClient:
 
         :param new_endpoint: The new endpoint to use
         """
-        self.endpoint = f"{self.base_url}/{new_endpoint}"
+        self._endpoint = f"{self.base_url}/{new_endpoint}"
         self.logger.info(f"Endpoint changed to: {self.endpoint}")
 
     def handle_request(self, method: str, data: Dict[str, Any] = None) -> Dict[str, Any]:
