@@ -4,6 +4,16 @@ import copy
 
 
 class Config:
+    """
+    Configuration object. The purpose of this object is to pass around common configuration parameters
+    through the control flow of various components. For example, the variable `log_level` may be expected
+    to be defined by this object, specifying the verbosity of a logger (e.g. as DEBUG, INFO, WARN, ERROR).
+
+    The most common usage pattern of this object is that it is simply populated from a YAML file with the
+    `load_config()` method. Additional parameters and their values can be defined with the `set()`
+    method. The object can be cloned with the `detach()` and `local_clone()` methods, so that global
+    parameters can be updated locally by components and passed on.
+    """
 
     def __init__(self):
         self.config_data = None
