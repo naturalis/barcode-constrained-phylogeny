@@ -3,9 +3,18 @@ from bactria.tool_runner import ToolRunner
 from bactria.config import Config
 
 
-class BlastdbcommandRunner(ToolRunner):
+class Blastdbcommand(ToolRunner):
     """
     A subclass of ToolRunner specifically for running blastdbcmd.
+
+    Examples:
+        >>> config = Config()
+        >>> config.load_config('path/to/config.yaml')
+        >>> blastdbcmd_runner = Blastdbcommand(config)
+        >>> blastdbcmd_runner.set_db('nr')
+        >>> blastdbcmd_runner.set_entry(['NP_000508.1', 'NP_001018081.2'])
+        >>> blastdbcmd_runner.set_outfmt('%f')
+        >>> return_code = blastdbcmd_runner.run()
     """
 
     def __init__(self, config: Config):
@@ -281,12 +290,3 @@ class BlastdbcommandRunner(ToolRunner):
         """
         self.validate_parameters()
         return super().run()
-
-# Example usage:
-# config = Config()
-# config.load_config('path/to/config.yaml')
-# blastdbcmd_runner = BlastdbcommandRunner(config)
-# blastdbcmd_runner.set_db('nr')
-# blastdbcmd_runner.set_entry(['NP_000508.1', 'NP_001018081.2'])
-# blastdbcmd_runner.set_outfmt('%f')
-# return_code = blastdbcmd_runner.run()

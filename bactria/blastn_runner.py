@@ -3,9 +3,22 @@ from bactria.tool_runner import ToolRunner
 from bactria.config import Config
 
 
-class BLASTNRunner(ToolRunner):
+class BLASTN(ToolRunner):
     """
     A subclass of ToolRunner specifically for running BLASTN (Nucleotide-Nucleotide BLAST).
+
+    Examples:
+        >>> config = Config()
+        >>> config.load_config('path/to/config.yaml')
+        >>> blastn_runner = BLASTN(config)
+        >>> blastn_runner.set_query('input.fasta')
+        >>> blastn_runner.set_db('nr')
+        >>> blastn_runner.set_out('output.txt')
+        >>> blastn_runner.set_evalue(1e-5)
+        >>> blastn_runner.set_outfmt(6)
+        >>> blastn_runner.set_num_threads(4)
+        >>> blastn_runner.set_remote(True)
+        >>> return_code = blastn_runner.run()
     """
 
     def __init__(self, config: Config):
@@ -216,16 +229,3 @@ class BLASTNRunner(ToolRunner):
                 command.append(f'-{param}')
 
         return command
-
-# Example usage:
-# config = Config()
-# config.load_config('path/to/config.yaml')
-# blastn_runner = BLASTNRunner(config)
-# blastn_runner.set_query('input.fasta')
-# blastn_runner.set_db('nr')
-# blastn_runner.set_out('output.txt')
-# blastn_runner.set_evalue(1e-5)
-# blastn_runner.set_outfmt(6)
-# blastn_runner.set_num_threads(4)
-# blastn_runner.set_remote(True)
-# return_code = blastn_runner.run()

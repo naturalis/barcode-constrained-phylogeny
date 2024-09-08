@@ -3,9 +3,18 @@ from bactria.tool_runner import ToolRunner
 from bactria.config import Config
 
 
-class BlastdbAliastoolRunner(ToolRunner):
+class BlastdbAliastool(ToolRunner):
     """
     A subclass of ToolRunner specifically for running blastdb_aliastool.
+
+    Examples:
+        >>> config = Config()
+        >>> config.load_config('path/to/config.yaml')
+        >>> aliastool_runner = BlastdbAliastoolRunner(config)
+        >>> aliastool_runner.set_db('my_blast_db')
+        >>> aliastool_runner.set_out('my_alias_db')
+        >>> aliastool_runner.set_gilist('my_gi_list.txt')
+        >>> return_code = aliastool_runner.run()
     """
 
     def __init__(self, config: Config):
@@ -193,12 +202,3 @@ class BlastdbAliastoolRunner(ToolRunner):
         """
         self.validate_parameters()
         return super().run()
-
-# Example usage:
-# config = Config()
-# config.load_config('path/to/config.yaml')
-# aliastool_runner = BlastdbAliastoolRunner(config)
-# aliastool_runner.set_db('my_blast_db')
-# aliastool_runner.set_out('my_alias_db')
-# aliastool_runner.set_gilist('my_gi_list.txt')
-# return_code = aliastool_runner.run()

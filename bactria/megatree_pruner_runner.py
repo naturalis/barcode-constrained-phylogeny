@@ -4,9 +4,19 @@ from bactria.config import Config
 import logging
 
 
-class MegatreePrunerRunner(ToolRunner):
+class MegatreePruner(ToolRunner):
     """
     A subclass of ToolRunner specifically for running megatree-pruner.
+
+    Examples:
+        >>> config = Config()
+        >>> config.load_config('path/to/config.yaml')
+        >>> megatree_pruner = MegatreePruner(config)
+        >>> megatree_pruner.set_dbfile('tree_database.sqlite')
+        >>> megatree_pruner.set_infile('taxa_list.txt')
+        >>> megatree_pruner.set_tabular(True)
+        >>> megatree_pruner.set_relabel(True)
+        >>> return_code = megatree_pruner.run()
     """
 
     def __init__(self, config: Config):
@@ -115,13 +125,3 @@ class MegatreePrunerRunner(ToolRunner):
         """
         self.validate_parameters()
         return super().run()
-
-# Example usage:
-# config = Config()
-# config.load_config('path/to/config.yaml')
-# megatree_pruner = MegatreePrunerRunner(config)
-# megatree_pruner.set_dbfile('tree_database.sqlite')
-# megatree_pruner.set_infile('taxa_list.txt')
-# megatree_pruner.set_tabular(True)
-# megatree_pruner.set_relabel(True)
-# return_code = megatree_pruner.run()

@@ -2,9 +2,19 @@ from typing import List
 from bactria.tool_runner import ToolRunner
 from bactria.config import Config
 
-class MakeblastdbRunner(ToolRunner):
+class Makeblastdb(ToolRunner):
     """
     A subclass of ToolRunner specifically for running makeblastdb.
+
+    Examples:
+        >>> config = Config()
+        >>> config.load_config('path/to/config.yaml')
+        >>> makeblastdb_runner = Makeblastdb(config)
+        >>> makeblastdb_runner.set_in('input_sequences.fasta')
+        >>> makeblastdb_runner.set_dbtype('prot')
+        >>> makeblastdb_runner.set_out('my_blast_db')
+        >>> makeblastdb_runner.set_parse_seqids()
+        >>> return_code = makeblastdb_runner.run()
     """
 
     def __init__(self, config: Config):
@@ -213,13 +223,3 @@ class MakeblastdbRunner(ToolRunner):
         """
         self.validate_parameters()
         return super().run()
-
-# Example usage:
-# config = Config()
-# config.load_config('path/to/config.yaml')
-# makeblastdb_runner = MakeblastdbRunner(config)
-# makeblastdb_runner.set_in('input_sequences.fasta')
-# makeblastdb_runner.set_dbtype('prot')
-# makeblastdb_runner.set_out('my_blast_db')
-# makeblastdb_runner.set_parse_seqids()
-# return_code = makeblastdb_runner.run()

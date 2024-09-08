@@ -4,9 +4,17 @@ from bactria.config import Config
 import logging
 
 
-class MegatreeLoaderRunner(ToolRunner):
+class MegatreeLoader(ToolRunner):
     """
     A subclass of ToolRunner specifically for running megatree-loader.
+
+    Examples:
+        >>> config = Config()
+        >>> config.load_config('path/to/config.yaml')
+        >>> megatree_runner = MegatreeLoaderRunner(config)
+        >>> megatree_runner.set_infile('input_tree.newick')
+        >>> megatree_runner.set_dbfile('output_db.sqlite')
+        >>> return_code = megatree_runner.run()
     """
 
     def __init__(self, config: Config):
@@ -80,11 +88,3 @@ class MegatreeLoaderRunner(ToolRunner):
         """
         self.validate_parameters()
         return super().run()
-
-# Example usage:
-# config = Config()
-# config.load_config('path/to/config.yaml')
-# megatree_runner = MegatreeLoaderRunner(config)
-# megatree_runner.set_infile('input_tree.newick')
-# megatree_runner.set_dbfile('output_db.sqlite')
-# return_code = megatree_runner.run()

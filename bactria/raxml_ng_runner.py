@@ -3,9 +3,20 @@ from bactria.tool_runner import ToolRunner
 from bactria.config import Config
 
 
-class RAXMLNGRunner(ToolRunner):
+class RAXMLNG(ToolRunner):
     """
     A subclass of ToolRunner specifically for running RAxML-NG (Randomized Axelerated Maximum Likelihood - Next Generation).
+
+    Examples:
+        >>> config = Config()
+        >>> config.load_config('path/to/config.yaml')
+        >>> raxml_runner = RAXMLNG(config)
+        >>> raxml_runner.set_msa('alignment.fa')
+        >>> raxml_runner.set_model('GTR+G')
+        >>> raxml_runner.set_prefix('test_run')
+        >>> raxml_runner.set_threads(4)
+        >>> raxml_runner.set_all()
+        >>> return_code = raxml_runner.run()
     """
 
     def __init__(self, config: Config):
@@ -176,14 +187,3 @@ class RAXMLNGRunner(ToolRunner):
                 command.append(f'--{param}')
 
         return command
-
-# Example usage:
-# config = Config()
-# config.load_config('path/to/config.yaml')
-# raxml_runner = RAXMLNGRunner(config)
-# raxml_runner.set_msa('alignment.fa')
-# raxml_runner.set_model('GTR+G')
-# raxml_runner.set_prefix('test_run')
-# raxml_runner.set_threads(4)
-# raxml_runner.set_all()
-# return_code = raxml_runner.run()

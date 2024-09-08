@@ -3,9 +3,19 @@ from bactria.tool_runner import ToolRunner
 from bactria.config import Config
 
 
-class HmmalignRunner(ToolRunner):
+class Hmmalign(ToolRunner):
     """
     A subclass of ToolRunner specifically for running hmmalign.
+
+    Examples:
+        >>> config = Config()
+        >>> config.load_config('path/to/config.yaml')
+        >>> hmmalign_runner = Hmmalign(config)
+        >>> hmmalign_runner.set_hmmfile('model.hmm')
+        >>> hmmalign_runner.set_seqfile('sequences.fasta')
+        >>> hmmalign_runner.set_output('alignment.sto')
+        >>> hmmalign_runner.set_outformat('Stockholm')
+        >>> return_code = hmmalign_runner.run()
     """
 
     def __init__(self, config: Config):
@@ -140,13 +150,3 @@ class HmmalignRunner(ToolRunner):
         """
         self.validate_parameters()
         return super().run()
-
-# Example usage:
-# config = Config()
-# config.load_config('path/to/config.yaml')
-# hmmalign_runner = HmmalignRunner(config)
-# hmmalign_runner.set_hmmfile('model.hmm')
-# hmmalign_runner.set_seqfile('sequences.fasta')
-# hmmalign_runner.set_output('alignment.sto')
-# hmmalign_runner.set_outformat('Stockholm')
-# return_code = hmmalign_runner.run()
