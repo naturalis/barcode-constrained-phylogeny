@@ -1,16 +1,16 @@
 from typing import List, Union
-from bactria.tool_runner import ToolRunner
+from .tool_runner import ToolRunner
 from bactria.config import Config
 
 
-class BLASTN(ToolRunner):
+class Blastn(ToolRunner):
     """
     A subclass of ToolRunner specifically for running BLASTN (Nucleotide-Nucleotide BLAST).
 
     Examples:
         >>> config = Config()
         >>> config.load_config('path/to/config.yaml')
-        >>> blastn_runner = BLASTN(config)
+        >>> blastn_runner = Blastn(config)
         >>> blastn_runner.set_query('input.fasta')
         >>> blastn_runner.set_db('nr')
         >>> blastn_runner.set_out('output.txt')

@@ -1,16 +1,16 @@
 from typing import Optional, List
-from bactria.tool_runner import ToolRunner
+from .tool_runner import ToolRunner
 from bactria.config import Config
 
 
-class Blastdbcommand(ToolRunner):
+class Blastdbcmd(ToolRunner):
     """
     A subclass of ToolRunner specifically for running blastdbcmd.
 
     Examples:
         >>> config = Config()
         >>> config.load_config('path/to/config.yaml')
-        >>> blastdbcmd_runner = Blastdbcommand(config)
+        >>> blastdbcmd_runner = Blastdbcmd(config)
         >>> blastdbcmd_runner.set_db('nr')
         >>> blastdbcmd_runner.set_entry(['NP_000508.1', 'NP_001018081.2'])
         >>> blastdbcmd_runner.set_outfmt('%f')

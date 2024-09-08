@@ -1,16 +1,16 @@
 from typing import Optional, List, Union
-from bactria.tool_runner import ToolRunner
+from .tool_runner import ToolRunner
 from bactria.config import Config
 
 
-class RAXMLNG(ToolRunner):
+class RaxmlNg(ToolRunner):
     """
     A subclass of ToolRunner specifically for running RAxML-NG (Randomized Axelerated Maximum Likelihood - Next Generation).
 
     Examples:
         >>> config = Config()
         >>> config.load_config('path/to/config.yaml')
-        >>> raxml_runner = RAXMLNG(config)
+        >>> raxml_runner = RaxmlNg(config)
         >>> raxml_runner.set_msa('alignment.fa')
         >>> raxml_runner.set_model('GTR+G')
         >>> raxml_runner.set_prefix('test_run')

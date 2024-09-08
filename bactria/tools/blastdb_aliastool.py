@@ -1,5 +1,5 @@
 from typing import Optional, List
-from bactria.tool_runner import ToolRunner
+from .tool_runner import ToolRunner
 from bactria.config import Config
 
 
