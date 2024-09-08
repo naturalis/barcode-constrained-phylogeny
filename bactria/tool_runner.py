@@ -66,6 +66,7 @@ class ToolRunner:
         :param value: Parameter value.
         :type value: str
         """
+        self.logger.debug(f'Setting parameter: {key} = {value}')
         self.parameters[key] = value
 
     def get_parameter(self, key: str, default: Optional[str] = None) -> Optional[str]:
