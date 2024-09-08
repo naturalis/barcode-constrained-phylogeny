@@ -50,20 +50,21 @@ class Database:
     schema provided by BOLD's BCDM packages, creation of database tables based on these ORM classes, and the
     ingestion of data. Usage:
 
-    # First time use:
-    db = Database('db.sqlite', '/path/to/BOLD_Public.18-Dec-2023')
-    db.make_schema() # instantiates the database tables
-    db.load_bcdm() # loads TSV data into the database
+    Examples:
+        >>> # First time use:
+        >>> db = Database(Path('db.sqlite'), Path('/path/to/BOLD_Public.18-Dec-2023'))
+        >>> db.make_schema() # instantiates the database tables
+        >>> db.load_bcdm() # loads TSV data into the database
 
-    # To merge the megatree:
-    db = Database('db.sqlite', '/path/to/BOLD_Public.18-Dec-2023')
-    db.merge_megatree('node.sqlite')
+        >>> # To merge the megatree:
+        >>> db = Database(Path('db.sqlite'), Path('/path/to/BOLD_Public.18-Dec-2023'))
+        >>> db.merge_megatree(Path('node.sqlite'))
 
-    # All subsequent times:
-    db = Database('db.sqlite', '/path/to/BOLD_Public.18-Dec-2023')
-    node = db.get_node({'id':'ott34728'})
-    barcode = db.get_barcode(...)
-    taxon = db.get_taxon(...)
+        >>> # All subsequent times:
+        >>> db = Database(Path('db.sqlite'), Path('/path/to/BOLD_Public.18-Dec-2023'))
+        >>> node = db.get_node({'id':'ott34728'})
+        >>> barcode = db.get_barcode(...)
+        >>> taxon = db.get_taxon(...)
     """
 
     def __init__(self, db_file: Path, data_package: Path):
@@ -81,14 +82,20 @@ class Database:
         self.make_orm()
 
     def start_session(self):
-        """Start a new session."""
+        """
+        Start a new session.
+        :return: A new session object
+        """
         if self.current_session is not None:
             raise RuntimeError("A session is already in progress")
         self.current_session = self.Session()
         return self.current_session
 
-    def end_session(self):
-        """End the current session."""
+    def end_session(self) -> None:
+        """
+        End the current session.
+        :return: None
+        """
         if self.current_session is None:
             raise RuntimeError("No session is currently in progress")
         self.current_session.close()
