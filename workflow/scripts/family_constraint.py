@@ -4,6 +4,23 @@ import opentol
 import sqlite3
 
 
+"""
+This script, `family_constraint.py`, is responsible for generating a constraint tree for a given family from a SQLite 
+database and a set of FASTA files.
+
+The script performs the following steps:
+1. Connects to the SQLite database.
+2. Extracts the Open Tree of Life (OpenTOL) IDs from the headers of the ingroup and outgroup FASTA files.
+3. If there are no IDs, it creates a zero-byte file for the next step in the workflow.
+4. If there are IDs, it retrieves a subtree from the OpenTOL Web Service API using the extracted IDs.
+5. Writes the subtree to an output file in Newick format.
+
+The script uses command line arguments for the ingroup FASTA file, outgroup FASTA file, output tree file, SQLite 
+database file, and log level. The script is invoked by the Snakefile as a shell command with the required arguments in
+the rule `family_constraint`.
+"""
+
+
 def extract_id_from_fasta(unaligned, outgroups):
     """
     Extracts the ott IDs from a FASTA file. This operates specifically on

@@ -6,6 +6,26 @@ import argparse
 import util
 
 
+"""
+This script, `family_fasta.py`, is responsible for generating FASTA files for each family of a specified higher taxon 
+from a SQLite database.
+
+The script performs the following steps:
+1. Connects to the SQLite database.
+2. Retrieves distinct families and BINs (Barcode Index Numbers) for the higher taxon defined in the query restrictions.
+3. Iterates over each unique family and creates a directory for each family.
+4. For each BIN in a family, it fetches the longest sequence and writes it to the corresponding family's FASTA file.
+5. The sequence written to the FASTA file is stripped of non-ACGT characters as HMMER (used in later steps of the 
+   workflow) chokes on them.
+6. The script continues this process until it has iterated over all families and their respective BINs.
+7. Closes the connection to the database.
+
+The script uses command line arguments for the database file to query, directory to write FASTA files to, taxonomic 
+level to filter (e.g. order), taxon name to filter (e.g. Primates), number of chunks (families) to write to file, 
+marker code (e.g. COI-5P), and log level. This script is invoked by the Snakefile as a shell command with the required
+arguments in the rule `family_fasta`.
+"""
+
 def get_family_bins(q, conn):
     """
     Gets distinct families and bins for the higher taxon defined in the query restrictions

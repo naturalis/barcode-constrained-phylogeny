@@ -7,6 +7,24 @@ from Bio.AlignIO import read as read_alignment
 from Bio.Phylo import read as read_newick, write as write_newick
 
 
+"""
+This script, `prep_raxml.py`, is responsible for preparing the input for RAxML, a tool for phylogenetic analysis.
+
+The script performs the following steps:
+1. Connects to the SQLite database.
+2. Reads the input FASTA alignment file.
+3. Creates a mapping between Open Tree of Life (OpenTOL) IDs and process IDs from the alignment.
+4. Expands the input Newick tree based on the mapping. If a tip in the tree corresponds to multiple process IDs, it 
+   splits the tip into multiple tips, each labeled with a process ID. If a tip does not correspond to any process ID, 
+   it removes the tip.
+5. Writes the expanded tree to an output file in Newick format.
+
+The script uses command line arguments for the input Newick tree file, input FASTA alignment file, output Newick tree 
+file, SQLite database file, and log level. The script is invoked by the Snakefile as a shell command with the required
+arguments in the rule `prep_raxml`.
+"""
+
+
 def make_constraint(intree, outtree, processmap):
     """
     Makes a constraint tree compatible with the opentol input tree, but expanded
@@ -18,7 +36,11 @@ def make_constraint(intree, outtree, processmap):
     :return:
     """
     logger.info(f"Going to create constraint tree from {intree} to {outtree}")
-    tree = read_newick(intree, 'newick')
+    try:
+        tree = read_newick(intree, 'newick')
+    except ValueError:
+        logger.info("No trees made for this family.")
+        return
 
     # Map opentol_id to process_id, possibly adding tips if there are multiple process_ids
     # for this opentol_id (which means there are multiple BINs in this species)
@@ -107,7 +129,12 @@ if __name__ == '__main__':
     # Read input file, exit if it is empty
     logger.info(f'Going to read FASTA file {args.inaln}')
     infile = os.path.realpath(os.path.abspath(args.inaln))
-    alignment = read_alignment(infile, 'fasta')
+    try:
+        alignment = read_alignment(infile, 'fasta')
+    except:
+        logger.info("No records in the family.")
+        alignment = []
+        open(args.outtree, 'a')
 
     # Write Newick tree using process_id as labels, grafting subtended split BINS and outgroups
     logger.info(f'Going to expand OpenToL constraint to subtended process IDs')

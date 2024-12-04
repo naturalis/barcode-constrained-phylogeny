@@ -7,6 +7,26 @@ import argparse
 import pandas as pd
 import numpy as np
 
+
+"""
+This script is responsible for mapping taxonomic names from a SQLite database to the Open Tree of Life (OpenTOL) using 
+the TNRS API.
+
+The script performs the following steps:
+1. Connects to the SQLite database.
+2. Loads all unmatched records from the 'taxon' table into a DataFrame.
+3. Iterates over the DataFrame in chunks and checks all names within each chunk against the TNRS API.
+4. Processes the results from the TNRS API. If there is a single match that is not a synonym and whose score is high 
+   enough, the script updates the 'taxon' table with the OpenTOL ID.
+5. If the initial exact match fails, the script attempts to recover through a fuzzy match.
+6. After all matches have been processed, the script creates an index on the 'opentol_id' column in the 'taxon' table 
+   for optimized queries.
+7. Commits the changes to the database and closes the connection.
+
+The script uses command line arguments for the database file to enrich, marker name, output status file, and log level.
+The script is invoked by the Snakefile as a shell command with the required arguments in the rule 'map_opentol'.
+"""
+
 # Set the Open Tree of Life API endpoint
 # https://github.com/OpenTreeOfLife/germinator/wiki/TNRS-API-v3#match_names
 endpoint = "https://api.opentreeoflife.org/v3/tnrs/match_names"

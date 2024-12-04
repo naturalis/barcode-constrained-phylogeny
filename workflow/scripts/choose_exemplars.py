@@ -6,6 +6,23 @@ import statistics
 from Bio import SeqIO
 
 
+"""
+This script, `choose_exemplars.py`, is responsible for selecting exemplar tips from a phylogenetic tree based on a 
+specified strategy and writing the corresponding sequences from an input alignment to an output file.
+
+The script performs the following steps:
+1. Reads the input Newick tree.
+2. Picks two exemplar tips from the tree based on the specified strategy. The strategies can be the two tallest, the 
+   two shallowest, or the two closest to the median.
+3. Reads the input FASTA alignment file.
+4. Writes the sequences corresponding to the selected exemplar tips to an output file.
+
+The script uses command line arguments for the input Newick tree file, input FASTA alignment file, output FASTA 
+alignment file, tip picking strategy, and log level. The script is invoked by the Snakefile as a shell command with the
+required arguments in the rule `choose_exemplars`.
+"""
+
+
 def pick_tips(tree, strategy):
     """
     Picks two exemplar tips, either the two tallest, the two shallowest, or the two closest to the median
@@ -60,6 +77,8 @@ def write_sequences(inaln, outaln, subset):
     :param subset:
     :return:
     """
+    if subset == None:
+        subset = []
     logger.info(f'Going to write {len(subset)} sequences to {outaln}')
     with open(outaln, 'a') as outfh:
         for record in SeqIO.parse(inaln, "fasta"):
@@ -102,4 +121,3 @@ if __name__ == "__main__":
     else:
         exemplars = pick_tips(tree, args.strategy)
         write_sequences(args.inaln, args.outaln, exemplars)
-

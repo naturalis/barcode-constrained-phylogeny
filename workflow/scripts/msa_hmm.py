@@ -10,6 +10,25 @@ from Bio.AlignIO import read as read_alignment
 from subprocess import run
 
 
+"""
+This script, `msa_hmm.py`, is responsible for aligning sequences using a Hidden Markov Model (HMM) and writing the 
+aligned sequences to an output file.
+
+The script performs the following steps:
+1. Merges the provided input files and maps the process IDs to barcode IDs, which are shorter. This is useful because 
+   the alignment steps truncate IDs. At a later stage we map them back to process IDs. In both cases this is done via 
+   the database.
+2. Corrects any sequences that are reverse complemented. It does this by aligning the sequence with and without reverse 
+   complementing the sequence, and keeps the sequence that gives the highest alignment score.
+3. Aligns the reverse complement-corrected sequences. Remaps barcode_id to process_id using a database lookup. Writes 
+   output to outfile.
+
+The script uses command line arguments for the HMM model file, log level, input unaligned ingroup FASTA file, unaligned 
+outgroup FASTA file, output aligned FASTA file, and SQLite database. The script is invoked by the Snakefile as a shell
+command with the required arguments in the rule `msa_hmm`.
+"""
+
+
 def correct_revcom(hmmfile, inseqs):
     """
     Read a list of SeqIO records using hmmer with and without reverse complementing the sequence,
@@ -70,7 +89,11 @@ def align_write(sequences, outfile, conn):
 
     # Align with hmmalign, capture and parse output as phylip
     run(['hmmalign', '--trim', '-o', f'{outfile}.tmp2', '--outformat', 'phylip', hmmfile, f'{outfile}.tmp1'])
-    aligned = read_alignment(f'{outfile}.tmp2', 'phylip')
+    try:
+        aligned = read_alignment(f'{outfile}.tmp2', 'phylip')
+    except ValueError:
+        logger.info("No sequences found.")
+        aligned = []
     os.remove(f'{outfile}.tmp1')
     os.remove(f'{outfile}.tmp2')
 

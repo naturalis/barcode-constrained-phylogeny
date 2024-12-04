@@ -8,6 +8,26 @@ import dendropy
 from Bio import SeqIO
 
 
+"""
+This script, `backbone_constraint.py`, is responsible for generating a constraint tree for a given family from a SQLite 
+database and a set of FASTA files.
+
+The script performs the following steps:
+1. Connects to the SQLite database.
+2. Extracts the Open Tree of Life (OpenTOL) IDs from the headers of the FASTA files.
+3. If there are no IDs, it creates a zero-byte file for the next step in the workflow.
+4. If there are IDs, it verifies that all process IDs belong to the same family. If not, it raises an error.
+5. If the process IDs belong to the same family, it retrieves a subtree from the OpenTOL Web Service API using the 
+   extracted IDs.
+6. Remaps the leaf labels of the input tree to the values provided in the pidmap. Possibly grafts additional child 
+   nodes if one-to-many mapping occurs.
+7. Writes the subtree to an output file in Newick format.
+
+The script uses command line arguments for the input FASTA files, output tree file, SQLite database file, and log level.
+The script is invoked by the Snakefile as a shell command with the required arguments in the rule `backbone_constraint`.
+"""
+
+
 def get_ott_ids(pids, conn):
     """
     Given a list of BOLD process IDs, checks to verify that these all belong to the same family
@@ -71,19 +91,19 @@ def process_exemplars(exemplar_files, conn):
         process_ids = []
         for record in SeqIO.parse(exemplar_file, 'fasta'):
             process_ids.append(record.id)
+        if not process_ids == []:
+            # Get an OTT ID for the process IDs in the list
+            dict_of_lists = get_ott_ids(process_ids, conn)
+            if dict_of_lists:
+                pids_for_ott.update(dict_of_lists)
+            else:
 
-        # Get an OTT ID for the process IDs in the list
-        dict_of_lists = get_ott_ids(process_ids, conn)
-        if dict_of_lists:
-            pids_for_ott.update(dict_of_lists)
-        else:
-
-            # The process IDs have no family that occurs in the OpenTree. In two cases now this
-            # occurred because the focal exemplar file consisted entirely of extinct taxa 
-            # (i.e. an entire extinct family, such as Megaladapidae). The least bad thing to do
-            # with these is to remove them from the backbone.
-            logger.warning(f'Input file with unconstrained sequences (maybe extinct?): {exemplar_file}')
-            extinct_pids.extend(process_ids)
+                # The process IDs have no family that occurs in the OpenTree. In two cases now this
+                # occurred because the focal exemplar file consisted entirely of extinct taxa 
+                # (i.e. an entire extinct family, such as Megaladapidae). The least bad thing to do
+                # with these is to remove them from the backbone.
+                logger.warning(f'Input file with unconstrained sequences (maybe extinct?): {exemplar_file}')
+                extinct_pids.extend(process_ids)
     return pids_for_ott, extinct_pids
 
 

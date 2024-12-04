@@ -39,6 +39,25 @@ needs to know ahead of time how many families to expect, which needs to be
 specified in the configuration file.
 
 ---
+### `makeblastdb`
+
+Creates a BLAST database from all family FASTA files from the `family_fasta`
+rule, retaining the sequences that have an OpenToL ID and reformatting them 
+so that the definition line only has the process ID of the sequence. The
+script is implemented in [makeblastdb.sh](scripts/makeblastdb.sh), which
+uses the `makeblastdb` command from the BLAST+ suite to create the database.
+
+---
+### `get_outgroups`
+
+Fetches outgroup sequences from the BLAST database. This is done by running 
+a BLAST search with the focal ingroup sequences (i.e. a family fasta file) 
+against the BLAST database, and then selecting the most common hits across the 
+ingroup sequences. The script is implemented in 
+[get_outgroups.sh](scripts/get_outgroups.sh) and is parallelized using
+`scattergather`.
+
+---
 ### `family_constraint`
 
 For each family FASTA file generates a constraint tree. The constraints are 
