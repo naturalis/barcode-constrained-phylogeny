@@ -242,10 +242,13 @@ rule prep_raxml:
             -d {params.db} 2> {log}
         """
 
-# Runs raxml as a constrained tree search. Possibly this should instead take a two-step approach, where unplaced
-# sequences are first placed, and then the branch lengths are estimated. This requires that there actually is a
-# constraint tree. Currently, this rule deals with the fact that some of the constraint trees are 0-byte files due
-# to incomplete OpenToL coverage by trapping raxml-ng errors and then re-running without the constraint.
+# Runs raxml as a constrained tree search. This rule first checks if the alignment file exists and is non-empty.
+# It then extracts the outgroup names from the alignment file. If the constraint tree file exists, is non-empty,
+# contains inner nodes, and is not fully resolved, RAxML-NG is run with the constraint tree. If the constraint tree
+# does not meet these criteria but the number of taxa in the alignment is at least 5, RAxML-NG is run without the
+# constraint tree. If the number of taxa is less than 5, the analysis is skipped, and the input tree is copied to the
+# output tree. This rule handles cases where the constraint tree is a 0-byte file due to incomplete OpenToL coverage
+# by trapping raxml-ng errors and then re-running without the constraint.
 rule run_raxml:
     input:
         alignment = "results/fasta/family/{scatteritem}/aligned.fa",
@@ -254,35 +257,45 @@ rule run_raxml:
         tree = "results/fasta/family/{scatteritem}/aligned.fa.raxml.bestTree"
     params:
         model = config['model'],
-        num_outgroups= config['outgroups']
+        num_outgroups = config['outgroups']
     log: "logs/run_raxml/run_raxml-{scatteritem}.log"
     benchmark:
         "benchmarks/run_raxml/run_raxml-{scatteritem}.benchmark.txt"
     conda: "envs/raxml.yml"
     shell:
         """
-        if [ -s {input.alignment} ]; then
-            OG=$(grep '>' {input.alignment} | tail -{params.num_outgroups} | sed -e 's/>//' | tr '\n' ',')
-            if [ -s {input.tree} ]; then
-            set -e
+        # Check the number of taxa in the alignment
+        TAXON_COUNT=$(grep -c '>' {input.alignment})
+
+        # Extract the outgroup names from the alignment file
+        OG=$(grep '>' {input.alignment} | tail -{params.num_outgroups} | sed -e 's/>//' | tr '\n' ',')
+
+        # Check if the constraint tree exists, is non-empty, contains inner nodes, and is not fully resolved
+        if [ -s {input.tree} ] && grep -q '(' {input.tree} && grep -q ')' {input.tree} && [ "$(grep -o '(' {input.tree} | wc -l)" -gt 2 ] && [ "$(grep -o ',' {input.tree} | wc -l)" -lt "$((TAXON_COUNT - 1))" ] && [ "$TAXON_COUNT" -ge 5 ]; then
+            # Run raxml-ng with the constraint tree
+            echo "Running RAxML-NG with constraint tree" > {log}
             raxml-ng \
-                --redo \
-                --msa {input.alignment} \
-                --outgroup $OG \
-                --model {params.model} \
-                --tree-constraint {input.tree} \
-                --search1 > {log} 2>&1 \
-            || \
+            --redo \
+            --msa {input.alignment} \
+            --outgroup $OG \
+            --model {params.model} \
+            --tree-constraint {input.tree} \
+            --workers 1 \
+            --blopt nr_safe \
+            --search >> {log} 2>>&1
+        elif [ "$TAXON_COUNT" -ge 5 ]; then
+            # If no constraint tree, run raxml-ng without it
+            echo "Running RAxML-NG without constraint tree" > {log}
             raxml-ng \
-                --redo \
-                --msa {input.alignment} \
-                --outgroup $OG \
-                --model {params.model} \
-                --search1 >> {log} 2>&1
-            else
-                raxml-ng --msa {input.alignment} --outgroup $OG --model {params.model} --search --redo > {log} 2>&1
-            fi
+            --redo \
+            --msa {input.alignment} \
+            --model {params.model} \
+            --workers 1 \
+            --blopt nr_safe \
+            --search >> {log} 2>>&1
         else
+            # Skip <5 taxa MSAs and copy input tree to output tree
+            echo "Skipping <5 taxa MSA" > {log} 2>&1
             touch {output.tree}
         fi
         """

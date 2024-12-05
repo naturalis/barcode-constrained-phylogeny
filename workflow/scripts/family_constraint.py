@@ -32,34 +32,31 @@ def extract_id_from_fasta(unaligned, outgroups):
     """
     ids = []
 
-    # process the ingroup file
+    # Process the ingroup file
     with open(unaligned, 'r') as file:
         for line in file:
             if line.startswith('>'):
                 parts = line.strip().split('|')
                 if len(parts) > 1:
-                    # Extract the second element and remove 'ott' prefix
                     id_with_prefix = parts[1]
-                    id_number = id_with_prefix.replace('ott', '')
-                    if id_number != 'None':
+                    if id_with_prefix != "ottNone":
+                        id_number = id_with_prefix.replace('ott', '')
                         ids.append(int(id_number))
 
-    # process the outgroup file
+    # Process the outgroup file
     with open(outgroups, 'r') as file:
         for line in file:
             if line.startswith('>'):
                 pid = line.strip().removeprefix('>')
                 sql = f"SELECT t.opentol_id FROM taxon t, barcode b WHERE t.taxon_id=b.taxon_id and b.processid='{pid}'"
                 ott = conn.execute(sql).fetchone()
-                ids.append(ott[0])
+                if ott:
+                    ids.append(ott[0])
 
-    # Remove all 'None' entries
-    cleaned_list = [item for item in ids if item != 'None']
-    return cleaned_list
+    return ids
 
 
 if __name__ == '__main__':
-    # Define command line arguments
     parser = argparse.ArgumentParser(description='Required command line arguments.')
     parser.add_argument('-i', '--ingroup', required=True, help='FASTA file with the ingroup')
     parser.add_argument('-g', '--outgroups', required=True, help='FASTA file with outgroup taxa')
@@ -68,29 +65,37 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
     args = parser.parse_args()
 
-    # Configure logging
     logger = util.get_formatted_logger('family_constraint', args.verbosity)
-
-    # Connect to the database (creates a new file if it doesn't exist)
-    logger.info(f"Going to connect to database {args.database}")
+    logger.info(f"Connecting to database {args.database}")
     conn = sqlite3.connect(args.database)
 
-    # Read input alignment, get ott IDs
     ott_ids = extract_id_from_fasta(args.ingroup, args.outgroups)
 
-    # If we have no IDs at all, we write a zero byte file for run_raxml
     if len(ott_ids) == 0:
-        logger.warning('There were zero OTT IDs in the input file')
-        with open(args.outtree, "a"):
+        logger.warning('No valid OTT IDs found in the input files.')
+        with open(args.outtree, "a"):  # Create an empty output file
             pass
 
     else:
-        # Get subtree from OpenToL WS API
-        tree = opentol.get_subtree(ott_ids)
+        try:
+            # Try to fetch the subtree using the OpenToL API
+            tree = opentol.get_subtree(ott_ids)
+            if tree is None:
+                logger.error('The API returned None, indicating no tree could be generated.')
+                with open(args.outtree, "a"):  # Create an empty file
+                    pass
+            else:
+                # Confirm tree has correct format before writing
+                if hasattr(tree, 'as_string'):
+                    logger.info(f'Writing tree to {args.outtree}')
+                    with open(args.outtree, "w") as output_file:
+                        output_file.write(tree.as_string(schema="newick"))
+                else:
+                    logger.error('The tree object does not support "as_string"; skipping file writing.')
+                    with open(args.outtree, "a"):
+                        pass
 
-        # Write output
-        logger.info(f'Going to write tree to {args.outtree}')
-        with open(args.outtree, "w") as output_file:
-            output_file.write(tree.as_string(schema="newick"))
-
-
+        except Exception as e:
+            logger.error(f"Failed to fetch or write subtree: {e}")
+            with open(args.outtree, "a"):  # Create an empty file on failure
+                pass
