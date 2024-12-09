@@ -1,3 +1,4 @@
+import os.path
 import sqlite3
 import util
 import argparse
@@ -126,7 +127,7 @@ def create_taxon_table(table_name):
             family TEXT NOT NULL,
             subfamily TEXT NOT NULL,
             genus TEXT NOT NULL,
-            species TEXT NOT NULL,            
+            species TEXT NOT NULL,
             bin_uri TEXT NOT NULL,
             opentol_id INTEGER,
             UNIQUE(kingdom, phylum, class, "order", family, subfamily, genus, species, bin_uri));
@@ -200,10 +201,17 @@ if __name__ == '__main__':
     # Instantiate logger
     logger = util.get_formatted_logger('create_database', args.verbosity)
 
+    if os.path.isfile(args.outdb):
+        os.unlink(args.outdb)
+
     # Connect to the database
     logger.info('Going to connect to database')
     connection = sqlite3.connect(args.outdb)
     database_cursor = connection.cursor()
+    database_cursor.execute('pragma journal_mode=OFF')
+    database_cursor.execute('PRAGMA synchronous=OFF')
+    database_cursor.execute('PRAGMA cache_size=100000')
+    database_cursor.execute('PRAGMA temp_store = MEMORY')
 
     # Create database tables
     create_taxon_table('taxon')

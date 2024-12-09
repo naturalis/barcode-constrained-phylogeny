@@ -4,15 +4,6 @@
 # a reasonable value might be 4, or 8.
 cpu_cores: 4
 
-# Used for scatter/gather processing, corresponds with the number of families within the taxon defined in 
-# fasta_filter that have records for the specified marker. In practice, this means that the input BCDM TSV
-# file has to have exactly this many distinct (not empty) values for the `family` column where the column
-# named under fasta_filter.filter_level has has value fasta_filter.filter_name (e.g. the `order` must be
-# `Odonata`. TODO: make this so that it is done automatically from the data. At present, this needs to be 
-# calculated by the user from the input file, e.g. by first making the sqlite database, or by grepping the 
-# TSV file somehow.
-nfamilies: 63
-
 # Number of outgroups to include in each family-level analysis. Minimum is 2.
 outgroups: 3
 
@@ -46,8 +37,13 @@ datatype: NT
 # Choose which records to use from the database for the pipeline. filter_name only takes one name, so does filter level.
 # filter levels: class, order, family, genus, all (no filter)
 fasta_filter:
+  # max level: family
   filter_level: kingdom
   filter_name: Animalia
+  # Maximum number of sequences per fasta
+  # if above, fasta files are generated not at the family level but at lower rank i.e., genus or, if still
+  # too many sequences, at species level
+  max_fasta_seq: 200
 
 name: phylogeny
 
@@ -61,6 +57,6 @@ file_names:
   bold_tsv: resources/BOLD_Public.21-Jun-2024.curated.NL.tsv
   open_tre: resources/opentree/opentree14.9_tree/labelled_supertree/labelled_supertree.tre
   hmm: resources/hmm/COI-5P.hmm
-  fasta_dir: results/fasta/family
+  fasta_dir: results/fasta/
   blast_dir: results/blast
 

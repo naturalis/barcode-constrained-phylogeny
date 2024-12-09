@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 configfile: "config/config.yaml"
 
 # TODO refactor the snakefile so that all dependencies are managed by a containerized mamba.
@@ -5,9 +7,31 @@ configfile: "config/config.yaml"
 # container: "docker://condaforge/mambaforge:23.1.0-1"
 
 
+wildcard_constraints:
+    taxon=r"\w+"
+
+def get_all_taxon(wildcards):
+    checkpoint_output = checkpoints.family_fasta.get().output[0]
+    taxon_dir = os.path.join(Path(checkpoint_output).parent, "taxon")
+    taxon = [
+        t for t in os.listdir(taxon_dir)
+        if os.path.isdir(os.path.join(taxon_dir, t))
+           and os.stat(os.path.join(taxon_dir, t, "unaligned.fa")).st_size != 0 # ignore empty files
+           and "{" not in t ]  # ignore one file named "Erebidae-Plecoptera{Genus_moth}", it breaks the wildcard
+    return taxon
+
+def get_prep_raxml_backbone_input(wildcards):
+    return expand(
+        "results/fasta/taxon/{{taxon}}/exemplars.fa".format(config['datatype']),
+        taxon=get_all_taxon(wildcards)  # TODO remove the limit
+    )
+
 rule all:
     input:
-        "results/grafted.tre"
+        # "results/raxml/Cercopithecidae/Cercopithecidae_{}.raxml.log".format(config['datatype'])
+        # get_all_families
+        "results/fasta/raxml-ready.fa.raxml.bestTree.rooted"
+
 
 # Creates and populates a SQLite database with filtered sequence records.
 # Uses BOLD dump TSV as defined in config file
@@ -82,25 +106,21 @@ rule megatree_loader:
         rm {params.tempsql} {params.tempdb}
         """
 
-# TODO either this is updated dynamically or scattergather is abandoned for dynamic()
-scattergather:
-  split = config["nfamilies"]
 
 # Exports unaligned BIN sequences for each family within the total set. This task is parallelized as many times as
 # specified by config["nfamilies"]. During this task, the longest raw sequence within each BIN is selected.
-rule family_fasta:
+checkpoint family_fasta:
     input: rules.map_opentol.output
     output:
-      fastas=scatter.split("results/fasta/family/{scatteritem}/unaligned.fa"),
-      status=f'{config["file_names"]["fasta_dir"]}/family_fasta.ok'
+      fasta_tsv="results/fasta/taxon_fasta.tsv",
     params:
       log_level=config['log_level'],
       fasta_dir=config["file_names"]["fasta_dir"],
       filter_level=config["fasta_filter"]["filter_level"],
       filter_name=config["fasta_filter"]["filter_name"],
+      max_seq_fasta=config["fasta_filter"]["max_fasta_seq"],
       marker=config["marker"],
       db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
-      chunks=config["nfamilies"],
     conda: "envs/family_fasta.yml"
     log: "logs/family_fasta/family_fasta.log"
     benchmark:
@@ -112,10 +132,9 @@ rule family_fasta:
             -f {params.fasta_dir} \
             -l {params.filter_level} \
             -n {params.filter_name} \
-            -c {params.chunks} \
+            -L {params.max_seq_fasta} \
             -m {params.marker} \
             -v {params.log_level} 2> {log}
-        touch {output.status}
         """
 
 # Creates a local BLAST database from the exported sequences that have OTT IDs. Later on, this database will be used
@@ -123,10 +142,9 @@ rule family_fasta:
 # hopefully mean that even monotypic families will have a constraint tree with >= 3 tips so all chunks can be treated
 # identically.
 rule makeblastdb:
-    input: rules.family_fasta.output.status
+    input: rules.family_fasta.output.fasta_tsv
     output: f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}.nsq'
     params:
-      chunks=config["nfamilies"],
       fasta_dir=config["file_names"]["fasta_dir"],
       concatenated=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}.fa',
       blastdb=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}'
@@ -137,7 +155,7 @@ rule makeblastdb:
     shell:
         """
         sh workflow/scripts/makeblastdb.sh \
-            {params.blastdb} {params.fasta_dir} {params.chunks} {params.concatenated} 2> {log}
+            {params.blastdb} {params.fasta_dir} {params.concatenated} 2> {log}
         """
 
 
@@ -146,16 +164,16 @@ rule makeblastdb:
 # hits across all queries.
 rule get_outgroups:
     input:
-        unaligned = "results/fasta/family/{scatteritem}/unaligned.fa",
+        unaligned = "results/fasta/taxon/{taxon}/unaligned.fa",
         makeblastdb = rules.makeblastdb.output
-    output: "results/fasta/family/{scatteritem}/outgroups.fa",
+    output: "results/fasta/taxon/{taxon}/outgroups.fa",
     params:
         outgroups = config["outgroups"],
         blastdb=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}'
     conda: "envs/blast.yml"
-    log: "logs/get_outgroups/get_outgroups-{scatteritem}.log"
+    log: "logs/get_outgroups/get_outgroups-{taxon}.log"
     benchmark:
-        "benchmarks/get_outgroups/get_outgroups-{scatteritem}.benchmark.txt"
+        "benchmarks/get_outgroups/get_outgroups-{taxon}.benchmark.txt"
     shell:
         """
         sh workflow/scripts/get_outgroups.sh {params.blastdb} {params.outgroups} {input.unaligned} {output} 2> {log}
@@ -166,16 +184,16 @@ rule get_outgroups:
 # service endpoint from OpenToL. The new implementation appears to achieve better coverage.
 rule family_constraint:
     input:
-        unaligned = "results/fasta/family/{scatteritem}/unaligned.fa",
-        outgroups = "results/fasta/family/{scatteritem}/outgroups.fa"
-    output: "results/fasta/family/{scatteritem}/constraint.tre"
+        unaligned = "results/fasta/taxon/{taxon}/unaligned.fa",
+        outgroups = "results/fasta/taxon/{taxon}/outgroups.fa"
+    output: "results/fasta/taxon/{taxon}/constraint.tre"
     params:
         log_level=config['log_level'],
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"])
     conda: "envs/family_constraint.yml"
-    log: "logs/family_constraint/family_constraint-{scatteritem}.log"
+    log: "logs/family_constraint/family_constraint-{taxon}.log"
     benchmark:
-        "benchmarks/family_constraint/family_constraint-{scatteritem}.benchmark.txt"
+        "benchmarks/family_constraint/family_constraint-{taxon}.benchmark.txt"
     shell:
         """
         python workflow/scripts/family_constraint.py \
@@ -190,17 +208,17 @@ rule family_constraint:
 # is not needed at all because so far 0 revcom sequences were observed in BOLD.
 rule msa_hmm:
     input:
-        ingroup="results/fasta/family/{scatteritem}/unaligned.fa",
-        outgroup="results/fasta/family/{scatteritem}/outgroups.fa"
-    output: "results/fasta/family/{scatteritem}/aligned.fa"
+        ingroup="results/fasta/taxon/{taxon}/unaligned.fa",
+        outgroup="results/fasta/taxon/{taxon}/outgroups.fa"
+    output: "results/fasta/taxon/{taxon}/aligned.fa"
     params:
         log_level=config['log_level'],
         hmm_file=config['file_names']['hmm'],
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"])
     conda: "envs/msa_hmm.yml"
-    log: "logs/msa_hmm/msa_hmm-{scatteritem}.log"
+    log: "logs/msa_hmm/msa_hmm-{taxon}.log"
     benchmark:
-        "benchmarks/msa_hmm/msa_hmm-{scatteritem}.benchmark.txt"
+        "benchmarks/msa_hmm/msa_hmm-{taxon}.benchmark.txt"
     shell:
         """
         python workflow/scripts/msa_hmm.py \
@@ -221,17 +239,17 @@ rule msa_hmm:
 # criterion should be that the candidate outgroups are in the OpenToL.
 rule prep_raxml:
     input:
-        alignment="results/fasta/family/{scatteritem}/aligned.fa",
-        tree="results/fasta/family/{scatteritem}/constraint.tre"
+        alignment="results/fasta/taxon/{taxon}/aligned.fa",
+        tree="results/fasta/taxon/{taxon}/constraint.tre"
     output:
-        tree="results/fasta/family/{scatteritem}/remapped.tre"
+        tree="results/fasta/taxon/{taxon}/remapped.tre"
     params:
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
         log_level=config['log_level']
     conda: "envs/prep_raxml.yml"
-    log: "logs/prep_raxml/prep_raxml-{scatteritem}.log"
+    log: "logs/prep_raxml/prep_raxml-{taxon}.log"
     benchmark:
-        "benchmarks/prep_raxml/prep_raxml-{scatteritem}.benchmark.txt"
+        "benchmarks/prep_raxml/prep_raxml-{taxon}.benchmark.txt"
     shell:
         """
         python workflow/scripts/prep_raxml.py \
@@ -251,16 +269,16 @@ rule prep_raxml:
 # by trapping raxml-ng errors and then re-running without the constraint.
 rule run_raxml:
     input:
-        alignment = "results/fasta/family/{scatteritem}/aligned.fa",
-        tree = "results/fasta/family/{scatteritem}/remapped.tre"
+        alignment = "results/fasta/taxon/{taxon}/aligned.fa",
+        tree = "results/fasta/taxon/{taxon}/remapped.tre"
     output:
-        tree = "results/fasta/family/{scatteritem}/aligned.fa.raxml.bestTree"
+        tree = "results/fasta/taxon/{taxon}/aligned.fa.raxml.bestTree"
     params:
         model = config['model'],
         num_outgroups = config['outgroups']
-    log: "logs/run_raxml/run_raxml-{scatteritem}.log"
+    log: "logs/run_raxml/run_raxml-{taxon}.log"
     benchmark:
-        "benchmarks/run_raxml/run_raxml-{scatteritem}.benchmark.txt"
+        "benchmarks/run_raxml/run_raxml-{taxon}.benchmark.txt"
     conda: "envs/raxml.yml"
     shell:
         """
@@ -282,7 +300,7 @@ rule run_raxml:
             --tree-constraint {input.tree} \
             --workers 1 \
             --blopt nr_safe \
-            --search >> {log} 2>>&1
+            --search >> {log} 2>&1
         elif [ "$TAXON_COUNT" -ge 5 ]; then
             # If no constraint tree, run raxml-ng without it
             echo "Running RAxML-NG without constraint tree" > {log}
@@ -292,7 +310,7 @@ rule run_raxml:
             --model {params.model} \
             --workers 1 \
             --blopt nr_safe \
-            --search >> {log} 2>>&1
+            --search >> {log} 2>&1
         else
             # Skip <5 taxa MSAs and copy input tree to output tree
             echo "Skipping <5 taxa MSA" > {log} 2>&1
@@ -305,17 +323,17 @@ rule run_raxml:
 # clade members and then rooting on that bipartition branch. Subsequently, the outgroup taxa are removed.
 rule reroot_raxml_output:
     input:
-        tree = "results/fasta/family/{scatteritem}/aligned.fa.raxml.bestTree",
-        constraint = "results/fasta/family/{scatteritem}/remapped.tre",
-        alignment = "results/fasta/family/{scatteritem}/aligned.fa"
+        tree = "results/fasta/taxon/{taxon}/aligned.fa.raxml.bestTree",
+        constraint = "results/fasta/taxon/{taxon}/remapped.tre",
+        alignment = "results/fasta/taxon/{taxon}/aligned.fa"
     output:
-        outtree = "results/fasta/family/{scatteritem}/aligned.fa.raxml.bestTree.rooted"
+        outtree = "results/fasta/taxon/{taxon}/aligned.fa.raxml.bestTree.rooted"
     params:
         log_level = config['log_level'],
         num_outgroups = config['outgroups']
-    log: "logs/reroot_raxml_output/reroot_raxml_output-{scatteritem}.log"
+    log: "logs/reroot_raxml_output/reroot_raxml_output-{taxon}.log"
     benchmark:
-        "benchmarks/reroot_raxml_output/reroot_raxml_output-{scatteritem}.benchmark.txt"
+        "benchmarks/reroot_raxml_output/reroot_raxml_output-{taxon}.benchmark.txt"
     conda: "envs/reroot_backbone.yml"
     shell:
         """
@@ -340,15 +358,15 @@ rule reroot_raxml_output:
 # to those optimized freely on a total tree.
 rule choose_exemplars:
     input:
-        alignment = "results/fasta/family/{scatteritem}/aligned.fa",
-        tree= "results/fasta/family/{scatteritem}/aligned.fa.raxml.bestTree.rooted"
-    output: "results/fasta/family/{scatteritem}/exemplars.fa"
+        alignment = "results/fasta/taxon/{taxon}/aligned.fa",
+        tree= "results/fasta/taxon/{taxon}/aligned.fa.raxml.bestTree.rooted"
+    output: "results/fasta/taxon/{taxon}/exemplars.fa"
     params:
         log_level = config['log_level'],
         strategy = 'median'
-    log: "logs/choose_exemplars/choose_exemplars-{scatteritem}.log"
+    log: "logs/choose_exemplars/choose_exemplars-{taxon}.log"
     benchmark:
-        "benchmarks/choose_exemplars/choose_exemplars-{scatteritem}.benchmark.txt"
+        "benchmarks/choose_exemplars/choose_exemplars-{taxon}.benchmark.txt"
     conda: "envs/choose_exemplars.yaml"
     shell:
         """
@@ -371,7 +389,7 @@ rule choose_exemplars:
 # data on the command line, awk turns it into FASTA.
 rule prep_raxml_backbone:
     input:
-        fastas=gather.split("results/fasta/family/{scatteritem}/exemplars.fa"),
+        fastas=get_prep_raxml_backbone_input,
         opentol='results/databases/megatree_loader.ok'
     output:
         fasta="results/fasta/raxml-ready.fa",
@@ -470,7 +488,6 @@ rule graft_clades:
         tree = "results/grafted.tre"
     params:
         log_level = config['log_level'],
-        nfamilies = config["nfamilies"]
     log: "logs/graft_clades/graft_clades.log"
     benchmark:
         "benchmarks/graft_clades.benchmark.txt"
@@ -482,6 +499,5 @@ rule graft_clades:
             -f {input.clades} \
             -e {input.extinct} \
             -o {output.tree} \
-            -n {params.nfamilies} \
             -v {params.log_level} 2> {log}                  
         """

@@ -133,6 +133,10 @@ if __name__ == '__main__':
     logger.info(f'Going to connect to database {args.database}')
     conn = sqlite3.connect(args.database)
     cursor = conn.cursor()
+    cursor.execute('pragma journal_mode=OFF')
+    cursor.execute('PRAGMA synchronous=OFF')
+    cursor.execute('PRAGMA cache_size=100000')
+    cursor.execute('PRAGMA temp_store = MEMORY')
 
     # Infer taxonomic context from marker name
     if args.marker == "COI-5P":
