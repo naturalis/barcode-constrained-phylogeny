@@ -92,7 +92,7 @@ def write_bin(q, conn, outfile):
     famseq = pd.read_sql_query(query, conn)
 
     # Append to file handle fh
-    with open(outfile, "w") as fh:
+    with open(outfile, "a") as fh:
         for _, row in famseq.iterrows():
             defline = f'>{row["barcode_id"]}|ott{row["opentol_id"]}|{row["processid"]}|{row["bin_uri"]}|{row["species"]}\n'
             fh.write(defline)

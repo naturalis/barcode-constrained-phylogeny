@@ -6,6 +6,7 @@ configfile: "config/config.yaml"
 # TODO make it so that parallelization is dynamic, probably using checkpoints.
 # container: "docker://condaforge/mambaforge:23.1.0-1"
 
+# TAXA = [d for d in os.listdir("results/fasta/taxon") if os.path.isdir(os.path.join("results/fasta/taxon", d))]
 
 wildcard_constraints:
     taxon=r"\w+"
@@ -30,7 +31,8 @@ rule all:
     input:
         # "results/raxml/Cercopithecidae/Cercopithecidae_{}.raxml.log".format(config['datatype'])
         # get_all_families
-        "results/fasta/raxml-ready.fa.raxml.bestTree.rooted"
+        # "results/fasta/raxml-ready.fa.raxml.bestTree.rooted"
+        "results/grafted.tre"
 
 
 # Creates and populates a SQLite database with filtered sequence records.
@@ -136,6 +138,59 @@ checkpoint family_fasta:
             -m {params.marker} \
             -v {params.log_level} 2> {log}
         """
+
+
+# === RULE TO COUNT SEQUENCES ===
+rule count_sequences:
+    """Count the number of sequences in each family.fasta file."""
+    input: "results/fasta/taxon/{taxon}/unaligned.fa"
+    output: "results/fasta/taxon/{taxon}/sequences_count.txt"
+    run:
+        count = sum(1 for line in open(input[0]) if line.startswith(">"))
+        with open(output[0], "w") as f:
+            f.write(f"{count}\n")
+
+
+# === CHECKPOINT TO GENERATE LISTS ===
+checkpoint list_taxa_files:
+    """Generate a list of taxa that passed the condition."""
+    input: expand("results/fasta/taxon/{taxon}/sequences_count.txt", taxon=get_all_taxon(wildcards))
+    output: 
+        passed="results/passed_taxa.txt"
+    run:
+        passed_taxa = []
+        
+        for file in input:
+            taxon = file.split("/")[3]  # Extract taxon from path
+            with open(file, "r") as f:
+                num_sequences = int(f.read().strip())
+                if num_sequences >= 3:
+                    passed_taxa.append(taxon)
+        
+        with open(output.passed, "w") as passed_f:
+            for taxon in passed_taxa:
+                passed_f.write(f"{taxon}\n")
+
+
+
+# === FUNCTION TO GET TAXA THAT PASSED THE CONDITION ===
+def get_passed_taxa(wildcards):
+    """Get the list of taxa that passed the condition from the checkpoint output."""
+    checkpoint_output = checkpoints.list_taxa_files.get().output.passed
+    with open(checkpoint_output, "r") as passed_f:
+        passed_taxa = [line.strip() for line in passed_f.readlines()]
+    return passed_taxa
+
+# === FUNCTION TO GET TAXA THAT FAILED THE CONDITION ===
+def get_failed_taxa(wildcards):
+    """Get the list of taxa that failed the condition from the checkpoint output."""
+    checkpoint_output = checkpoints.list_taxa_files.get().output.passed
+    with open(checkpoint_output, "r") as passed_f:
+        passed_taxa = {line.strip() for line in passed_f.readlines()}
+    failed_taxa = [taxon for taxon in get_all_taxon(wildcards) if taxon not in passed_taxa]
+    return failed_taxa
+
+    
 
 # Creates a local BLAST database from the exported sequences that have OTT IDs. Later on, this database will be used
 # for locating outgroups that are i) close to the ingroup but not inside it, ii) occur in the OpenToL. The latter will
@@ -264,7 +319,7 @@ rule prep_raxml:
 # It then extracts the outgroup names from the alignment file. If the constraint tree file exists, is non-empty,
 # contains inner nodes, and is not fully resolved, RAxML-NG is run with the constraint tree. If the constraint tree
 # does not meet these criteria but the number of taxa in the alignment is at least 5, RAxML-NG is run without the
-# constraint tree. If the number of taxa is less than 5, the analysis is skipped, and the input tree is copied to the
+# constraint tree. If the number of taxa is less than 4, the analysis is skipped, and the input tree is copied to the
 # output tree. This rule handles cases where the constraint tree is a 0-byte file due to incomplete OpenToL coverage
 # by trapping raxml-ng errors and then re-running without the constraint.
 rule run_raxml:
@@ -298,8 +353,6 @@ rule run_raxml:
             --outgroup $OG \
             --model {params.model} \
             --tree-constraint {input.tree} \
-            --workers 1 \
-            --blopt nr_safe \
             --search >> {log} 2>&1
         elif [ "$TAXON_COUNT" -ge 5 ]; then
             # If no constraint tree, run raxml-ng without it
@@ -308,15 +361,15 @@ rule run_raxml:
             --redo \
             --msa {input.alignment} \
             --model {params.model} \
-            --workers 1 \
-            --blopt nr_safe \
             --search >> {log} 2>&1
         else
             # Skip <5 taxa MSAs and copy input tree to output tree
-            echo "Skipping <5 taxa MSA" > {log} 2>&1
+            echo "Skipping <3 taxa MSA" > {log} 2>&1
             touch {output.tree}
         fi
         """
+
+
 
 # Reroots the raxml output in and then prunes the outgroups. Rooting is done by finding the smallest clade subtended
 # by the root in the constraint tree, looking for the smallest bipartition in the result tree that includes those same
@@ -358,29 +411,42 @@ rule reroot_raxml_output:
 # to those optimized freely on a total tree.
 rule choose_exemplars:
     input:
-        alignment = "results/fasta/taxon/{taxon}/aligned.fa",
-        tree= "results/fasta/taxon/{taxon}/aligned.fa.raxml.bestTree.rooted"
-    output: "results/fasta/taxon/{taxon}/exemplars.fa"
+        alignment=lambda wildcards: f"results/fasta/taxon/{wildcards.taxon}/aligned.fa" if wildcards.taxon in get_passed_taxa(wildcards) else None,
+        tree=lambda wildcards: f"results/fasta/taxon/{wildcards.taxon}/aligned.fa.raxml.bestTree.rooted" if wildcards.taxon in get_passed_taxa(wildcards) else None,
+        failed_file=lambda wildcards: f"results/fasta/taxon/{wildcards.taxon}/aligned.fa" if wildcards.taxon in get_failed_taxa(wildcards) else None
+    output:
+        "results/fasta/taxon/{taxon}/exemplars.fa"
     params:
-        log_level = config['log_level'],
-        strategy = 'median'
-    log: "logs/choose_exemplars/choose_exemplars-{taxon}.log"
+        log_level=config['log_level'],
+        strategy='median'
+    log:
+        "logs/choose_exemplars/choose_exemplars-{taxon}.log"
     benchmark:
         "benchmarks/choose_exemplars/choose_exemplars-{taxon}.benchmark.txt"
-    conda: "envs/choose_exemplars.yaml"
+    conda:
+        "envs/choose_exemplars.yaml"
     shell:
         """
+        echo "Processing taxon: {wildcards.taxon}" >> {log}
+        echo "Alignment file: {input.alignment}" >> {log}
+        echo "Tree file: {input.tree}" >> {log}
+        echo "Failed file: {input.failed_file}" >> {log}
+
         if [ -s {input.alignment} ]; then
             python workflow/scripts/choose_exemplars.py \
                 -v {params.log_level} \
                 -t {input.tree} \
                 -i {input.alignment} \
                 -s {params.strategy} \
-                -o {output} 2> {log}
+                -o {output} 2>> {log}
+        elif [ -s {input.failed_file} ]; then
+            cp {input.failed_file} {output}
         else
+            echo "No valid input files found for taxon {wildcards.taxon}." >> {log}
             touch {output}
         fi
         """
+
 
 # When aligning the family-level subsets, different families may have different indel
 # patterns. So, although they are all orientated against the model in the same way,
