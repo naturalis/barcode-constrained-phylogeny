@@ -32,6 +32,7 @@ rule all:
         # "results/raxml/Cercopithecidae/Cercopithecidae_{}.raxml.log".format(config['datatype'])
         # get_all_families
         # "results/fasta/raxml-ready.fa.raxml.bestTree.rooted"
+        "results/passed_taxa.txt",
         "results/grafted.tre"
 
 
@@ -154,7 +155,7 @@ rule count_sequences:
 # === CHECKPOINT TO GENERATE LISTS ===
 checkpoint list_taxa_files:
     """Generate a list of taxa that passed the condition."""
-    input: expand("results/fasta/taxon/{taxon}/sequences_count.txt", taxon=get_all_taxon(wildcards))
+    input: expand("results/fasta/taxon/{taxon}/sequences_count.txt", taxon=get_all_taxon)
     output: 
         passed="results/passed_taxa.txt"
     run:
@@ -411,14 +412,14 @@ rule reroot_raxml_output:
 # to those optimized freely on a total tree.
 rule choose_exemplars:
     input:
-        alignment=lambda wildcards: f"results/fasta/taxon/{wildcards.taxon}/aligned.fa" if wildcards.taxon in get_passed_taxa(wildcards) else None,
-        tree=lambda wildcards: f"results/fasta/taxon/{wildcards.taxon}/aligned.fa.raxml.bestTree.rooted" if wildcards.taxon in get_passed_taxa(wildcards) else None,
-        failed_file=lambda wildcards: f"results/fasta/taxon/{wildcards.taxon}/aligned.fa" if wildcards.taxon in get_failed_taxa(wildcards) else None
+        alignment=lambda wildcards: f"results/fasta/taxon/{wildcards.taxon}/aligned.fa" if wildcards.taxon in get_passed_taxa(wildcards) else [],
+        tree=lambda wildcards: f"results/fasta/taxon/{wildcards.taxon}/aligned.fa.raxml.bestTree.rooted" if wildcards.taxon in get_passed_taxa(wildcards) else [],
+        failed_file=lambda wildcards: f"results/fasta/taxon/{wildcards.taxon}/aligned.fa" if wildcards.taxon in get_failed_taxa(wildcards) else []
     output:
         "results/fasta/taxon/{taxon}/exemplars.fa"
     params:
-        log_level=config['log_level'],
-        strategy='median'
+        log_level = config['log_level'],
+        strategy = 'median'
     log:
         "logs/choose_exemplars/choose_exemplars-{taxon}.log"
     benchmark:
@@ -432,20 +433,26 @@ rule choose_exemplars:
         echo "Tree file: {input.tree}" >> {log}
         echo "Failed file: {input.failed_file}" >> {log}
 
-        if [ -s {input.alignment} ]; then
+        # Check if the failed file exists and is not empty
+        if [ -n "{input.failed_file}" ] && [ -s {input.failed_file} ]; then
+            echo "Failed file exists, skipping the choose_exemplars.py script." >> {log}
+            # Copy the failed file to the output
+            cp {input.failed_file} {output}
+        # If the failed file doesn't exist and the tree file is available, run the choose_exemplars.py script
+        elif [ -s {input.tree} ] && [ -s {input.alignment} ]; then
             python workflow/scripts/choose_exemplars.py \
                 -v {params.log_level} \
                 -t {input.tree} \
                 -i {input.alignment} \
                 -s {params.strategy} \
                 -o {output} 2>> {log}
-        elif [ -s {input.failed_file} ]; then
-            cp {input.failed_file} {output}
         else
             echo "No valid input files found for taxon {wildcards.taxon}." >> {log}
             touch {output}
         fi
         """
+
+
 
 
 # When aligning the family-level subsets, different families may have different indel
