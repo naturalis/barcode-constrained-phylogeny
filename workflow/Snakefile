@@ -438,7 +438,7 @@ rule choose_exemplars:
         echo "Failed file: {input.failed_file}" >> {log}
         echo "Outgroup file: {input.failed_outgroup}" >> {log}
 
-        # Check if the failed file exists and is not empty
+        # If the failed file exists and is not empty, run the process_failed_file.py script
         if [ -n "{input.failed_file}" ] && [ -s {input.failed_file} ]; then
             echo "Failed file exists, processing with process_failed_file.py." >> {log}
             python workflow/scripts/process_failed_file.py \
@@ -569,6 +569,7 @@ rule graft_clades:
         tree = "results/grafted.tre"
     params:
         log_level = config['log_level'],
+        nfamilies = config["nfamilies"]
     log: "logs/graft_clades/graft_clades.log"
     benchmark:
         "benchmarks/graft_clades.benchmark.txt"
@@ -580,5 +581,6 @@ rule graft_clades:
             -f {input.clades} \
             -e {input.extinct} \
             -o {output.tree} \
+            -n {params.nfamilies} \
             -v {params.log_level} 2> {log}                  
         """
