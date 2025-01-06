@@ -140,11 +140,57 @@ checkpoint family_fasta:
             -v {params.log_level} 2> {log}
         """
 
+    
+
+# Creates a local BLAST database from the exported sequences that have OTT IDs. Later on, this database will be used
+# for locating outgroups that are i) close to the ingroup but not inside it, ii) occur in the OpenToL. The latter will
+# hopefully mean that even monotypic families will have a constraint tree with >= 3 tips so all chunks can be treated
+# identically.
+rule makeblastdb:
+    input: rules.family_fasta.output.fasta_tsv
+    output: f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}.nsq'
+    params:
+      fasta_dir=config["file_names"]["fasta_dir"],
+      concatenated=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}.fa',
+      blastdb=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}'
+    conda: "envs/blast.yml"
+    log: "logs/makeblastdb/makeblastdb.log"
+    benchmark:
+        "benchmarks/makeblastdb.benchmark.txt"
+    shell:
+        """
+        sh workflow/scripts/makeblastdb.sh \
+            {params.blastdb} {params.fasta_dir} {params.concatenated} 2> {log}
+        """
+
+
+# Gets the nearest outgroups by blasting. The number of outgroups is defined in config["outgroups"]. The outgroups are
+# selected by querying every sequence in the ingroup for the top 10 hits, then taking the most frequently occurring
+# hits across all queries.
+rule get_outgroups:
+    input:
+        unaligned = "results/fasta/taxon/{taxon}/unaligned.fa",
+        makeblastdb = rules.makeblastdb.output
+    output: "results/fasta/taxon/{taxon}/outgroups.fa",
+    params:
+        outgroups = config["outgroups"],
+        blastdb=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}'
+    conda: "envs/blast.yml"
+    log: "logs/get_outgroups/get_outgroups-{taxon}.log"
+    benchmark:
+        "benchmarks/get_outgroups/get_outgroups-{taxon}.benchmark.txt"
+    shell:
+        """
+        sh workflow/scripts/get_outgroups.sh {params.blastdb} {params.outgroups} {input.unaligned} {output} 2> {log}
+        """
+
 
 # === RULE TO COUNT SEQUENCES ===
 rule count_sequences:
     """Count the number of sequences in each family.fasta file."""
-    input: "results/fasta/taxon/{taxon}/unaligned.fa"
+    input: 
+        "results/fasta/taxon/{taxon}/unaligned.fa",
+        "results/fasta/taxon/{taxon}/outgroups.fa"
     output: "results/fasta/taxon/{taxon}/sequences_count.txt"
     run:
         count = sum(1 for line in open(input[0]) if line.startswith(">"))
@@ -191,49 +237,6 @@ def get_failed_taxa(wildcards):
     failed_taxa = [taxon for taxon in get_all_taxon(wildcards) if taxon not in passed_taxa]
     return failed_taxa
 
-    
-
-# Creates a local BLAST database from the exported sequences that have OTT IDs. Later on, this database will be used
-# for locating outgroups that are i) close to the ingroup but not inside it, ii) occur in the OpenToL. The latter will
-# hopefully mean that even monotypic families will have a constraint tree with >= 3 tips so all chunks can be treated
-# identically.
-rule makeblastdb:
-    input: rules.family_fasta.output.fasta_tsv
-    output: f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}.nsq'
-    params:
-      fasta_dir=config["file_names"]["fasta_dir"],
-      concatenated=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}.fa',
-      blastdb=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}'
-    conda: "envs/blast.yml"
-    log: "logs/makeblastdb/makeblastdb.log"
-    benchmark:
-        "benchmarks/makeblastdb.benchmark.txt"
-    shell:
-        """
-        sh workflow/scripts/makeblastdb.sh \
-            {params.blastdb} {params.fasta_dir} {params.concatenated} 2> {log}
-        """
-
-
-# Gets the nearest outgroups by blasting. The number of outgroups is defined in config["outgroups"]. The outgroups are
-# selected by querying every sequence in the ingroup for the top 10 hits, then taking the most frequently occurring
-# hits across all queries.
-rule get_outgroups:
-    input:
-        unaligned = "results/fasta/taxon/{taxon}/unaligned.fa",
-        makeblastdb = rules.makeblastdb.output
-    output: "results/fasta/taxon/{taxon}/outgroups.fa",
-    params:
-        outgroups = config["outgroups"],
-        blastdb=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}'
-    conda: "envs/blast.yml"
-    log: "logs/get_outgroups/get_outgroups-{taxon}.log"
-    benchmark:
-        "benchmarks/get_outgroups/get_outgroups-{taxon}.benchmark.txt"
-    shell:
-        """
-        sh workflow/scripts/get_outgroups.sh {params.blastdb} {params.outgroups} {input.unaligned} {output} 2> {log}
-        """
 
 
 # Exports OpenToL newick file for each unaligned BIN sequence file. This implementation uses the induced subtree web
@@ -414,12 +417,13 @@ rule choose_exemplars:
     input:
         alignment=lambda wildcards: f"results/fasta/taxon/{wildcards.taxon}/aligned.fa" if wildcards.taxon in get_passed_taxa(wildcards) else [],
         tree=lambda wildcards: f"results/fasta/taxon/{wildcards.taxon}/aligned.fa.raxml.bestTree.rooted" if wildcards.taxon in get_passed_taxa(wildcards) else [],
-        failed_file=lambda wildcards: f"results/fasta/taxon/{wildcards.taxon}/aligned.fa" if wildcards.taxon in get_failed_taxa(wildcards) else []
+        failed_file=lambda wildcards: f"results/fasta/taxon/{wildcards.taxon}/aligned.fa" if wildcards.taxon in get_failed_taxa(wildcards) else [],
+        failed_outgroup=lambda wildcards: f"results/fasta/taxon/{wildcards.taxon}/outgroups.fa" if wildcards.taxon in get_failed_taxa(wildcards) else []
     output:
         "results/fasta/taxon/{taxon}/exemplars.fa"
     params:
-        log_level = config['log_level'],
-        strategy = 'median'
+        log_level=config['log_level'],
+        strategy='median'
     log:
         "logs/choose_exemplars/choose_exemplars-{taxon}.log"
     benchmark:
@@ -432,12 +436,15 @@ rule choose_exemplars:
         echo "Alignment file: {input.alignment}" >> {log}
         echo "Tree file: {input.tree}" >> {log}
         echo "Failed file: {input.failed_file}" >> {log}
+        echo "Outgroup file: {input.failed_outgroup}" >> {log}
 
         # Check if the failed file exists and is not empty
         if [ -n "{input.failed_file}" ] && [ -s {input.failed_file} ]; then
-            echo "Failed file exists, skipping the choose_exemplars.py script." >> {log}
-            # Copy the failed file to the output
-            cp {input.failed_file} {output}
+            echo "Failed file exists, processing with process_failed_file.py." >> {log}
+            python workflow/scripts/process_failed_file.py \
+                --failed {input.failed_file} \
+                --outgroup {input.failed_outgroup} \
+                --output {output} 2>> {log}
         # If the failed file doesn't exist and the tree file is available, run the choose_exemplars.py script
         elif [ -s {input.tree} ] && [ -s {input.alignment} ]; then
             python workflow/scripts/choose_exemplars.py \
@@ -451,6 +458,7 @@ rule choose_exemplars:
             touch {output}
         fi
         """
+
 
 
 
