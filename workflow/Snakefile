@@ -18,13 +18,14 @@ def get_all_taxon(wildcards):
         t for t in os.listdir(taxon_dir)
         if os.path.isdir(os.path.join(taxon_dir, t))
            and os.stat(os.path.join(taxon_dir, t, "unaligned.fa")).st_size != 0 # ignore empty files
-           and "{" not in t ]  # ignore one file named "Erebidae-Plecoptera{Genus_moth}", it breaks the wildcard
+    ]
     return taxon
+
 
 def get_prep_raxml_backbone_input(wildcards):
     return expand(
         "results/fasta/taxon/{{taxon}}/exemplars.fa".format(config['datatype']),
-        taxon=get_all_taxon(wildcards)  # TODO remove the limit
+        taxon=get_all_taxon(wildcards)
     )
 
 rule all:
@@ -197,11 +198,13 @@ rule count_sequences:
         with open(output[0], "w") as f:
             f.write(f"{count}\n")
 
+def get_list_taxa_file_input(wildcards):
+    return expand("results/fasta/taxon/{taxon}/sequences_count.txt", taxon=get_all_taxon(wildcards))
 
 # === CHECKPOINT TO GENERATE LISTS ===
 checkpoint list_taxa_files:
     """Generate a list of taxa that passed the condition."""
-    input: expand("results/fasta/taxon/{taxon}/sequences_count.txt", taxon=get_all_taxon)
+    input: get_list_taxa_file_input
     output: 
         passed="results/passed_taxa.txt"
     run:
@@ -225,7 +228,7 @@ def get_passed_taxa(wildcards):
     """Get the list of taxa that passed the condition from the checkpoint output."""
     checkpoint_output = checkpoints.list_taxa_files.get().output.passed
     with open(checkpoint_output, "r") as passed_f:
-        passed_taxa = [line.strip() for line in passed_f.readlines()]
+        passed_taxa = {line.strip() for line in passed_f.readlines()}
     return passed_taxa
 
 # === FUNCTION TO GET TAXA THAT FAILED THE CONDITION ===
@@ -234,7 +237,7 @@ def get_failed_taxa(wildcards):
     checkpoint_output = checkpoints.list_taxa_files.get().output.passed
     with open(checkpoint_output, "r") as passed_f:
         passed_taxa = {line.strip() for line in passed_f.readlines()}
-    failed_taxa = [taxon for taxon in get_all_taxon(wildcards) if taxon not in passed_taxa]
+    failed_taxa = {taxon for taxon in get_all_taxon(wildcards) if taxon not in passed_taxa}
     return failed_taxa
 
 
@@ -460,9 +463,6 @@ rule choose_exemplars:
         """
 
 
-
-
-
 # When aligning the family-level subsets, different families may have different indel
 # patterns. So, although they are all orientated against the model in the same way,
 # there can be some frame shifting. The least bad option is to unalign and realign 
@@ -569,7 +569,6 @@ rule graft_clades:
         tree = "results/grafted.tre"
     params:
         log_level = config['log_level'],
-        nfamilies = config["nfamilies"]
     log: "logs/graft_clades/graft_clades.log"
     benchmark:
         "benchmarks/graft_clades.benchmark.txt"
@@ -581,6 +580,5 @@ rule graft_clades:
             -f {input.clades} \
             -e {input.extinct} \
             -o {output.tree} \
-            -n {params.nfamilies} \
             -v {params.log_level} 2> {log}                  
         """

@@ -21,7 +21,7 @@ TMP=$3
 # doing this sequentially to avoid race conditions in BLAST indexing
 i=0
 for TAXON in $(ls -d $FASTADIR/taxon/*); do
-  i+=1
+  i=$((i + 1))
   INFILE=${TAXON}/unaligned.fa
 
   # only keep records with ott IDs, reformat the headers to retain the process ID, write to $TMP
