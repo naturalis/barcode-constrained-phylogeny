@@ -351,7 +351,7 @@ rule run_raxml:
         OG=$(grep '>' {input.alignment} | tail -{params.num_outgroups} | sed -e 's/>//' | tr '\n' ',')
 
         # Check if the constraint tree exists, is non-empty, contains inner nodes, and is not fully resolved
-        if [ -s {input.tree} ] && grep -q '(' {input.tree} && grep -q ')' {input.tree} && [ "$(grep -o '(' {input.tree} | wc -l)" -gt 2 ] && [ "$(grep -o ',' {input.tree} | wc -l)" -lt "$((TAXON_COUNT - 1))" ] && [ "$TAXON_COUNT" -ge 5 ]; then
+        if [ -s {input.tree} ] && grep -q '(' {input.tree} && grep -q ')' {input.tree} && [ "$(grep -o '(' {input.tree} | wc -l)" -gt 2 ] && [ "$(grep -o ',' {input.tree} | wc -l)" -lt "$((TAXON_COUNT - 1))" ]; then
             # Run raxml-ng with the constraint tree
             echo "Running RAxML-NG with constraint tree" > {log}
             raxml-ng \
@@ -361,21 +361,16 @@ rule run_raxml:
             --model {params.model} \
             --tree-constraint {input.tree} \
             --search >> {log} 2>&1
-        elif [ "$TAXON_COUNT" -ge 5 ]; then
-            # If no constraint tree, run raxml-ng without it
-            echo "Running RAxML-NG without constraint tree" > {log}
+        else
+            # Constraint tree fully-resolved, run raxml-ng without it
+            echo "Constraint tree fully-resolved, running raxml-ng without it" > {log}
             raxml-ng \
             --redo \
             --msa {input.alignment} \
             --model {params.model} \
             --search >> {log} 2>&1
-        else
-            # Skip <5 taxa MSAs and copy input tree to output tree
-            echo "Skipping <3 taxa MSA" > {log} 2>&1
-            touch {output.tree}
         fi
         """
-
 
 
 # Reroots the raxml output in and then prunes the outgroups. Rooting is done by finding the smallest clade subtended
