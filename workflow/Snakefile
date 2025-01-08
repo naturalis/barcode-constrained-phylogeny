@@ -565,6 +565,7 @@ rule run_raxml_backbone:
             --msa {input.alignment} \
             --model {params.model} \
             --tree-constraint {input.tree} \
+            --workers auto \
             --search > {log} 2>&1
         """
 
