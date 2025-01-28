@@ -8,7 +8,7 @@ configfile: "config/config.yaml"
 
 
 wildcard_constraints:
-    taxon=r"\w+"
+    taxon=r"[\w-]+"
 
 def get_all_taxon(wildcards):
     checkpoint_output = checkpoints.family_fasta.get().output[0]
@@ -107,7 +107,7 @@ rule megatree_loader:
 # Exports unaligned BIN sequences for each family within the total set. This task is parallelized for each taxon.
 # During this task, the longest raw sequence within each BIN is selected.
 checkpoint family_fasta:
-    input: rules.map_opentol.output
+    input: 'results/databases/megatree_loader.ok'
     output:
       fasta_tsv="results/fasta/taxon_fasta.tsv",
     params:
@@ -139,22 +139,24 @@ checkpoint family_fasta:
 # hopefully mean that even monotypic families will have a constraint tree with >= 3 tips so all chunks can be treated
 # identically.
 rule makeblastdb:
-    input: rules.family_fasta.output.fasta_tsv
-    output: f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}.nsq'
+    input:
+        fasta_dir="results/fasta/taxon"
+    output:
+        database="results/blast/blastdb.nsq"
     params:
-      fasta_dir=config["file_names"]["fasta_dir"],
-      concatenated=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}.fa',
-      blastdb=f'{config["file_names"]["blast_dir"]}/{config["blastdb"]}'
+        tmp_file="results/blast/tmp_sequences.fa",
+        database="results/blast/blastdb"
     conda: "envs/blast.yml"
     log: "logs/makeblastdb/makeblastdb.log"
-    benchmark:
-        "benchmarks/makeblastdb.benchmark.txt"
+    benchmark: "benchmarks/makeblastdb.benchmark.txt"
     shell:
         """
-        sh workflow/scripts/makeblastdb.sh \
-            {params.blastdb} {params.fasta_dir} {params.concatenated} 2> {log}
+        python workflow/scripts/makeblastdb.py \
+            --fasta_dir {input.fasta_dir} \
+            --tmp_file {params.tmp_file} \
+            --database {params.database} \
+            > {log} 2>&1
         """
-
 # Gets the nearest outgroups by blasting. The number of outgroups is defined in config["outgroups"]. The outgroups are
 # selected by querying every sequence in the ingroup for the top 10 hits, then taking the most frequently occurring
 # hits across all queries.

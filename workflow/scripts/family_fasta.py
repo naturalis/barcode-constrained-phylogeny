@@ -1,9 +1,9 @@
-import errno
 import sqlite3
 import os
 import pandas as pd
 import argparse
 import util
+import re
 from pathlib import Path
 
 levels = ['kingdom', 'phylum', 'class', 'order', 'family', 'subfamily', 'genus', 'all']
@@ -27,6 +27,14 @@ level to filter (e.g. order), taxon name to filter (e.g. Primates), number of ch
 marker code (e.g. COI-5P), and log level. This script is invoked by the Snakefile as a shell command with the required
 arguments in the rule `family_fasta`.
 """
+
+def sanitize_string(input_string):
+    """
+    Replaces all characters in the input string that do not match [a-zA-Z0-9_-] with an underscore (_).
+    :param input_string: The string to be sanitized
+    :return: The sanitized string
+    """
+    return re.sub(r'[^a-zA-Z0-9_-]', '_', input_string)
 
 def get_family_bins(q, conn):
     """
@@ -144,8 +152,11 @@ if __name__ == '__main__':
     }
     df = get_family_bins(query, connection)
 
-    def write_fasta(query, rank, taxon, family_bin_uris, higher_ranks=None):
+    def write_fasta(query, rank, taxon, family_bin_uris):
         logger.info(f"Writing {taxon} ({rank})")
+
+        # Replace "/" with "_" in taxon name
+        taxon = sanitize_string(taxon)
 
         # Make directory and open file handle
         align_file = os.path.join(args.fasta_dir, "taxon", taxon, "unaligned.fa")
@@ -188,24 +199,28 @@ if __name__ == '__main__':
                         continue
                     genus_bin_uris = df[(df['family'] == family) & (df['genus'] == genus)]['bin_uri'].unique()
                     if len(genus_bin_uris) > args.limit:
-                        split_genera.append(genus)
-                        fw.write(f"{genus}\tgenus\t{len(genus_bin_uris)}\tTrue\t{family}\n")
-                        continue
+                        # split_genera.append(genus)
+                        # fw.write(f"{genus}\tgenus\t{len(genus_bin_uris)}\tTrue\t{family}\n")
+                        logger.warning(f"Genus {genus} in family {family} ({len(genus_bin_uris)}) exceeds the limit of {args.limit}.")
+                        # continue
 
                     write_fasta(query, "genus", genus, genus_bin_uris)
                     fw.write(f"{genus}\tgenus\t{len(genus_bin_uris)}\tFalse\t{family}\n")
 
-        if split_genera:
-            for genus in split_genera:
-                if not genus:
-                    continue
-                unique_species = df[df['genus'] == genus]['species'].unique()
-                for species in unique_species:
-                    species_bin_uris = df[(df['genus'] == genus) & (df['species'] == species)]['bin_uri'].unique()
-                    if len(species_bin_uris) > args.limit:
-                        raise NotImplementedError("This is impossible!")
-                    write_fasta(query, "species", species, species_bin_uris)
-                    fw.write(f"{species}\tspecies\t{len(species_bin_uris)}\tFalse\t{genus}\n")
+        # if split_genera:
+        #     for genus in split_genera:
+        #         if not genus:
+        #             continue
+        #         unique_species = df[df['genus'] == genus]['species'].unique()
+        #         for species in unique_species:
+        #             if not species:
+        #                 continue
+        #             species_bin_uris = df[(df['genus'] == genus) & (df['species'] == species)]['bin_uri'].unique()
+        #             if len(species_bin_uris) > args.limit:
+        #                 logger.error(f"Species {species} in genus {genus} exceeds the limit of {args.limit}. Skipping.")
+        #                 continue
+        #             write_fasta(query, "species", species, species_bin_uris)
+        #             fw.write(f"{species}\tspecies\t{len(species_bin_uris)}\tFalse\t{genus}\n")
 
     # Close the connection
     connection.close()
