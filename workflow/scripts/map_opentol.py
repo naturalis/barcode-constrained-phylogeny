@@ -89,6 +89,11 @@ def match_opentol(kingdom, chunksize, fuzzy):
     :return:
     """
 
+    # NOTE: this query takes up a lot of memory/swap space. This is because we are chunking through the database
+    # doing exact matches for 10k records at a time, and those records are loaded in memory in full (e.g. including
+    # the sequences and all other columns) by doing 'SELECT *'. Instead, we can get away with doing 'SELECT species, taxon_id'
+    # so that the chunks have a smaller footprint.
+   
     # Load all unmatched records into df, iterate over it in chunks
     df = pd.read_sql("SELECT * FROM taxon WHERE opentol_id IS NULL", conn)
     for _, chunk_df in df.groupby(np.arange(len(df)) // chunksize):
