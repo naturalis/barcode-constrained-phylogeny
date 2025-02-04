@@ -1,6 +1,7 @@
 import os
 import subprocess
 import argparse
+import re
 
 def process_taxon_files(fasta_dir, tmp_file):
     i = 0
@@ -16,8 +17,9 @@ def process_taxon_files(fasta_dir, tmp_file):
 
                 filtered_lines = []
                 for j in range(0, len(lines), 2):
-                    if 'ott' in lines[j]:
-                        header = lines[j].split('|')[2]
+                    parts = lines[j].split('|')
+                    if len(parts) > 1 and re.match(r'ott\d+', parts[1].strip()):
+                        header = parts[2]
                         sequence = lines[j + 1]
                         filtered_lines.append(f'>{header.strip()}\n{sequence}')
 
