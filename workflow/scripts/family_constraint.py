@@ -50,10 +50,26 @@ def extract_id_from_fasta(unaligned, outgroups):
                 pid = line.strip().removeprefix('>')
                 sql = f"SELECT t.opentol_id FROM taxon t, barcode b WHERE t.taxon_id=b.taxon_id and b.processid='{pid}'"
                 ott = conn.execute(sql).fetchone()
+                logger.info(f"Result for processid {pid} was {ott}")
                 if ott:
                     ids.append(ott[0])
 
     return ids
+
+
+def test_database_connection(database):
+    """
+    Tests the connection to the SQLite database.
+    :param database: the location of the SQLite database file
+    :return: True if connection is successful, False otherwise
+    """
+    try:
+        conn = sqlite3.connect(database)
+        conn.close()
+        return True
+    except sqlite3.Error as e:
+        print(f"Database connection failed: {e}")
+        return False
 
 
 if __name__ == '__main__':
@@ -67,6 +83,13 @@ if __name__ == '__main__':
 
     logger = util.get_formatted_logger('family_constraint', args.verbosity)
     logger.info(f"Connecting to database {args.database}")
+
+    if test_database_connection(args.database):
+        logger.info("Database connection successful.")
+    else:
+        logger.error("Database connection failed.")
+        exit(1)
+
     conn = sqlite3.connect(args.database)
 
     ott_ids = extract_id_from_fasta(args.ingroup, args.outgroups)
@@ -79,7 +102,9 @@ if __name__ == '__main__':
     else:
         try:
             # Try to fetch the subtree using the OpenToL API
+            logger.info("Going to query OpenToL API")
             tree = opentol.get_subtree(ott_ids)
+            logger.info(f"Done querying, got {tree}")
             if tree is None:
                 logger.error('The API returned None, indicating no tree could be generated.')
                 with open(args.outtree, "a"):  # Create an empty file
