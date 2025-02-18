@@ -1,4 +1,5 @@
 import argparse
+import subprocess
 import util
 import os.path
 import sqlite3
@@ -146,6 +147,8 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--outtree', required=True, help="Output constraint tree")
     parser.add_argument('-e', '--extinctpids', required=True, help='Putatively extinct PIDs')
     parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
+    parser.add_argument('-hmm', '--hmmfile', required=True, help='HMM file for alignment')
+    parser.add_argument('-f', '--fasta', required=True, help='Output FASTA file')
     args = parser.parse_args()
 
     # Configure logging
@@ -174,3 +177,31 @@ if __name__ == '__main__':
     with open(args.outtree, "w") as output_file:
         output_file.write(ott_tree.as_string(schema="newick"))
 
+    # Clean the concatenated FASTA by removing gaps (dashes)
+    unaligned_fasta = 'results/fasta/unaligned.fa'
+    with open(unaligned_fasta, 'w') as unaligned_file:
+        for fasta in args.inaln.split(' '):
+            with open(fasta, 'r') as input_file:
+                for line in input_file:
+                    if line.startswith('>'):
+                        unaligned_file.write(line)
+                    else:
+                        unaligned_file.write(line.replace('-', ''))
+
+    # Align with hmmalign and output in Stockholm format
+    aligned_sto = 'results/fasta/aligned.sto'
+    subprocess.run([
+        'hmmalign', '--trim', '--dna', '--informat', 'FASTA', '--outformat', 'Stockholm',
+        '-o', aligned_sto, args.hmmfile, unaligned_fasta
+    ])
+
+    # Convert the Stockholm alignment to a non-interleaved FASTA format for RAxML
+    subprocess.run([
+        'seqmagick', 'convert', aligned_sto, args.fasta
+    ])
+
+    # Remove any extinct PIDs
+    if os.path.exists(args.extinctpids):
+        subprocess.run([
+            'seqmagick', 'mogrify', '--exclude-from-file', args.extinctpids, args.fasta
+        ])

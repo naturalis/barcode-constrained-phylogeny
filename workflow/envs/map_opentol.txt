@@ -1,4 +1,6 @@
-db-sqlite3
-pandas
-numpy
-requests
+biopython
+logging
+tempfile
+argparse
+os
+util
