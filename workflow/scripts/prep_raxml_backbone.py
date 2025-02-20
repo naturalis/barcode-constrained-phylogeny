@@ -10,7 +10,7 @@ from Bio import SeqIO
 
 
 """
-This script, `backbone_constraint.py`, is responsible for generating a constraint tree for a given family from a SQLite 
+This script, `prep_raxml_backbone.py`, is responsible for generating a constraint tree for a given family from a SQLite 
 database and a set of FASTA files.
 
 The script performs the following steps:
@@ -143,7 +143,7 @@ if __name__ == '__main__':
     # Define command line arguments
     parser = argparse.ArgumentParser(description='Required command line arguments.')
     parser.add_argument('-d', '--database', required=True, help='SQLite database file')
-    parser.add_argument('-i', '--inaln', required=True, help='Input exemplar FASTA files')
+    parser.add_argument('-i', '--input_list', required=True, help='Text file containing list of input exemplar FASTA files')
     parser.add_argument('-o', '--outtree', required=True, help="Output constraint tree")
     parser.add_argument('-e', '--extinctpids', required=True, help='Putatively extinct PIDs')
     parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
@@ -154,12 +154,16 @@ if __name__ == '__main__':
     # Configure logging
     logger = util.get_formatted_logger('backbone_constraint', args.verbosity)
 
+    # Read input exemplar FASTA files from the provided text file
+    with open(args.input_list, 'r') as f:
+        exemplar_files = [line.strip() for line in f.readlines()]
+
     # Configure database connection
     logger.info(f"Going to connect to database {args.database}")
     connection = sqlite3.connect(args.database)
 
     # Get one-to-many mapping from OTT IDs to process IDs and store extinct PIDs
-    pidmap, extinctpids = process_exemplars(args.inaln.split(' '), connection)
+    pidmap, extinctpids = process_exemplars(exemplar_files, connection)
     connection.close()
     if len(extinctpids) != 0:
         with open(args.extinctpids, 'w') as file:
@@ -180,7 +184,7 @@ if __name__ == '__main__':
     # Clean the concatenated FASTA by removing gaps (dashes)
     unaligned_fasta = 'results/fasta/unaligned.fa'
     with open(unaligned_fasta, 'w') as unaligned_file:
-        for fasta in args.inaln.split(' '):
+        for fasta in exemplar_files:
             with open(fasta, 'r') as input_file:
                 for line in input_file:
                     if line.startswith('>'):

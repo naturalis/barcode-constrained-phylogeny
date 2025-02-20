@@ -29,7 +29,7 @@ def get_prep_raxml_backbone_input(wildcards):
 rule all:
     input:
         "results/passed_taxa.txt",
-        "results/grafted.tre"
+        "results/fasta/raxml-ready.fa.raxml.bestTree"
 
 # Creates and populates a SQLite database with filtered sequence records.
 # Uses BOLD dump TSV as defined in config file
@@ -426,6 +426,7 @@ rule prep_raxml_backbone:
         tree="results/fasta/raxml-ready.tre",
         extinct="results/fasta/extinct_pids.txt"
     params:
+        input_list="results/fasta/exemplars_list.txt",
         db="results/databases/BOLD_{}_barcodes.db".format(config["marker"]),
         log_level = config['log_level'],
         hmm_file=config['file_names']['hmm']
@@ -433,10 +434,12 @@ rule prep_raxml_backbone:
     conda: "envs/prep_raxml_backbone.yml"
     shell:
         """
-        python workflow/scripts/backbone_constraint.py \
+        ls results/fasta/taxon/*/exemplars.fa > results/fasta/exemplars_list.txt
+
+        python workflow/scripts/prep_raxml_backbone.py \
             -d {params.db} \
             -v {params.log_level} \
-            -i '{input.fastas}' \
+            -i {params.input_list} \
             -e {output.extinct} \
             -o {output.tree} \
             -hmm {params.hmm_file} \
