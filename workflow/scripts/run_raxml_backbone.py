@@ -10,7 +10,8 @@ def run_raxml_backbone(alignment, tree, model, log_file):
         "--msa", alignment,
         "--model", model,
         "--tree-constraint", tree,
-        "--search"
+        "--search",
+        "--msa-format", "PHYLIP"
     ]
     with open(log_file, "w") as log:
         log.write("Running initial raxml-ng command:\n")
@@ -57,10 +58,6 @@ def run_raxml_backbone(alignment, tree, model, log_file):
     return 0  # Indicate that the initial command was successful
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
-        print("Usage: python run_raxml_backbone.py <alignment> <tree> <model> <log_file>")
-        sys.exit(1)
-    
     alignment = sys.argv[1]
     tree = sys.argv[2]
     model = sys.argv[3]

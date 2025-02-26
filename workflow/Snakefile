@@ -452,7 +452,7 @@ rule prep_raxml_backbone:
 # taxonomic width of BOLD. Instead, the tree will be rooted using the constraint.
 rule run_raxml_backbone:
     input:
-        alignment = "results/fasta/raxml-ready.fa",
+        alignment = "results/fasta/raxml-ready.fa.raxml.reduced.phy",
         tree = "results/fasta/raxml-ready.tre"
     output:
         tree = "results/fasta/raxml-ready.fa.raxml.bestTree"
