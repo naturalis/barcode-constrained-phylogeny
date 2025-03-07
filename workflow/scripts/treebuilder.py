@@ -235,6 +235,32 @@ def build_tree_from_paths(taxonomy_paths: Dict[str, List[str]]) -> Tree:
     return tree
 
 
+def fix_root_unifurcation(tree: Tree) -> None:
+    """
+    Fix the case where the root has only one child by making that child the new root.
+
+    :param tree: BioPython Tree object
+    """
+    if len(tree.root.clades) == 1:
+        logger.info("Root has only one child - fixing root unifurcation")
+        # The child of the root becomes the new root
+        old_root = tree.root
+        new_root = old_root.clades[0]
+
+        # Set the new root's properties
+        tree.root = new_root
+
+        # If we want to preserve the old root's name in some way
+        if old_root.name and old_root.name != "root":
+            # We could add the old root's name to the new root if needed
+            if new_root.name:
+                new_root.name = f"{old_root.name}_{new_root.name}"
+            else:
+                new_root.name = old_root.name
+
+        logger.info("Root unifurcation fixed")
+
+
 def collapse_unbranching_nodes(tree: Tree) -> None:
     """
     Remove internal nodes that have only one child using recursion.
@@ -398,13 +424,8 @@ if __name__ == "__main__":
     # Optionally collapse unbranching internal nodes
     if args.collapse:
         collapse_unbranching_nodes(tree)
-
-    # Optionally remove internal node labels
-    #if not args.nodelabels:
-    #    remove_internal_labels(tree)
-
-    # Write the tree to a Newick file
-    #write_tree_to_newick(tree, args.output)
+        # After collapsing, fix any root unifurcation
+        fix_root_unifurcation(tree)
 
     # Write the tree to a Newick file
     write_tree_to_newick(tree, args.output, args.nodelabels)
