@@ -40,6 +40,8 @@ def make_constraint(intree, outtree, processmap):
         tree = read_newick(intree, 'newick')
     except ValueError:
         logger.info("No trees made for this family.")
+        with open(outtree, 'a'):
+            pass
         return
 
     # Map opentol_id to process_id, possibly adding tips if there are multiple process_ids
@@ -83,6 +85,7 @@ def make_mapping(aln, conn):
     map_dict = {}
     for seq in aln:
         process_id = seq.id
+        logger.debug(f"Processing sequence {process_id}")
 
         # Because we are querying on the basis of the alignment, we may encounter cases
         # where there is a process_id without an opentol_id. However, this is not going
@@ -99,6 +102,7 @@ def make_mapping(aln, conn):
         record = cursor.fetchone()
 
         # Check if record is not empty
+        logger.debug(f"Query result for {process_id} is: {record}")
         if record is not None:
             opentol_id = f'ott{record[0]}'  # tree has ott prefixes
             if opentol_id not in map_dict:
@@ -131,6 +135,7 @@ if __name__ == '__main__':
     infile = os.path.realpath(os.path.abspath(args.inaln))
     try:
         alignment = read_alignment(infile, 'fasta')
+        logger.info(f"Read {len(alignment)} records from {infile}")
     except:
         logger.info("No records in the family.")
         alignment = []

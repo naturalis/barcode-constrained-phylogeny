@@ -89,6 +89,11 @@ def match_opentol(kingdom, chunksize, fuzzy):
     :return:
     """
 
+    # NOTE: this query takes up a lot of memory/swap space. This is because we are chunking through the database
+    # doing exact matches for 10k records at a time, and those records are loaded in memory in full (e.g. including
+    # the sequences and all other columns) by doing 'SELECT *'. Instead, we can get away with doing 'SELECT species, taxon_id'
+    # so that the chunks have a smaller footprint.
+   
     # Load all unmatched records into df, iterate over it in chunks
     df = pd.read_sql("SELECT * FROM taxon WHERE opentol_id IS NULL", conn)
     for _, chunk_df in df.groupby(np.arange(len(df)) // chunksize):
@@ -133,6 +138,10 @@ if __name__ == '__main__':
     logger.info(f'Going to connect to database {args.database}')
     conn = sqlite3.connect(args.database)
     cursor = conn.cursor()
+    cursor.execute('pragma journal_mode=OFF')
+    cursor.execute('PRAGMA synchronous=OFF')
+    cursor.execute('PRAGMA cache_size=100000')
+    cursor.execute('PRAGMA temp_store = MEMORY')
 
     # Infer taxonomic context from marker name
     if args.marker == "COI-5P":

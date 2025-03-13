@@ -53,7 +53,6 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--folder', required=True, help='Location of folder with subtree folders')
     parser.add_argument('-e', '--extinct', required=True, help='File with extinct PIDs to skip')
     parser.add_argument('-o', '--out', required=True, help="Output grafted newick")
-    parser.add_argument('-n', '--nfamilies', required=True, help='Number of families')
     parser.add_argument('-v', '--verbosity', required=True, help='Log level (e.g. DEBUG)')
     args = parser.parse_args()
 
@@ -61,11 +60,11 @@ if __name__ == '__main__':
     logger = util.get_formatted_logger('graft_clades', args.verbosity)
 
     # Read the extinct PIDs
-    extinct = []
+    extinct = set()
     with open(args.extinct, 'r') as file:
         for line in file:
             clean_line = line.strip()
-            extinct.append(clean_line)
+            extinct.add(clean_line)
     logger.info(f"extinct: {extinct}")
     # Read the backbone tree as a dendropy object, calculate distances to root, and get its leaves
     backbone = read_tree(args.tree)
@@ -74,15 +73,16 @@ if __name__ == '__main__':
 
     # Iterate over folders
     base_folder = os.path.abspath(args.folder)
-    for i in range(1, int(args.nfamilies) + 1):
-        logger.info(f'Processing subtree {i}')
+    for taxon in os.listdir(base_folder):
+        logger.info(f'Processing subtree {taxon}')
+        subfolder = os.path.join(base_folder, taxon)
 
-        # Peprocess the focal family tree
-        subfolder = f'{i}-of-{args.nfamilies}'
+        # Preprocess the focal family tree
         subtree_file = os.path.join(base_folder, subfolder, 'aligned.fa.raxml.bestTree.rooted')
         try:
             subtree = read_tree(subtree_file)
         except:
+            logger.info(f'warning: subtree for taxon "{taxon}" could not be read')
             continue
         subtree.calc_node_root_distances()
 

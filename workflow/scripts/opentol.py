@@ -109,7 +109,9 @@ def _opentol_request(ids):
 
 
 def get_subtree(idmap):
+    logger.info(f"Going to fetch subtree for {idmap}")
     json_result = _iterate_requests(idmap)
+    logger.info(f"Received {json_result}")
 
     # Parse the newick string, which may still have mrca nodes
     tree_obj = dendropy.Tree.get(
